@@ -1,0 +1,42 @@
+{
+  "name": "iot-miniservers",
+  "version": "0.0.1",
+  "private": true,
+  "description": "IoT miniservers",
+  "repository": "git@github.com:radoslavirha/iot-miniservers.git",
+  "license": "MIT",
+  "author": "Radoslav Irha <radoslav.irha@gmail.com>",
+  "type": "module",
+  "scripts": {
+    "build": "pnpm --stream --recursive run build",
+    "build:docs": "node docs.js",
+    "changeset:tag": "changeset tag",
+    "changeset:version": "changeset version",
+    "cleanup:all": "pnpm --stream --recursive run cleanup:all",
+    "cleanup:artifacts": "pnpm --stream --recursive run cleanup:artifacts",
+    "cleanup:modules": "pnpm --stream --recursive run cleanup:modules && rm -rf node_modules",
+    "lint": "pnpm --stream --recursive run lint",
+    "lint:fix": "pnpm --stream --recursive run lint:fix",
+    "prepare": "husky",
+    "test": "pnpm --stream --recursive --sequential run test",
+    "verify": "pnpm run lint && pnpm run build && pnpm run test"
+  },
+  "dependencies": {
+    "husky": "^9.1.7"
+  },
+  "devDependencies": {
+    "@actions/core": "^1.11.1",
+    "@actions/github": "^6.0.1",
+    "@changesets/changelog-github": "^0.5.1",
+    "@changesets/cli": "^2.29.7",
+    "handlebars": "^4.7.8"
+  },
+  "engines": {
+    "node": ">= 24",
+    "pnpm": ">= 10"
+  },
+  "os": [
+    "darwin",
+    "linux"
+  ]
+}

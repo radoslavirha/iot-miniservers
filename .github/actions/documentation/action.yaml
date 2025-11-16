@@ -1,0 +1,13 @@
+---
+name: Build Readme
+description: Build Readme files for APIs
+runs:
+  using: composite
+  steps:
+    - name: Build Readme
+      shell: bash
+      run: pnpm build:docs
+    - name: Commit and push changes
+      uses: EndBug/add-and-commit@v9
+      with:
+        message: 'Update API Readme files'

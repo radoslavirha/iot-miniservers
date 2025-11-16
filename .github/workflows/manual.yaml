@@ -1,0 +1,32 @@
+---
+name: Manual docker build
+
+# yamllint disable-line rule:truthy
+on:
+  workflow_dispatch:
+
+jobs:
+  changes:
+    name: Create APIs list
+    runs-on: ubuntu-latest
+    outputs:
+      apis: ${{ steps.apis.outputs.folders_no_base_path }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Compose APIs list
+        id: apis
+        uses: Drafteame/list-folders-action@main
+        with:
+          paths: |
+            ./apis
+
+  # build-apis-images:
+  #   name: Build ${{ matrix.api }} docker images
+  #   needs: changes
+  #   runs-on: ubuntu-latest
+  #   if: ${{ needs.changes.outputs.apis != '[]' }}
+  #   strategy:
+  #     matrix:
+  #       api: ${{ fromJSON(needs.changes.outputs.apis) }}
+  #   steps:

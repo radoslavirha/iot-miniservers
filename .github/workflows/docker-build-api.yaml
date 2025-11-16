@@ -1,0 +1,74 @@
+---
+name: Build API Docker images and publish to Docker Hub if requested
+
+# yamllint disable-line rule:truthy
+on:
+  workflow_call:
+    inputs:
+      TARGET:
+        description: API subfolder inside apis/ folder
+        required: true
+        default: interactive-map-feeder
+        type: string
+      PUBLISH:
+        description: Whether to build and publish to Docker Hub or just build the image
+        required: true
+        default: false
+        type: boolean
+  workflow_dispatch:
+    inputs:
+      TARGET:
+        description: API subfolder inside apis/ folder
+        required: true
+        default: interactive-map-feeder
+        type: string
+      PUBLISH:
+        description: Whether to build and publish to Docker Hub or just build the image
+        required: true
+        default: false
+        type: boolean
+
+jobs:
+  build:
+    name: Build ${{ inputs.TARGET }} docker image
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Set up .npmrc
+        uses: v-venes/create-npmrc@v1.0.0
+        with:
+          org_name: radoslavirha
+          auth_token: ${{ secrets.TOOLKIT_HUB_PACKAGES }}
+      - name: Login to DockerHub
+        if: ${{ inputs.PUBLISH == true || inputs.PUBLISH == 'true' }}
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+# - name: Build
+#   uses: docker/build-push-action@v6
+#   with:
+#     push: ${{ inputs.PUBLISH }}
+#     load: true
+#     context: apis/${{ inputs.TARGET }}
+#     file: apis/${{ inputs.TARGET }}/Dockerfile
+#     tags: |
+#       ${{ steps.flags.outputs.image }}:latest
+#       ${{ steps.flags.outputs.image }}:${{ needs.information.outputs.version }}
+#     secret-files: |
+#       "npmrc=.npmrc"
+#     build-args: |
+#       BUILD_FROM=${{ steps.flags.outputs.from }}
+#     labels: |
+#       maintainer=Radoslav Irha <radoslav.irha@gmail.com>
+#       org.opencontainers.image.title=${{ needs.information.outputs.name }}
+#       org.opencontainers.image.description=${{ needs.information.outputs.description }}
+#       org.opencontainers.image.vendor=Radoslav Irha IoT Miniservers
+#       org.opencontainers.image.authors=Radoslav Irha <radoslav.irha@gmail.com>
+#       org.opencontainers.image.licenses=MIT
+#       org.opencontainers.image.source=https://github.com/${{ github.repository }}
+#       org.opencontainers.image.documentation=https://github.com/${{ github.repository }}/blob/main/README.md
+#       org.opencontainers.image.created=${{ steps.flags.outputs.date }}
+#       org.opencontainers.image.revision=${{ github.sha }}
+#       org.opencontainers.image.version=${{ needs.information.outputs.version }}

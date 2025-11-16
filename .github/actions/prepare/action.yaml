@@ -1,0 +1,38 @@
+---
+name: Prepare repository
+description: Prepare repository for further actions
+inputs:
+  NODE_AUTH_TOKEN:
+    description: A Node auth token / GitHub token
+    required: true
+  TARGET_API:
+    description: API directory in apis folder
+    required: false
+runs:
+  using: composite
+  steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+    - name: Set up pnpm v10
+      uses: pnpm/action-setup@v4
+      with:
+        version: 10
+    - name: Set up Node.js v24
+      uses: actions/setup-node@v6
+      with:
+        node-version: 24
+        cache: pnpm
+        registry-url: https://npm.pkg.github.com/
+        scope: '@radoslavirha'
+    - name: Install ${{ inputs.TARGET_API }} dependencies
+      if: "${{ inputs.TARGET_API != '' }}"
+      run: pnpm install --frozen-lockfile --filter "./apis/${{ inputs.TARGET_API }}"
+      shell: bash
+      env:
+        NODE_AUTH_TOKEN: ${{ inputs.NODE_AUTH_TOKEN }}
+    - name: Install dependencies
+      if: "${{ inputs.TARGET_API == '' }}"
+      run: pnpm install --frozen-lockfile
+      shell: bash
+      env:
+        NODE_AUTH_TOKEN: ${{ inputs.NODE_AUTH_TOKEN }}

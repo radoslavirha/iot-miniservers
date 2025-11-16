@@ -1,0 +1,23 @@
+---
+name: Pull request
+
+# yamllint disable-line rule:truthy
+on:
+  workflow_call:
+  push:
+    branches:
+      - main
+
+jobs:
+  docs:
+    name: Build Readme
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Prepare repository
+        uses: ./.github/actions/prepare
+        with:
+          NODE_AUTH_TOKEN: ${{ secrets.TOOLKIT_HUB_PACKAGES }}
+      - name: Build docs
+        uses: ./.github/actions/documentation
