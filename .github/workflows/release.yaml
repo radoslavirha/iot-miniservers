@@ -1,0 +1,67 @@
+---
+name: Release APIs
+
+# yamllint disable-line rule:truthy
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  release:
+    name: Release APIs
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-apis-matrix.outputs.json }}
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Prepare repository
+        uses: ./.github/actions/prepare
+        with:
+          NODE_AUTH_TOKEN: ${{ secrets.TOOLKIT_HUB_PACKAGES }}
+      - name: Create Release Pull Request and Publish
+        id: changesets
+        uses: changesets/action@v1
+        with:
+          title: Release APIs
+          commit: Version APIs
+          version: pnpm changeset:version
+          publish: pnpm changeset:tag
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Set APIs matrix
+        id: set-apis-matrix
+        uses: nickofthyme/object-remap@v3
+        with:
+          include.*.name: ${{ toJSON(fromJSON(steps.changesets.outputs.publishedPackages).*.name) }}
+          include.*.version: ${{ toJSON(fromJSON(steps.changesets.outputs.publishedPackages).*.version) }}
+  docs:
+    name: Build Readme
+    needs: release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Prepare repository
+        uses: ./.github/actions/prepare
+        with:
+          NODE_AUTH_TOKEN: ${{ secrets.TOOLKIT_HUB_PACKAGES }}
+      - name: Build docs
+        uses: ./.github/actions/documentation
+  build-api-images:
+    name: Publish ${{ matrix.name }} ${{ matrix.version }}
+    needs: release
+    if: ${{ needs.release.outputs.matrix != '{}' }}
+    strategy:
+      matrix: ${{ fromJson(needs.release.outputs.matrix) }}
+    uses: ./.github/workflows/docker-build-api.yaml
+    secrets: inherit
+    with:
+      TARGET: ${{ matrix.name }}
+      PUBLISH: true

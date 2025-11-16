@@ -1,0 +1,110 @@
+---
+name: CI
+
+# yamllint disable-line rule:truthy
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+
+  changes:
+    name: Check API changes
+    runs-on: ubuntu-latest
+    # Required permissions
+    permissions:
+      pull-requests: read
+    outputs:
+      apis: ${{ steps.filter.outputs.changes }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: 📂 Detect changed files
+        uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: .github/paths-filter.yaml
+
+  # lint-yaml:
+  #   name: YAML lint
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Checkout repository
+  #       uses: actions/checkout@v4
+  #     - name: Run YAML lint
+  #       uses: frenck/action-yamllint@v1.5
+  #       with:
+  #         strict: true
+
+  lint-api-code:
+    name: Code lint => ${{ matrix.api }}
+    needs: changes
+    runs-on: ubuntu-latest
+    if: ${{ needs.changes.outputs.apis != '[]' }}
+    strategy:
+      matrix:
+        api: ${{ fromJSON(needs.changes.outputs.apis) }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Prepare repository
+        uses: ./.github/actions/prepare
+        with:
+          TARGET_API: ${{ matrix.api }}
+          NODE_AUTH_TOKEN: ${{ secrets.TOOLKIT_HUB_PACKAGES }}
+      - name: Run lint
+        run: pnpm --filter ./apis/${{ matrix.api }} lint
+
+  build-api-code:
+    name: Code build => ${{ matrix.api }}
+    needs: changes
+    runs-on: ubuntu-latest
+    if: ${{ needs.changes.outputs.apis != '[]' }}
+    strategy:
+      matrix:
+        api: ${{ fromJSON(needs.changes.outputs.apis) }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Prepare repository
+        uses: ./.github/actions/prepare
+        with:
+          TARGET_API: ${{ matrix.api }}
+          NODE_AUTH_TOKEN: ${{ secrets.TOOLKIT_HUB_PACKAGES }}
+      - name: Run build
+        run: pnpm --filter ./apis/${{ matrix.api }} build
+
+  test-api-code:
+    name: Code test => ${{ matrix.api }}
+    needs: changes
+    runs-on: ubuntu-latest
+    if: ${{ needs.changes.outputs.apis != '[]' }}
+    strategy:
+      matrix:
+        api: ${{ fromJSON(needs.changes.outputs.apis) }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Prepare repository
+        uses: ./.github/actions/prepare
+        with:
+          TARGET_API: ${{ matrix.api }}
+          NODE_AUTH_TOKEN: ${{ secrets.TOOLKIT_HUB_PACKAGES }}
+      - name: Run tests
+        run: pnpm --filter ./apis/${{ matrix.api }} test
+
+  lint-api-dockerfile:
+    name: Dockerfile lint => ${{ matrix.api }}
+    needs: changes
+    runs-on: ubuntu-latest
+    if: ${{ needs.changes.outputs.apis != '[]' }}
+    strategy:
+      matrix:
+        api: ${{ fromJSON(needs.changes.outputs.apis) }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Run API Dockerfile lint
+        uses: hadolint/hadolint-action@v3.1.0
+        with:
+          dockerfile: ./apis/${{ matrix.api }}/Dockerfile

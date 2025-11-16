@@ -1,0 +1,13 @@
+**/coverage
+**/dist
+**/node_modules
+**/.DS_Store
+**/.npmrc
+!.npmrc
+apis/**/config/*.json
+!apis/**/config/custom-environment-variables.json
+.env
+.act
+.npmrc.docker
+.vscode
+.husky

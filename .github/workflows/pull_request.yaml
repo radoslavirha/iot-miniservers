@@ -1,0 +1,43 @@
+---
+name: Pull request
+
+# yamllint disable-line rule:truthy
+on:
+  workflow_call:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  changes:
+    name: Check APIs changes
+    runs-on: ubuntu-latest
+    # Required permissions
+    permissions:
+      pull-requests: read
+    outputs:
+      apis: ${{ steps.filter.outputs.changes }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: 📂 Detect changed files
+        uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: .github/paths-filter.yaml
+
+  build-api-images:
+    name: Build ${{ matrix.name }} docker images
+    needs: changes
+    if: ${{ needs.changes.outputs.apis != '[]' }}
+    # permissions:
+    #   contents: write
+    strategy:
+      matrix:
+        api: ${{ fromJSON(needs.changes.outputs.apis) }}
+    uses: ./.github/workflows/docker-build-api.yaml
+    secrets: inherit
+    with:
+      TARGET: ${{ matrix.api }}
+      PUBLISH: false

@@ -1,0 +1,25 @@
+---
+name: Main branch workflow
+
+# yamllint disable-line rule:truthy
+on:
+  workflow_call:
+  push:
+    branches:
+      - main
+
+jobs:
+  docs:
+    name: Build Readme
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Prepare repository
+        uses: ./.github/actions/prepare
+        with:
+          NODE_AUTH_TOKEN: ${{ secrets.TOOLKIT_HUB_PACKAGES }}
+      - name: Build docs
+        uses: ./.github/actions/documentation

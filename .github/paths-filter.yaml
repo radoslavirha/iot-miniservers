@@ -1,0 +1,3 @@
+---
+# Key must match subdirectory in apis/
+interactive-map-feeder: apis/interactive-map-feeder/**

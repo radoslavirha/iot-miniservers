@@ -1,0 +1,98 @@
+---
+name: Build API Docker images and publish to Docker Hub if requested
+
+# yamllint disable-line rule:truthy
+on:
+  workflow_call:
+    inputs:
+      TARGET:
+        description: API subfolder inside apis/ folder
+        required: true
+        default: interactive-map-feeder
+        type: string
+      PUBLISH:
+        description: Whether to build and publish to Docker Hub or just build the image
+        required: true
+        default: false
+        type: boolean
+  workflow_dispatch:
+    inputs:
+      TARGET:
+        description: API subfolder inside apis/ folder
+        required: true
+        default: interactive-map-feeder
+        type: string
+      PUBLISH:
+        description: Whether to build and publish to Docker Hub or just build the image
+        required: true
+        default: false
+        type: boolean
+
+jobs:
+  image-data:
+    name: Extract image information
+    runs-on: ubuntu-latest
+    outputs:
+      image: ${{ steps.information.outputs.image }}
+      description: ${{ steps.information.outputs.description }}
+      version: ${{ steps.information.outputs.version }}
+      date: ${{ steps.set_date.outputs.date }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Get image informations
+        id: information
+        shell: bash
+        run: |
+          name=$(yq -r --no-colors eval '.name' "apis/${{ inputs.TARGET }}/package.json")
+          echo "image=radoslavirha/${name}" >> "$GITHUB_OUTPUT"
+
+          description=$(yq -r --no-colors eval '.description' "apis/${{ inputs.TARGET }}/package.json")
+          echo "description=${description}" >> "$GITHUB_OUTPUT"
+
+          version=$(yq -r --no-colors eval '.version' "apis/${{ inputs.TARGET }}/package.json")
+          echo "version=${version}" >> "$GITHUB_OUTPUT"
+
+          echo "date=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_OUTPUT"
+  build:
+    name: Build ${{ inputs.TARGET }} docker image
+    runs-on: ubuntu-latest
+    needs: image-data
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Set up .npmrc
+        uses: v-venes/create-npmrc@v1.0.0
+        with:
+          org_name: radoslavirha
+          auth_token: ${{ secrets.TOOLKIT_HUB_PACKAGES }}
+      - name: Login to DockerHub
+        if: ${{ inputs.PUBLISH == true || inputs.PUBLISH == 'true' }}
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Build
+        uses: docker/build-push-action@v6
+        with:
+          push: ${{ inputs.PUBLISH }}
+          load: true
+          context: apis/${{ inputs.TARGET }}
+          file: apis/${{ inputs.TARGET }}/Dockerfile
+          tags: |
+            ${{ needs.image-data.outputs.image }}:latest
+            ${{ needs.image-data.outputs.image }}:${{ needs.image-data.outputs.version }}
+          secret-files: |
+            "npmrc=.npmrc"
+          labels: |
+            maintainer=Radoslav Irha <radoslav.irha@gmail.com>
+            org.opencontainers.image.title=${{ needs.image-data.outputs.image }}
+            org.opencontainers.image.description=${{ needs.image-data.outputs.description }}
+            org.opencontainers.image.vendor=Radoslav Irha IoT Miniservers
+            org.opencontainers.image.authors=Radoslav Irha <radoslav.irha@gmail.com>
+            org.opencontainers.image.licenses=MIT
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}/apis/${{ inputs.TARGET }}
+            org.opencontainers.image.documentation=https://github.com/${{ github.repository }}/blob/main/apis/${{ inputs.TARGET }}README.md
+            org.opencontainers.image.created=${{ needs.image-data.outputs.date }}
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.version=${{ needs.image-data.outputs.version }}
