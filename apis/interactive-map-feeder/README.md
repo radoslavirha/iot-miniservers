@@ -27,8 +27,8 @@ For an API issue or idea [open an issue here][github-issue]
 
 [maintenance-shield]: https://img.shields.io/maintenance/yes/2025.svg
 [project-stage-shield]: https://img.shields.io/badge/project%20stage-production%20ready-brightgreen.svg
-[release-shield]: https://img.shields.io/badge/version-0.1.1-blue.svg
-[github-release]: https://github.com/radoslavirha/iot-miniservers/releases/tag/interactive-map-feeder@0.1.1
+[release-shield]: https://img.shields.io/badge/version-0.1.2-blue.svg
+[github-release]: https://github.com/radoslavirha/iot-miniservers/releases/tag/interactive-map-feeder@0.1.2
 [github-issue]: https://github.com/radoslavirha/iot-miniservers/issues
 [license-shield]: https://img.shields.io/badge/License-MIT-yellow.svg
 [license-url]: https://opensource.org/licenses/MIT
