@@ -7,3 +7,5 @@ Dockerfile
 Readme.md
 DOCS.md
 vitest.config.ts
+config/*.json
+!config/custom-environment-variables.json
