@@ -1,5 +1,11 @@
 # interactive-map-feeder
 
+## 0.1.2
+
+### Patch Changes
+
+- [`65c1fe5`](https://github.com/radoslavirha/iot-miniservers/commit/65c1fe562d00df566d0e725d66719ef6b235b212) Thanks [@radoslavirha](https://github.com/radoslavirha)! - Fix uppercase filename
+
 ## 0.1.1
 
 ### Patch Changes
