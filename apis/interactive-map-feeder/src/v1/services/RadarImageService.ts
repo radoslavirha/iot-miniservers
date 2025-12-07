@@ -1,16 +1,18 @@
-import { Injectable, ProviderScope, Scope } from '@tsed/di';
-import { RadarService, RasterService } from '../../services/index.js';
+import { ProviderScope, Scope, Service } from '@tsed/di';
+import { RadarService } from './RadarService.js';
+import { RasterService } from './RasterService.js';
 
-@Injectable()
-@Scope(ProviderScope.REQUEST)
-export class RadarImageHandler {
-    constructor(
+@Service()
+@Scope(ProviderScope.SINGLETON)
+export class RadarImageService {
+    constructor (
         private radarService: RadarService,
         private rasterService: RasterService
-    ) {}
+    ) {
+    }
 
-    public async execute(): Promise<Buffer> {
-        const radarBuffer = await this.radarService.getCurrentRainSituation();
+    public async getCurrentRadarImage(): Promise<Buffer> {
+        const radarBuffer = await this.radarService.getCurrentRadarSituation();
         const surfaceBuffer = await this.radarService.getSurfaceMap();
         const citiesBuffer = await this.radarService.getCitiesMap();
         const bordersBuffer = await this.radarService.getBordersMap();

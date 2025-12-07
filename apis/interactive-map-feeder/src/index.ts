@@ -1,10 +1,10 @@
 import { $log } from '@tsed/logger';
-import { ConfigProvider, ConfigProviderOptions } from '@radoslavirha/tsed-configuration';
 import { Platform, ServerConfiguration } from '@radoslavirha/tsed-platform';
 import { SwaggerConfig, SwaggerDocumentConfig, SwaggerProvider } from '@radoslavirha/tsed-swagger';
 import { CommonUtils } from '@radoslavirha/utils';
 import { Server } from './Server.js';
-import { ConfigModel } from './models/index.js';
+import { injector } from '@tsed/di';
+import { ConfigService } from './services/ConfigService.js';
 
 const SIG_EVENTS = [
     'beforeExit',
@@ -23,11 +23,7 @@ const SIG_EVENTS = [
 ];
 
 try {
-    const config = new ConfigProvider(<ConfigProviderOptions>{
-        service: 'LaskaKit Data Feeder',
-        fallbackPort: 4000,
-        configModel: ConfigModel
-    });
+    const config = injector().get<ConfigService>(ConfigService);
 
     const swaggerConfig = CommonUtils.buildModel(SwaggerConfig, {
         title: config.api.service,
@@ -38,9 +34,12 @@ try {
                 docs: 'v1',
                 security: []
             })
-        ]
+        ],
+        swaggerUIOptions: {
+            validatorUrl: null
+        },
+        serverUrl: config.api.publicURL
     });
-
     const configuration: ServerConfiguration = {
         ...config.server,
         api: config.api,

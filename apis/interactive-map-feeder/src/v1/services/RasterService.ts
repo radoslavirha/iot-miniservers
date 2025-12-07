@@ -2,7 +2,7 @@ import { ProviderScope, Scope, Service } from '@tsed/di';
 import { CommonUtils, GeoUtils, NumberUtils } from '@radoslavirha/utils';
 import Sharp from 'sharp';
 import { BBox, Position, RGBA } from '../models/index.js';
-import { CITIES } from '../cities.js';
+import { CITIES } from '../Cities.js';
 
 @Service()
 @Scope(ProviderScope.SINGLETON)

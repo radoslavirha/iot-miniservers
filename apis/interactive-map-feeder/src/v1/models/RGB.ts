@@ -1,9 +1,8 @@
-import { AdditionalProperties, Description, Example, Groups, Max, Min, Property, Required } from '@tsed/schema';
-import { GROUP_NEVER_IOT } from '../ModelGroups.js';
+import { AdditionalProperties, Description, Example, Max, Min, Property, Required } from '@tsed/schema';
 
-@Description('A simple model representing RGB(A) color.')
+@Description('A simple model representing RGB color.')
 @AdditionalProperties(false)
-export class RGBA {
+export class RGB {
     @Description('The red color.')
     @Required()
     @Property()
@@ -28,18 +27,9 @@ export class RGBA {
     @Max(255)
     public b: number;
 
-    @Description('The alpha channel.')
-    @Required()
-    @Property()
-    @Min(0)
-    @Max(255)
-    @Groups(GROUP_NEVER_IOT)
-    public a: number;
-
-    constructor (r: number, g: number, b: number, a: number) {
+    constructor (r: number, g: number, b: number) {
         this.r = r;
         this.g = g;
         this.b = b;
-        this.a = a;
     }
 }

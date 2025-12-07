@@ -1,11 +1,12 @@
-import { Description, Example, Property, Required } from '@tsed/schema';
-import { RGBA } from './RGBA.js';
+import { Description, Example, ForwardGroups, Property, Required } from '@tsed/schema';
 import { City } from './City.js';
+import { RGB } from './RGB.js';
 
 export class CityLED extends City {
-    @Description('The RGBA color for LED.')
+    @Description('The RGB color for LED.')
     @Required()
-    @Property()
-    @Example(new RGBA(255, 0, 0, 255))
-    public color: RGBA;
+    @Property(RGB)
+    @Example(new RGB(255, 0, 0))
+    @ForwardGroups()
+    public color: RGB;
 }

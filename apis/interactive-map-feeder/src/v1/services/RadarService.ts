@@ -1,8 +1,8 @@
 import { ProviderScope, Scope, Service } from '@tsed/di';
 import axios from 'axios';
 import { CommonUtils, NumberUtils } from '@radoslavirha/utils';
-import { CITIES } from '../cities.js';
-import { BBox, CityLED, Coordinates } from '../models/index.js';
+import { CITIES } from '../Cities.js';
+import { BBox, CityLED, Coordinates, RGB } from '../models/index.js';
 import { CHMIService } from './CHMIService.js';
 import { RasterService } from './RasterService.js';
 
@@ -27,14 +27,14 @@ export class RadarService extends CHMIService {
         super();
     }
 
-    public async getCurrentRainSituation(): Promise<Buffer> {
+    public async getCurrentRadarSituation(): Promise<Buffer> {
         const url = `https://opendata.chmi.cz/meteorology/weather/radar/composite/maxz/png_masked/pacz2gmaps3.z_max3d.${this.getCurrentDate()}.0.png`;
         const response = await axios<Buffer>({ method: 'GET', url, responseType: 'arraybuffer' });
         return response.data;
     }
 
-    public async getCitiesConditions(radius?: number): Promise<CityLED[]> {
-        const buffer = await this.getCurrentRainSituation();
+    public async getCitiesFromRadar(radius?: number): Promise<CityLED[]> {
+        const buffer = await this.getCurrentRadarSituation();
         const image = this.rasterService.createImage(buffer);
 
         const cities = CommonUtils.cloneDeep(CITIES);
@@ -46,7 +46,7 @@ export class RadarService extends CHMIService {
             // TODO: Implement color mapping. Now I return exact color from radar, I need more suitable colors for LEDs?
             citiesLED.push(CommonUtils.buildModel(CityLED, {
                 ...city,
-                color
+                color: new RGB(color.r, color.g, color.b)
             }));
         }
 
