@@ -1,0 +1,6 @@
+{
+    "server": {
+        "httpPort": "4000"
+    },
+    "publicURL": "http://sandbox.api.server.home/iot/interactive-map-feeder"
+}

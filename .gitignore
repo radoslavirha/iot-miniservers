@@ -6,6 +6,7 @@
 !.npmrc
 apis/**/config/*.json
 !apis/**/config/custom-environment-variables.json
+!apis/**/config/test.json
 .env
 .act
 .npmrc.docker
