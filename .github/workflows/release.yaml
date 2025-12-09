@@ -56,7 +56,9 @@ jobs:
         uses: ./.github/actions/documentation
   build-api-images:
     name: Publish ${{ matrix.name }} ${{ matrix.version }}
-    needs: release
+    needs:
+      - docs
+      - release
     if: ${{ needs.release.outputs.matrix != '{}' }}
     strategy:
       matrix: ${{ fromJson(needs.release.outputs.matrix) }}
