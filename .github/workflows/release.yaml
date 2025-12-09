@@ -42,6 +42,7 @@ jobs:
   docs:
     name: Build Readme
     needs: release
+    if: ${{ needs.release.outputs.matrix != '{}' }}
     runs-on: ubuntu-latest
     permissions:
       contents: write
