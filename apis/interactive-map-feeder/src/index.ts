@@ -4,7 +4,7 @@ import { SwaggerConfig, SwaggerDocumentConfig, SwaggerProvider } from '@radoslav
 import { CommonUtils } from '@radoslavirha/utils';
 import { Server } from './Server.js';
 import { injector } from '@tsed/di';
-import { ConfigService } from './services/ConfigService.js';
+import { ConfigService } from './global/services/ConfigService.js';
 
 const SIG_EVENTS = [
     'beforeExit',
