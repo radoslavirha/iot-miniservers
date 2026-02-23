@@ -1,4 +1,15 @@
 import { BaseConfig } from '@radoslavirha/tsed-configuration';
+import { Description, Optional, Property } from '@tsed/schema';
+import { MongoConfig } from './MongoConfig.js';
 
 export class ConfigModel extends BaseConfig {
+    @Property(String)
+    @Optional()
+    @Description('Path to the JSON device cache file. Relative to CWD.')
+    public cachePath?: string;
+
+    @Property(MongoConfig)
+    @Optional()
+    @Description('MongoDB configuration. When mongodb.enabled is true, MongoDB is used as the device store.')
+    public mongodb?: MongoConfig;
 }

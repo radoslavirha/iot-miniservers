@@ -17,11 +17,12 @@
     "test:watch": "vitest"
   },
   "dependencies": {
-    "@radoslavirha/config-typescript": "^0.2.2",
-    "@radoslavirha/tsed-configuration": "^0.2.2",
-    "@radoslavirha/tsed-platform": "^0.2.2",
-    "@radoslavirha/tsed-swagger": "^1.0.2",
-    "@radoslavirha/utils": "^0.2.2",
+    "@radoslavirha/config-typescript": "^0.3.0",
+    "@radoslavirha/tsed-common": "^0.3.0",
+    "@radoslavirha/tsed-configuration": "^0.3.0",
+    "@radoslavirha/tsed-platform": "^0.3.0",
+    "@radoslavirha/tsed-swagger": "^2.0.0",
+    "@radoslavirha/utils": "^0.3.0",
     "@swc-node/register": "^1.11.1",
     "@swc/cli": "^0.7.9",
     "@swc/helpers": "^0.5.17",
@@ -59,8 +60,8 @@
   },
   "devDependencies": {
     "eslint": "^9.39.1",
-    "@radoslavirha/config-eslint": "^0.2.2",
-    "@radoslavirha/config-vitest": "^0.2.2",
+    "@radoslavirha/config-eslint": "^0.3.0",
+    "@radoslavirha/config-vitest": "^0.3.0",
     "@swc/core": "^1.15.3",
     "@types/compression": "^1.8.1",
     "@types/cookie-parser": "^1.4.10",

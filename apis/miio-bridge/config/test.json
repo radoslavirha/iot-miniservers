@@ -2,5 +2,5 @@
     "server": {
         "httpPort": "4001"
     },
-    "publicURL": "http://sandbox.api.server.home/iot/miio-bridge"
+    "cachePath": "./cache/devices.json"
 }
