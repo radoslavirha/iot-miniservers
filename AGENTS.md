@@ -21,7 +21,7 @@ All `@radoslavirha/*` packages are hosted on **GitHub Packages** (`npm.pkg.githu
 - `NODE_AUTH_TOKEN` must be set in the environment before running `pnpm install`, it's in `.env`
 - `shared-workspace-lockfile=false` is intentional — required for per-API Docker builds
 
-Always use [toolkit-hub](https://github.com/radoslavirha/toolkit-hub) where possible and avoid creating own logic if already exist in toolkit-hub. There are all libraries with `@radoslavirha` prefix.
+Always use [toolkit-hub](https://github.com/radoslavirha/toolkit-hub) where possible and avoid creating own logic if already exist in toolkit-hub. All `@radoslavirha/*` libraries are provided there.
 
 ## Monorepo Structure
 
@@ -29,15 +29,26 @@ Always use [toolkit-hub](https://github.com/radoslavirha/toolkit-hub) where poss
 apis/<api-name>/
   src/
     global/
-      models/         # App-level models (e.g. ConfigModel)
-      services/       # App-level services (e.g. ConfigService)
-      ...
+      endpoints/          # External API/data source wrappers, not HTTP controllers.
+        <API group>/
+          dto/            # DTO models for endpoints.
+          *Endpoint.ts    # Endpoint service which accepts/returns only DTOs. SINGLETON scoped when possible.
+      mappers/            # Global mapper services for mapping Ts.ED schema models and DTOs. Never use services, global endpoints/stores. SINGLETON scoped when possible.
+      models/             # App-level models (e.g. ConfigModel). Models can be organised to folders.
+      services/           # App-level services (e.g. ConfigService). SINGLETON scoped when possible.
+      storage/
+        <storage group>/  # E.g. mongo, other databases,...
+          dto/            # DTO models for storage repositories.
+          *Repository.ts  # Repository service which accepts/returns only DTOs. SINGLETON scoped when possible.
+      ModelGroups.ts      # Groups used in `@Groups()` decorator from Ts.ED. Groups should be defined on Controller endpoints (request/response models) and in Models. If `@Groups()` is used in child model, parent model should use `@ForwardGroups()` decorator on property which uses child model.
+      ...                 # There still may be something API specific.
     v1/
-      controllers/    # Ts.ED controllers
-      handlers/       # Business logic handlers (SINGLETON scoped)
-      mappers/        # Mapper services for mapping Ts.ED schema models and DTOs
-      services/       # Services (SINGLETON scoped)
-      models/         # Ts.ED schema models
+      controllers/        # Ts.ED controllers. Every endpoint has own handler. SINGLETON scoped when possible.
+      handlers/           # Business logic handlers. Handler can use Services/Mappers. Should avoid using global endpoints/stores if possible. SINGLETON scoped when possible.
+      mappers/            # Mapper services for mapping Ts.ED schema models and DTOs. Never use services, global endpoints/stores. SINGLETON scoped when possible.
+      models/             # Application version specific models, request/response models, etc. Models can be organised to folders.
+      services/           # Services with business logic. Use mappers, other services, endpoints, stores. (SINGLETON scoped when possible)
+      ...                 # There still may be something API specific.
     Server.ts
     index.ts
 ```
@@ -45,25 +56,40 @@ apis/<api-name>/
 ## Coding Conventions
 
 ### General
+
 - Always use **ESM** imports with explicit `.js` extensions (e.g. `import { Foo } from './Foo.js'`)
+- Files from `src/global` can't import from `src/{v1, v2,...}`.
+- Avoid constructing DTOs and calling endpoints/repositories from handler. Delegate DTO construction to services.
+- Use `@radoslavirha/*` packages from [toolkit-hub](https://github.com/radoslavirha/toolkit-hub)
 
 ### Dependency Injection (Ts.ED)
+
 - **Controllers**: `@Controller`, `@Scope(ProviderScope.SINGLETON)`
 - **Handlers**: `@Injectable`, `@Scope(ProviderScope.SINGLETON)`
 - **Services**: `@Service`, `@Scope(ProviderScope.SINGLETON)`
-- Inject dependencies via constructor parameters
+- Inject dependencies via constructor parameters.
 
 ### Models
+
 - Decorate all properties with `@tsed/schema` decorators: `@Property(String)`, `@Required`, `@Description`, `@Example`
 - Use `@AdditionalProperties(false)` on all model classes
 - Export all models from `models/index.ts`
+- DTO models do not need `@Description` decorator, use JSDoc.
+
+### Mappers
+
+- Always do bi-directional mapping between DTO <-> Model.
+- Should extend `MappingUtils` from `@radoslavirha/utils`
+- Export all from `mappers/index.ts`
 
 ### Services & Handlers
+
 - Services contain reusable, stateless logic
 - Handlers orchestrate services for a specific use case and map to controller actions
 - Export all from `services/index.ts` and `handlers/index.ts`
 
 ### Controllers
+
 - One controller file per resource
 - Use `@Docs(version)` for Swagger grouping
 - Use `@Returns(...)` with proper content types
@@ -88,7 +114,8 @@ apis/<api-name>/
    | `nodemon.json` | Usually identical across all APIs |
    | `.swcrc` | Usually identical across all APIs |
    | `vitest.config.ts` | Usually identical across all APIs |
-   | `config/localhost.json` | Set `server.httpPort` and `publicURL` |
+   | `config/localhost.json` | Set `server.httpPort` |
+   | `config/test.json` | Set `server.httpPort` |
    | `src/global/models/ConfigModel.ts` | Extends `BaseConfig`; add API-specific config fields here |
    | `src/global/models/index.ts` | Barrel export |
    | `src/global/services/ConfigService.ts` | Standard `ConfigProvider<ConfigModel>` — identical across APIs |
@@ -100,7 +127,12 @@ apis/<api-name>/
 4. Add a `.README.hbs` template (README is generated via `docs.js`).
 
 ## Server configuration
+
 - uses [config](https://www.npmjs.com/package/config) library
+  - `config/` directory structure comes from this library, files may differ except `custom-environment-variables.json`
+  - `NODE_ENV` value when running server from `package.json` should match filename. `NODE_ENV=localhost {command to start server}` will require `config/localhost.json` file.
+  - `config/test.json` exists for tests as testing frameworks usually set `NODE_ENV=test`
+  - `config/custom-environment-variables.json` is not mandatory, it's only for advanced usage when [config](https://www.npmjs.com/package/config) can use/replace environment variable in json file during runtime.
 - uses `@radoslavirha/tsed-configuration` for loading server configuration.
 
 ## Versioning & Changesets
@@ -108,12 +140,3 @@ apis/<api-name>/
 - Uses `@changesets/cli` for versioning
 - Create a changeset: `pnpm changeset`
 - Follows [Semantic Versioning](http://semver.org/)
-
-## Do Not
-
-- Do **not** omit `.js` extensions in imports
-- Do **not** use CommonJS (`require`, `module.exports`)
-- Do **not** add fields to models without `@tsed/schema` decorators
-- Do **not** add logic directly in controllers — delegate to handlers and services
-- Do **not** add `sharp` to a new API unless it actually needs image processing
-- Do **not** forget `.swcrc` when scaffolding a new API — it is required and not auto-generated
