@@ -1,5 +1,5 @@
 import { Description, Example, Groups, Property, Required } from '@tsed/schema';
-import { GROUP_NEVER_SIMPLIFIED_SPEC } from '../Groups.js';
+import { GROUP_NEVER_SIMPLIFIED_SPEC } from '../ModelGroups.js';
 
 /**
  * Base device model shared by response and cache models.

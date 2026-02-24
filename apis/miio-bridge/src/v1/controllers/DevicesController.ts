@@ -6,7 +6,7 @@ import { DeviceDiscoveryHandler } from '../handlers/DeviceDiscoveryHandler.js';
 import { DeviceRegisterHandler } from '../handlers/DeviceRegisterHandler.js';
 import { DeviceRequestModel } from '../models/DeviceRequestModel.js';
 import { DeviceResponseModel } from '../models/DeviceResponseModel.js';
-import { GROUP_SIMPLIFIED_SPEC } from '../../global/Groups.js';
+import { GROUP_SIMPLIFIED_SPEC } from '../../global/ModelGroups.js';
 
 @Description('Endpoints for miio device discovery and registration.')
 @Controller('/devices')

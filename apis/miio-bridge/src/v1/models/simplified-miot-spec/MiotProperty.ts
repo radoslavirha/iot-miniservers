@@ -1,7 +1,7 @@
 import { AdditionalProperties, CollectionOf, Description, Groups, Property, Required } from '@tsed/schema';
 import { PropertyAccess } from './PropertyAccess.enum.js';
 import { MiotPropertyValue } from './MiotPropertyValue.js';
-import { GROUP_NEVER_SIMPLIFIED_SPEC } from '../../../global/Groups.js';
+import { GROUP_NEVER_SIMPLIFIED_SPEC } from '../../../global/ModelGroups.js';
 
 /**
  * MIoT Property (v1)

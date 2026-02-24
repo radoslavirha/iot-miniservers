@@ -1,5 +1,5 @@
 import { AdditionalProperties, CollectionOf, Description, Groups, Optional, Property, Required } from '@tsed/schema';
-import { GROUP_NEVER_SIMPLIFIED_SPEC } from '../../../global/Groups.js';
+import { GROUP_NEVER_SIMPLIFIED_SPEC } from '../../../global/ModelGroups.js';
 
 /**
  * MIoT Action (v1)
