@@ -1,8 +1,6 @@
 import { createSocket } from 'dgram';
 import { Service, Scope, ProviderScope } from '@tsed/di';
-import { MIIO_PORT, MIIO_TIMEOUT_MS } from './constants.js';
-import { OutgoingPacket } from './packet/index.js';
-import { IncomingPacket } from './packet/index.js';
+import { IncomingPacket, OutgoingPacket } from '../../global/miio/packet/index.js';
 
 export interface HandshakeResult {
     /** Device ID to use in subsequent commands. */
@@ -10,6 +8,12 @@ export interface HandshakeResult {
     /** Current device stamp to use in subsequent commands. */
     stamp: number;
 }
+
+/** Default miIO protocol UDP port */
+const MIIO_PORT = 54321;
+
+/** UDP handshake timeout in milliseconds */
+const MIIO_TIMEOUT_MS = 10000;
 
 @Service()
 @Scope(ProviderScope.SINGLETON)

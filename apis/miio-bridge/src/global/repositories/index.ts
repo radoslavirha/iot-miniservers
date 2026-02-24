@@ -1,3 +1,4 @@
-export { type CachedDevice, type IDeviceRepository } from './IDeviceRepository.js';
+export { type IDeviceRepository } from './IDeviceRepository.js';
 export { FileDeviceRepository } from './FileDeviceRepository.js';
-export { MongoDeviceRepository } from './MongoDeviceRepository.js';
+export { FileDeviceMapper } from './file/FileDeviceMapper.js';
+export { type FileDeviceDTO } from './file/FileDeviceDTO.js';

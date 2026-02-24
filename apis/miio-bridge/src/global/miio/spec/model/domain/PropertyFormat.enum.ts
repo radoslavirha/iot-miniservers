@@ -1,4 +1,4 @@
-export enum PropertyFormatDTO {
+export enum PropertyFormat {
     String = 'string',
     UInt8 = 'uint8',
     UInt16 = 'uint16',
@@ -6,5 +6,6 @@ export enum PropertyFormatDTO {
     Int8 = 'int8',
     Int16 = 'int16',
     Int32 = 'int32',
+    Int64 = 'int64',
     Bool = 'bool'
 }

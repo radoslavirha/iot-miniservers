@@ -1,7 +1,7 @@
 import { AdditionalProperties, Description, Property, Required } from '@tsed/schema';
 
 /**
- * MIoT Property value
+ * MIoT Property value (v1)
  */
 @Description('A single allowed value for a MIoT property')
 @AdditionalProperties(false)

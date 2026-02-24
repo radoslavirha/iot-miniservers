@@ -1,8 +1,8 @@
 import { AdditionalProperties, CollectionOf, Description, Groups, Optional, Property, Required } from '@tsed/schema';
-import { GROUP_NEVER_SIMPLIFIED_SPEC } from '../../../Groups.js';
+import { GROUP_NEVER_SIMPLIFIED_SPEC } from '../../global/Groups.js';
 
 /**
- * MIoT Action
+ * MIoT Action (v1)
  */
 @Description('A single action of a MIoT service')
 @AdditionalProperties(false)

@@ -1,14 +1,14 @@
 import { AdditionalProperties, CollectionOf, Description, ForwardGroups, Groups, Property, Required } from '@tsed/schema';
 import { MiotAction } from './MiotAction.js';
 import { MiotProperty } from './MiotProperty.js';
-import { GROUP_NEVER_SIMPLIFIED_SPEC } from '../../../Groups.js';
+import { GROUP_NEVER_SIMPLIFIED_SPEC } from '../../global/Groups.js';
 
 /**
- * MIoT Device Spec
+ * Simplified / parsed MIoT device specification (v1 layer)
  */
 @Description('Parsed MIoT device specification with typed maps of properties and actions')
 @AdditionalProperties(false)
-export class DeviceSpec {
+export class SimplifiedMiotSpec {
     @Required()
     @Property(String)
     @Description('Human-readable device name')

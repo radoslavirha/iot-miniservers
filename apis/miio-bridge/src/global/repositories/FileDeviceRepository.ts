@@ -3,49 +3,58 @@ import { readFile, writeFile, mkdir } from 'fs/promises';
 import { existsSync } from 'fs';
 import { dirname, resolve } from 'path';
 import { ConfigService } from '../services/ConfigService.js';
-import { CachedDevice, IDeviceRepository } from './IDeviceRepository.js';
+import { DeviceCache } from '../models/DeviceCache.js';
+import { IDeviceRepository } from './IDeviceRepository.js';
+import { FileDeviceMapper } from './file/FileDeviceMapper.js';
+import { FileDeviceDTO } from './file/FileDeviceDTO.js';
 
-type CacheFile = { devices: CachedDevice[] };
+type DeviceFile = { devices: FileDeviceDTO[] };
 
 @Injectable()
 @Scope(ProviderScope.SINGLETON)
 export class FileDeviceRepository implements IDeviceRepository {
-    private readonly cachePath: string;
+    private readonly filePath: string;
 
-    constructor(private readonly config: ConfigService) {
-        this.cachePath = resolve(process.cwd(), config.config.cachePath ?? './cache/devices.json');
+    constructor(
+        private readonly config: ConfigService,
+        private readonly mapper: FileDeviceMapper
+    ) {
+        this.filePath = resolve(process.cwd(), config.config.cachePath ?? './cache/devices.json');
     }
 
-    async getAll(): Promise<CachedDevice[]> {
-        return (await this.readCache()).devices;
+    async getAll(): Promise<DeviceCache[]> {
+        const file = await this.read();
+        return file.devices.map(dto => this.mapper.toEntity(dto));
     }
 
-    async getById(deviceId: number): Promise<CachedDevice | undefined> {
-        const cache = await this.readCache();
-        return cache.devices.find(d => d.deviceId === deviceId);
+    async getById(deviceId: number): Promise<DeviceCache | undefined> {
+        const file = await this.read();
+        const dto = file.devices.find(d => d.deviceId === deviceId);
+        return dto ? this.mapper.toEntity(dto) : undefined;
     }
 
-    async upsert(device: CachedDevice): Promise<void> {
-        const cache = await this.readCache();
-        const index = cache.devices.findIndex(d => d.deviceId === device.deviceId);
+    async upsert(device: DeviceCache): Promise<void> {
+        const file = await this.read();
+        const dto = this.mapper.toDTO(device);
+        const index = file.devices.findIndex(d => d.deviceId === dto.deviceId);
         if (index >= 0) {
-            cache.devices[index] = device;
+            file.devices[index] = dto;
         } else {
-            cache.devices.push(device);
+            file.devices.push(dto);
         }
-        await this.writeCache(cache);
+        await this.write(file);
     }
 
-    private async readCache(): Promise<CacheFile> {
-        if (!existsSync(this.cachePath)) {
+    private async read(): Promise<DeviceFile> {
+        if (!existsSync(this.filePath)) {
             return { devices: [] };
         }
-        const raw = await readFile(this.cachePath, 'utf-8');
-        return JSON.parse(raw) as CacheFile;
+        const raw = await readFile(this.filePath, 'utf-8');
+        return JSON.parse(raw) as DeviceFile;
     }
 
-    private async writeCache(cache: CacheFile): Promise<void> {
-        await mkdir(dirname(this.cachePath), { recursive: true });
-        await writeFile(this.cachePath, JSON.stringify(cache, null, 2), 'utf-8');
+    private async write(file: DeviceFile): Promise<void> {
+        await mkdir(dirname(this.filePath), { recursive: true });
+        await writeFile(this.filePath, JSON.stringify(file, null, 2), 'utf-8');
     }
 }

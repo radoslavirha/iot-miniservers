@@ -1,14 +1,12 @@
 import { Injectable, Scope, ProviderScope } from '@tsed/di';
+import { DeviceCache } from '../models/DeviceCache.js';
 import { ConfigService } from './ConfigService.js';
-import { FileDeviceRepository, MongoDeviceRepository, CachedDevice, IDeviceRepository } from '../repositories/index.js';
-
-export type { CachedDevice };
+import { FileDeviceRepository, IDeviceRepository } from '../repositories/index.js';
 
 /**
  * Facade for device persistence.
  * Selects the active repository at startup based on configuration:
- *  - `mongoUri` set → MongoDeviceRepository
- *  - fallback        → FileDeviceRepository (local JSON cache)
+ *  - fallback → FileDeviceRepository (local JSON cache)
  *
  * Handlers and other consumers depend only on this service and are unaware of the backend.
  */
@@ -19,25 +17,23 @@ export class DeviceCacheService implements IDeviceRepository {
 
     constructor(
         private readonly config: ConfigService,
-        private readonly fileRepository: FileDeviceRepository,
-        private readonly mongoRepository: MongoDeviceRepository
+        private readonly fileRepository: FileDeviceRepository
     ) {
         if (config.config.mongodb?.enabled) {
-            this.repository = this.mongoRepository;
-        } else {
-            this.repository = this.fileRepository;
+            throw new Error('MongoDB storage is not supported yet.');
         }
+        this.repository = this.fileRepository;
     }
 
-    getAll(): Promise<CachedDevice[]> {
+    getAll(): Promise<DeviceCache[]> {
         return this.repository.getAll();
     }
 
-    getById(deviceId: number): Promise<CachedDevice | undefined> {
+    getById(deviceId: number): Promise<DeviceCache | undefined> {
         return this.repository.getById(deviceId);
     }
 
-    upsert(device: CachedDevice): Promise<void> {
+    upsert(device: DeviceCache): Promise<void> {
         return this.repository.upsert(device);
     }
 }

@@ -1,16 +1,7 @@
-import { MiotSpecDTO } from '../miio/spec/index.js';
-
-export interface CachedDevice {
-    deviceId: number;
-    address: string;
-    token: string;
-    stamp: number;
-    model: string;
-    spec: MiotSpecDTO;
-}
+import { DeviceCache } from '../models/DeviceCache.js';
 
 export interface IDeviceRepository {
-    getAll(): Promise<CachedDevice[]>;
-    getById(deviceId: number): Promise<CachedDevice | undefined>;
-    upsert(device: CachedDevice): Promise<void>;
+    getAll(): Promise<DeviceCache[]>;
+    getById(deviceId: number): Promise<DeviceCache | undefined>;
+    upsert(device: DeviceCache): Promise<void>;
 }

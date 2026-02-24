@@ -23,6 +23,10 @@ We need a HTTP endpoint (enumerated v1, check next phase) for device registry. T
 
 ## Phase 3
 
+Now we have cached device with raw spec, spec url. We need a mechanism to verify spec on server start and parse to more suitable DeviceSpec for further commands to the device. Also some kind of in memory cache (very tiny) with list of possible actions/properties and access to them. When we'll implement endpoints for commands, we must verify if command is valid against this cache.
+
+## Phase 4
+
 Communication request/response model for client - api communication. Must be same for UDP/HTTP/MQTT. I'm thinking about versioned routes. In HTTP/MQTT it's easy. Maybe UDP request model will have extra property for version and kind of routing will be done on API side.
 
 In model, we need
@@ -32,7 +36,7 @@ In model, we need
 - command (string) - property/action Map key from [Miot spec](./AGENTS.md#miot-spec)
 - value (integer) - allowed value for property, depends on property access type
 
-## Phase 4
+## Phase 5
 
 Device value updates. We need to discover, how other libraries handle this. We'll definitelly allow defining HTPP/UDP/MQTT logic per device during register/device update. E.g. client endpoint/topic where we send updated value for property on the device.
 
@@ -49,6 +53,6 @@ Worth to check other libraries how they do it, or check the internet.
 - [miio](https://github.com/aholstenson/miio)
 - [hass-xiaomi-miot](https://github.com/al-one/hass-xiaomi-miot)
 
-## Phase 5
+## Phase 6
 
 Optional (server configuration) MongoDB integration and replacement of JSON cache.
