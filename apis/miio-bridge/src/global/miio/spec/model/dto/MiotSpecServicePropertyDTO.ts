@@ -13,4 +13,5 @@ export class MiotSpecServicePropertyDTO {
     @Optional() @Property() public unit?: string;
     @Optional() @CollectionOf(MiotSpecPropertyValueDTO) @Name('value-list') public valueList?: MiotSpecPropertyValueDTO[];
     @Optional() @CollectionOf(Number) @Name('value-range') public valueRange?: number[];
+    @Optional() @CollectionOf(String) @Name('gatt-access') public gattAccess?: string[];
 }

@@ -6,6 +6,7 @@ import {
     MiotSpec,
     MiotSpecService,
     MiotSpecServiceAction,
+    MiotSpecServiceEvent,
     MiotSpecServiceProperty,
     MiotSpecPropertyValue,
     PropertyAccess,
@@ -46,7 +47,8 @@ export class MiotSpecV2Mapper extends MappingUtils {
                                     description: v.description
                                 })
                             ),
-                            valueRange: p.valueRange
+                            valueRange: p.valueRange,
+                            gattAccess: p.gattAccess
                         })
                     ),
                     actions: await this.mapOptionalArray(svc.actions, async (a) =>
@@ -56,6 +58,14 @@ export class MiotSpecV2Mapper extends MappingUtils {
                             description: a.description,
                             in: a.in,
                             out: a.out
+                        })
+                    ),
+                    events: await this.mapOptionalArray(svc.events, async (e) =>
+                        CommonUtils.buildModel(MiotSpecServiceEvent, {
+                            iid: e.iid,
+                            type: e.type,
+                            description: e.description,
+                            arguments: e.arguments
                         })
                     )
                 })

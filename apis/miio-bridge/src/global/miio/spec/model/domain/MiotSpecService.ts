@@ -1,5 +1,6 @@
 import { AdditionalProperties, CollectionOf, Description, Optional, Property, Required } from '@tsed/schema';
 import { MiotSpecServiceAction } from './MiotSpecServiceAction.js';
+import { MiotSpecServiceEvent } from './MiotSpecServiceEvent.js';
 import { MiotSpecServiceProperty } from './MiotSpecServiceProperty.js';
 
 /**
@@ -32,4 +33,9 @@ export class MiotSpecService {
     @CollectionOf(MiotSpecServiceAction)
     @Description('Service actions')
     public actions?: MiotSpecServiceAction[];
+
+    @Optional()
+    @CollectionOf(MiotSpecServiceEvent)
+    @Description('Service events')
+    public events?: MiotSpecServiceEvent[];
 }

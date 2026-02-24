@@ -49,4 +49,9 @@ export class MiotSpecServiceProperty {
     @CollectionOf(Number)
     @Description('Allowed value range [min, max, step]')
     public valueRange?: number[];
+
+    @Optional()
+    @CollectionOf(String)
+    @Description('GATT access modes (BLE only)')
+    public gattAccess?: string[];
 }
