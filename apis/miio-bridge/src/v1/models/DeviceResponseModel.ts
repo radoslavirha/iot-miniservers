@@ -1,5 +1,5 @@
 import { AdditionalProperties, Description, ForwardGroups, Property, Required } from '@tsed/schema';
-import { SimplifiedMiotSpec } from './SimplifiedMiotSpec.js';
+import { SimplifiedMiotSpec } from './simplified-miot-spec/SimplifiedMiotSpec.js';
 import { Device } from '../../global/models/Device.js';
 
 @Description('Device information returned by discovery or registration endpoints.')

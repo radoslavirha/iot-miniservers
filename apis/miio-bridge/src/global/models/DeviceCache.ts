@@ -1,5 +1,5 @@
 import { AdditionalProperties, Description, Property, Required } from '@tsed/schema';
-import { MiotSpec } from '../miio/spec/index.js';
+import { MiotSpecV2 } from './miio-spec-v2/index.js';
 import { Device } from './Device.js';
 
 /**
@@ -10,7 +10,7 @@ import { Device } from './Device.js';
 @AdditionalProperties(false)
 export class DeviceCache extends Device {
     /** Raw MIoT spec as a domain model. Parsed on demand via MiotSpecV2Mapper. */
-    @Property(MiotSpec)
+    @Property(MiotSpecV2)
     @Required()
-    public rawSpec: MiotSpec;
+    public rawSpec: MiotSpecV2;
 }

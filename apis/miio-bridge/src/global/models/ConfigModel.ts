@@ -10,6 +10,6 @@ export class ConfigModel extends BaseConfig {
 
     @Property(MongoConfig)
     @Optional()
-    @Description('MongoDB configuration. When mongodb.enabled is true, MongoDB is used as the device store.')
+    @Description('MongoDB configuration. When mongodb.enabled is true, MongoDB is used as the device storage.')
     public mongodb?: MongoConfig;
 }

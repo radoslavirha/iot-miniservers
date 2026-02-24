@@ -1,8 +1,10 @@
 import { Service, Scope, ProviderScope } from '@tsed/di';
-import { MiotSpec, MiotSpecV2Endpoint, MiotSpecV2Mapper } from '../../global/miio/spec/index.js';
+import { MiotSpec } from '../../global/models/miio-spec-v2/index.js';
+import { MiotSpecV2Endpoint } from '../../global/endpoints/miot-spec-v2/MiotSpecV2Endpoint.js';
+import { MiotSpecV2Mapper } from '../../global/mappers/MiotSpecV2Mapper.js';
 import { DeviceRequestModel } from '../models/DeviceRequestModel.js';
 import { SimplifiedMiotSpec } from '../models/index.js';
-import { MiioService } from './MiioService.js';
+import { MiioLocalService } from './MiioLocalService.js';
 import { SimplifiedMiotSpecV2Mapper } from '../mappers/index.js';
 
 export interface DeviceConnectionResult {
@@ -24,7 +26,7 @@ export interface DeviceConnectionResult {
 @Scope(ProviderScope.SINGLETON)
 export class DeviceInteractionService {
     constructor(
-        private readonly miioService: MiioService,
+        private readonly miioLocalService: MiioLocalService,
         private readonly miotSpecEndpoint: MiotSpecV2Endpoint,
         private readonly miotSpecMapper: MiotSpecV2Mapper,
         private readonly simplifiedMiotSpecMapper: SimplifiedMiotSpecV2Mapper
@@ -35,7 +37,7 @@ export class DeviceInteractionService {
      * Does not persist anything — callers decide what to do with the result.
      */
     async connect(request: DeviceRequestModel): Promise<DeviceConnectionResult> {
-        const { deviceId, stamp } = await this.miioService.handshake(request.address);
+        const { deviceId, stamp } = await this.miioLocalService.handshake(request.address);
         const rawDto = await this.miotSpecEndpoint.fetchRaw(request.model);
         const rawSpec = await this.miotSpecMapper.mapDTOToModel(rawDto);
         const deviceSpec = await this.simplifiedMiotSpecMapper.map(rawSpec);

@@ -1,6 +1,6 @@
 import { Injectable, Scope, ProviderScope } from '@tsed/di';
 import { CommonUtils, MappingUtils } from '@radoslavirha/utils';
-import { MiotSpec } from '../../global/miio/spec/index.js';
+import { MiotSpec } from '../../global/models/miio-spec-v2/index.js';
 import { MiotAction, MiotProperty, MiotPropertyValue, PropertyAccess, SimplifiedMiotSpec } from '../models/index.js';
 
 /**
