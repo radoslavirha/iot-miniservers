@@ -1,14 +1,40 @@
 import { Injectable, Scope, ProviderScope } from '@tsed/di';
+import { CommonUtils } from '@radoslavirha/utils';
+import { DeviceCache } from '../../global/models/DeviceCache.js';
+import { DeviceCacheService } from '../../global/services/DeviceCacheService.js';
 import { DeviceRequestModel } from '../models/DeviceRequestModel.js';
 import { DeviceResponseModel } from '../models/DeviceResponseModel.js';
-import { DeviceRegistrationService } from '../services/DeviceRegistrationService.js';
+import { DeviceInteractionService } from '../services/DeviceInteractionService.js';
 
 @Injectable()
 @Scope(ProviderScope.SINGLETON)
 export class DeviceRegisterHandler {
-    constructor(private readonly registrationService: DeviceRegistrationService) {}
+    constructor(
+        private readonly deviceInteractionService: DeviceInteractionService,
+        private readonly deviceCacheService: DeviceCacheService
+    ) {}
 
-    execute(request: DeviceRequestModel): Promise<DeviceResponseModel> {
-        return this.registrationService.persist(request);
+    async execute(request: DeviceRequestModel): Promise<DeviceResponseModel> {
+        const { deviceId, stamp, specUrl, rawSpec, deviceSpec } = await this.deviceInteractionService.connect(request);
+
+        await this.deviceCacheService.upsert(CommonUtils.buildModel(DeviceCache, {
+            deviceId,
+            address: request.address,
+            token: request.token,
+            stamp,
+            model: request.model,
+            specURL: specUrl,
+            rawSpec
+        }));
+
+        return CommonUtils.buildModel(DeviceResponseModel, {
+            deviceId,
+            address: request.address,
+            token: request.token,
+            stamp,
+            model: request.model,
+            specURL: specUrl,
+            spec: deviceSpec
+        });
     }
 }
