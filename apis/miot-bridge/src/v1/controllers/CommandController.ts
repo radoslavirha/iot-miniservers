@@ -5,11 +5,12 @@ import { Docs } from '@tsed/swagger';
 import { CommandHandler } from '../handlers/CommandHandler.js';
 import { CommandRequestModel } from '../models/CommandRequestModel.js';
 import { CommandResponseModel } from '../models/CommandResponseModel.js';
+import { APIVersion } from '../../global/models/APIVersion.enum.js';
 
 @Description('Endpoint for sending commands (read/write property, execute action) to registered devices.')
 @Controller('/command')
 @Scope(ProviderScope.SINGLETON)
-@Docs('v1')
+@Docs(APIVersion.V1)
 export class CommandController {
     constructor(private readonly commandHandler: CommandHandler) {}
 

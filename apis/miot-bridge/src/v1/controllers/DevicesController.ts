@@ -7,11 +7,12 @@ import { DeviceRegisterHandler } from '../handlers/DeviceRegisterHandler.js';
 import { DeviceRequestModel } from '../models/DeviceRequestModel.js';
 import { DeviceResponseModel } from '../models/DeviceResponseModel.js';
 import { GROUP_SIMPLIFIED_SPEC } from '../../global/ModelGroups.js';
+import { APIVersion } from '../../global/models/APIVersion.enum.js';
 
 @Description('Endpoints for miot device discovery and registration.')
 @Controller('/devices')
 @Scope(ProviderScope.SINGLETON)
-@Docs('v1')
+@Docs(APIVersion.V1)
 export class DevicesController {
     constructor(
         private readonly discoveryHandler: DeviceDiscoveryHandler,

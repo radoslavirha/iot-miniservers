@@ -5,6 +5,7 @@ import { CommonUtils } from '@radoslavirha/utils';
 import { Server } from './Server.js';
 import { injector } from '@tsed/di';
 import { ConfigService } from './global/services/ConfigService.js';
+import { APIVersion } from './global/models/APIVersion.enum.js';
 
 const SIG_EVENTS = [
     'beforeExit',
@@ -29,12 +30,12 @@ try {
         title: config.api.service,
         version: config.api.version,
         description: config.api.description,
-        documents: [
+        documents: Object.values(APIVersion).map((version) =>
             CommonUtils.buildModel(SwaggerDocumentConfig, {
-                docs: 'v1',
+                docs: version,
                 security: []
             })
-        ],
+        ),
         swaggerUIOptions: {
             validatorUrl: null
         },
