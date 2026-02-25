@@ -1,7 +1,7 @@
 {
-  "name": "interactive-map-feeder",
-  "version": "0.1.2",
-  "description": "Data Feeder for LaskaKit interactive map of Czech republic",
+  "name": "miot-bridge",
+  "version": "0.1.0",
+  "description": "Bridge between Loxone/other controllers and Xiaomi devices via miot protocol",
   "type": "module",
   "private": true,
   "scripts": {
@@ -55,11 +55,9 @@
     "dotenv": "^17.2.3",
     "express": "^5.2.1",
     "method-override": "^3.0.0",
-    "sharp": "^0.34.5",
     "typescript": "^5.9.3"
   },
   "devDependencies": {
-    "eslint": "^9.39.1",
     "@radoslavirha/config-eslint": "^0.3.0",
     "@radoslavirha/config-vitest": "^0.3.0",
     "@swc/core": "^1.15.3",
@@ -72,12 +70,13 @@
     "@types/node": "^24.10.1",
     "@types/supertest": "^6.0.3",
     "@vitest/coverage-v8": "^4.0.15",
+    "eslint": "^9.39.1",
     "nodemon": "^3.1.11",
     "supertest": "^7.1.4",
     "tslib": "^2.8.1",
-    "vitest": "^4.0.15",
+    "typescript": "^5.9.3",
     "typescript-eslint": "^8.48.1",
-    "typescript": "^5.9.3"
+    "vitest": "^4.0.15"
   },
   "tsed": {
     "convention": "conv_default",
