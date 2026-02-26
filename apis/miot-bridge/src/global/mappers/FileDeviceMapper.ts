@@ -14,7 +14,8 @@ export class FileDeviceMapper {
             stamp: dto.stamp,
             model: dto.model,
             specURL: dto.specURL,
-            rawSpec: dto.rawSpec
+            rawSpec: dto.rawSpec,
+            stampUpdatedAt: dto.stampUpdatedAt ?? 0
         }));
     }
 
@@ -26,7 +27,8 @@ export class FileDeviceMapper {
             stamp: entity.stamp,
             model: entity.model,
             specURL: entity.specURL,
-            rawSpec: entity.rawSpec
+            rawSpec: entity.rawSpec,
+            stampUpdatedAt: entity.stampUpdatedAt ?? 0
         }));
     }
 }

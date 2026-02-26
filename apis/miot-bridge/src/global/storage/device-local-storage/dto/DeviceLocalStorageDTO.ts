@@ -13,4 +13,6 @@ export class DeviceLocalStorageDTO {
     @Required() @Property(String) public model: string;
     @Required() @Property(String) public specURL: string;
     @Required() @Property(MiotSpecV2) public rawSpec: MiotSpecV2;
+    /** Unix timestamp (ms) of when the stamp was last refreshed. Optional for backwards-compatibility; 0 means unknown. */
+    @Property(Number) public stampUpdatedAt?: number;
 }

@@ -42,4 +42,9 @@ export class Device {
     @Description('Full URL to the MIoT spec on miot-spec.org.')
     @Example('https://miot-spec.org/miot-spec-v2/instance?type=urn:miot-spec-v2:device:vacuum:0000A006:xiaomi-c102gl:2')
     public specURL: string;
+
+    @Property(Number)
+    @Description('Unix timestamp (ms) of when the stamp was last refreshed. 0 means unknown (treat as stale).')
+    @Example(1700000000000)
+    public stampUpdatedAt: number = 0;
 }

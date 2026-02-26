@@ -2,7 +2,7 @@ import { DeviceCommandOperation } from './DeviceCommandOperation.enum.js';
 
 /**
  * Transport-agnostic internal command request.
- * Created by per-transport handlers (HTTP, MQTT, UDP) and consumed by CommandRoutingService.
+ * Created by per-transport handlers (HTTP, UDP) and consumed by {@link DeviceCommandService}.
  */
 export class DeviceCommandRequest {
     /** Numeric device ID as returned from registration. */

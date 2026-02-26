@@ -4,10 +4,10 @@ import { MiotSpecV2Endpoint } from '../../global/endpoints/miot-spec-v2/MiotSpec
 import { MiotSpecV2Mapper } from '../../global/mappers/MiotSpecV2Mapper.js';
 import { DeviceRequestModel } from '../models/DeviceRequestModel.js';
 import { SimplifiedMiotSpec } from '../models/index.js';
-import { MiotLocalService } from './MiotLocalService.js';
+import { MiotDeviceClient } from './MiotDeviceClient.js';
 import { SimplifiedMiotSpecV2Mapper } from '../mappers/index.js';
 
-export interface DeviceConnectionResult {
+export interface DeviceDiscoveryResult {
     deviceId: number;
     stamp: number;
     /** Resolved spec URL for this device type. */
@@ -19,25 +19,21 @@ export interface DeviceConnectionResult {
 }
 
 /**
- * Orchestrates device-level interactions: handshake, spec resolution, and (later)
- * command dispatch, property reads, and permission checks.
+ * Discovers a device by address: performs a handshake and resolves its full MIoT spec.
+ * Does not persist anything — callers decide what to do with the result.
  */
 @Service()
 @Scope(ProviderScope.SINGLETON)
-export class DeviceInteractionService {
+export class DeviceDiscoveryService {
     constructor(
-        private readonly miotLocalService: MiotLocalService,
+        private readonly miotDeviceClient: MiotDeviceClient,
         private readonly miotSpecEndpoint: MiotSpecV2Endpoint,
         private readonly miotSpecMapper: MiotSpecV2Mapper,
         private readonly simplifiedMiotSpecMapper: SimplifiedMiotSpecV2Mapper
     ) {}
 
-    /**
-     * Performs a handshake with the device and resolves its full spec.
-     * Does not persist anything — callers decide what to do with the result.
-     */
-    async connect(request: DeviceRequestModel): Promise<DeviceConnectionResult> {
-        const { deviceId, stamp } = await this.miotLocalService.handshake(request.address);
+    async discover(request: DeviceRequestModel): Promise<DeviceDiscoveryResult> {
+        const { deviceId, stamp } = await this.miotDeviceClient.handshake(request.address);
         const rawDto = await this.miotSpecEndpoint.fetchRaw(request.model);
         const rawSpec = await this.miotSpecMapper.mapDTOToModel(rawDto);
         const deviceSpec = await this.simplifiedMiotSpecMapper.map(rawSpec);

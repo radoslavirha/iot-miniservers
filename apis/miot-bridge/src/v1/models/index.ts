@@ -3,3 +3,4 @@ export * from './CommandRequestModel.js';
 export * from './CommandResponseModel.js';
 export * from './DeviceRequestModel.js';
 export * from './DeviceResponseModel.js';
+export * from './UdpCommandRequestModel.js';

@@ -1,10 +1,11 @@
 import { $log } from '@tsed/logger';
 import { Platform, ServerConfiguration } from '@radoslavirha/tsed-platform';
 import { SwaggerConfig, SwaggerDocumentConfig, SwaggerProvider } from '@radoslavirha/tsed-swagger';
-import { CommonUtils } from '@radoslavirha/utils';
+import { CommonUtils, ObjectUtils } from '@radoslavirha/utils';
 import { Server } from './Server.js';
 import { injector } from '@tsed/di';
 import { ConfigService } from './global/services/ConfigService.js';
+import { UdpListenerService } from './global/services/UdpListenerService.js';
 import { APIVersion } from './global/models/APIVersion.enum.js';
 
 const SIG_EVENTS = [
@@ -30,7 +31,7 @@ try {
         title: config.api.service,
         version: config.api.version,
         description: config.api.description,
-        documents: Object.values(APIVersion).map((version) =>
+        documents: ObjectUtils.values(APIVersion).map((version) =>
             CommonUtils.buildModel(SwaggerDocumentConfig, {
                 docs: version,
                 security: []
@@ -50,11 +51,20 @@ try {
     const platform = await Platform.bootstrap(Server, configuration);
     await platform.listen();
 
-    SIG_EVENTS.forEach((evt) => process.on(evt, () => platform.stop()));
+    const udpListener = injector().get<UdpListenerService>(UdpListenerService)!;
+    udpListener.start();
+
+    SIG_EVENTS.forEach((evt) =>
+        process.on(evt, () => {
+            udpListener.stop();
+            platform.stop();
+        })
+    );
 
     ['uncaughtException', 'unhandledRejection'].forEach((evt) =>
         process.on(evt, async (error) => {
             $log.error({ event: 'SERVER_' + evt.toUpperCase(), message: error.message, stack: error.stack });
+            udpListener.stop();
             await platform.stop();
         })
     );

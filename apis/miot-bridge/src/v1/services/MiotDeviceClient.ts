@@ -29,9 +29,14 @@ const MIOT_PORT = 54321;
 /** UDP command timeout in milliseconds */
 const MIOT_TIMEOUT_MS = 10000;
 
+/**
+ * Low-level MIoT protocol adapter.
+ * Handles UDP socket management, packet encoding/decoding, and raw device communication.
+ * Contains no business logic — callers are responsible for stamp management and retries.
+ */
 @Service()
 @Scope(ProviderScope.SINGLETON)
-export class MiotLocalService {
+export class MiotDeviceClient {
     /**
      * Sends a miot hello packet to the device and returns its deviceId and stamp.
      *
@@ -92,7 +97,6 @@ export class MiotLocalService {
             method: 'get_properties',
             params: [{ did, siid, piid }]
         });
-        console.log('getProperty', response);
 
         const results = response.result as MiotPropertyResult[];
         const item = results?.[0];
@@ -111,7 +115,6 @@ export class MiotLocalService {
             method: 'set_properties',
             params: [{ did, siid, piid, value }]
         });
-        console.log('setProperty', response);
 
         const results = response.result as MiotPropertyResult[];
         const item = results?.[0];
@@ -129,14 +132,11 @@ export class MiotLocalService {
         const did = String(deviceId);
         const inArgs = args === undefined ? [] : Array.isArray(args) ? args : [args];
 
-        const response = await this.sendCommand(address, token, deviceId, stamp, {
+        await this.sendCommand(address, token, deviceId, stamp, {
             method: 'action',
             params: { did, siid, aiid, in: inArgs }
         });
-        console.log('callAction', response);
     }
-
-    // ─── Private ─────────────────────────────────────────────
 
     /**
      * Sends a miot command packet to the device and returns the parsed JSON response.

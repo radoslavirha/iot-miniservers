@@ -21,7 +21,7 @@ We need a HTTP endpoint (enumerated v1, check next phase) for device discovery. 
 
 We need a HTTP endpoint (enumerated v1, check next phase) for device registry. This endpoint will do the same as discovery endpoint and will cache device data, including `stamp` which will be updated. Now we save raw Miot spec. For now we cache devices in JSON, later we'll introduce option to cache in MongoDB. Device ID from handshake will be identifier for further operations related to the device. This endpoint should allow updating cached devices (spec change, new IP,...)
 
-## Phase 3
+## Phase 3 (done)
 
 Communication request/response model for client -> api communication. Must be same for UDP/HTTP/MQTT. I'm thinking about versioned routes. In HTTP/MQTT it's easy. Maybe UDP request model will have extra property for version and routing service will be created. In ideal scenario, at some moment, all possible requests should be resolved by one service which communicates with device, validates if action is possible, etc.
 
@@ -40,6 +40,27 @@ But this won't fit MQTT/UDP routing. Remember we have properties (read/write/not
 
 ## Phase 4
 
+UDP support.
+
+In server config model we need to add new optional input for UDP.
+
+```
+{
+    udp: {
+        enabled: boolean,
+        udpPort: number
+    }
+}
+```
+
+Create UDP listener in server using this port.
+
+### Phase 5
+
+MQTT support
+
+## Phase 6
+
 Device value updates. We need to discover, how other libraries handle this. We'll definitelly allow defining HTPP/UDP/MQTT logic per device during register/device update. E.g. client endpoint/topic where we send updated value for property on the device.
 
 We need to discover, how to achieve it internally. Are we always connected to the device via UDP per property, we're polling device regularly (may influence `stamp`)?
@@ -55,11 +76,11 @@ Worth to check other libraries how they do it, or check the internet.
 - [miot](https://github.com/aholstenson/miot)
 - [hass-xiaomi-miot](https://github.com/al-one/hass-xiaomi-miot)
 
-## Phase 5
+## Phase 7
 
 We need a mechanism to verify spec (fetch new, compare with cached) on server start (maybe cron).
 We also need internal cache for SimplifiedMiotSpec (Maybe we can optimize the size, speed of access).
 
-## Phase 6
+## Phase 8
 
 Optional (server configuration) MongoDB integration and replacement of JSON cache.

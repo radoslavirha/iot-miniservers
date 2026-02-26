@@ -3,12 +3,12 @@ import { CommonUtils } from '@radoslavirha/utils';
 import { DeviceCommandRequest } from '../models/DeviceCommandRequest.js';
 import { CommandRequestModel } from '../models/CommandRequestModel.js';
 import { CommandResponseModel } from '../models/CommandResponseModel.js';
-import { CommandRoutingService } from '../services/CommandRoutingService.js';
+import { DeviceCommandService } from '../services/DeviceCommandService.js';
 
 @Injectable()
 @Scope(ProviderScope.SINGLETON)
 export class CommandHandler {
-    constructor(private readonly commandRoutingService: CommandRoutingService) {}
+    constructor(private readonly deviceCommandService: DeviceCommandService) {}
 
     async execute(request: CommandRequestModel): Promise<CommandResponseModel> {
         const commandRequest = CommonUtils.buildModel(DeviceCommandRequest, {
@@ -18,6 +18,6 @@ export class CommandHandler {
             value: request.value
         });
 
-        return this.commandRoutingService.execute(commandRequest);
+        return this.deviceCommandService.execute(commandRequest);
     }
 }
