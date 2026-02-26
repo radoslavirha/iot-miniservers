@@ -1,4 +1,4 @@
-import { CommonUtils } from '@radoslavirha/utils';
+import { CommonUtils, ObjectUtils } from '@radoslavirha/utils';
 import { Injectable, ProviderScope, Scope } from '@tsed/di';
 import { DataSources } from '../DataSources.js';
 import { DataSourcesResponse } from '../models/DataSourcesResponse.js';
@@ -10,7 +10,7 @@ export class DataSourcesListHandler {
 
     public async execute(): Promise<DataSourcesResponse> {
         return CommonUtils.buildModel(DataSourcesResponse, {
-            dataSources: Object.values(DataSources)
+            dataSources: ObjectUtils.values(DataSources)
         });
     }
 }
