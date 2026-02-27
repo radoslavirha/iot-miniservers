@@ -2,10 +2,16 @@ import { Service, Scope, ProviderScope } from '@tsed/di';
 import { MiotSpecV2 } from '../../global/models/miot-spec-v2/index.js';
 import { MiotSpecV2Endpoint } from '../../global/endpoints/miot-spec-v2/MiotSpecV2Endpoint.js';
 import { MiotSpecV2Mapper } from '../../global/mappers/MiotSpecV2Mapper.js';
-import { DeviceRequestModel } from '../models/DeviceRequestModel.js';
 import { SimplifiedMiotSpec } from '../models/index.js';
 import { MiotDeviceClient } from './MiotDeviceClient.js';
 import { SimplifiedMiotSpecV2Mapper } from '../mappers/index.js';
+
+/** Minimal device address info accepted by discover(). Both DeviceDiscoverRequest and DeviceRequest satisfy this. */
+export interface DeviceAddressInput {
+    address: string;
+    token: string;
+    model: string;
+}
 
 export interface DeviceDiscoveryResult {
     deviceId: number;
@@ -32,7 +38,7 @@ export class DeviceDiscoveryService {
         private readonly simplifiedMiotSpecMapper: SimplifiedMiotSpecV2Mapper
     ) {}
 
-    async discover(request: DeviceRequestModel): Promise<DeviceDiscoveryResult> {
+    async discover(request: DeviceAddressInput): Promise<DeviceDiscoveryResult> {
         const { deviceId, stamp } = await this.miotDeviceClient.handshake(request.address);
         const rawDto = await this.miotSpecEndpoint.fetchRaw(request.model);
         const rawSpec = await this.miotSpecMapper.mapDTOToModel(rawDto);

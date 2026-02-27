@@ -38,7 +38,7 @@ POST /property (further validation if property has write access)
 
 But this won't fit MQTT/UDP routing. Remember we have properties (read/write/notify access) and actions (no access, just execute action).
 
-## Phase 4
+## Phase 4 (done)
 
 UDP support.
 
@@ -55,17 +55,24 @@ In server config model we need to add new optional input for UDP.
 
 Create UDP listener in server using this port.
 
-### Phase 5
+## Phase 5
 
-MQTT support
+1. Endpoint updates (done)
 
-## Phase 6
+- `DeviceRequestModel` for `/discover` will be renamed to `DeviceDiscoverRequest`
+- `DeviceResponseModel` for  `/discover` will be renamed to `DeviceDiscoverResponse`
+- `/register` will be changed to `/`. Handler will be renamed to `DevicePostHandler`
+- logic in `DevicePostHandler` must be changed to mimic real DB (later MongoDB) and should create unique ID and save. `DeviceResponseModel` must include this newly created ID field and be renamed to `DeviceGetResponse`. `DeviceRequestModel` should be renamed to `DeviceRequest`
+- new GET `/devices/:id` endpoint which just returns device, basically identical to `DeviceResponseModel`, should be called `DeviceGetResponse`. Id is new one (DB id), not current real deviceId we have.
+- new DELETE `/device/:id` endpoint. ID is this newly created ID
+- new `DeviceNotificationsController`, `/notifications` path, mounted as children in `DevicesController`
+- new POST `/` endpoint for registering new notification. `NotificationRequest` model will have property `properties: string[]`. Device ID from path (hope it'll work in nested controller in Ts.ED) will be verified in storage and all properties will be verified against `SimplifiedMiotSpec.properties`. No need to check access, every READ/WRITE property can be subscribed (ignoring NOTIFY access, it's useless for our usage). This will create new records (again preparing for MongoDB) in a new file for notifications (very similar to devices cache json). Includes reference to deviceId (new ID, not real device id we currently have). Returns `DeviceNotificationResponse` which is only extending new `DeviceNotification` model.
+- new GET `/` returns all notifications for device. Returns `DeviceNotificationsResponse` which defines `notifications: DeviceNotification[]` property.
+- new DELETE `/` deletes all notifications for device
+- new DELETE `/:id` deletes notification by id
 
-Device value updates. We need to discover, how other libraries handle this. We'll definitelly allow defining HTPP/UDP/MQTT logic per device during register/device update. E.g. client endpoint/topic where we send updated value for property on the device.
 
-We need to discover, how to achieve it internally. Are we always connected to the device via UDP per property, we're polling device regularly (may influence `stamp`)?
-
-Worth to check other libraries how they do it, or check the internet.
+2. Device value updates. We need to discover, how other libraries handle this, I guess we need to poll device:
 
 - [xmihome](https://github.com/alex2844/node-xmihome/tree/main/packages/node), with [abstract-things](https://github.com/thingbound/abstract-things)
 - [mihome-binary-protocol](https://github.com/OpenMiHome/mihome-binary-protocol)
@@ -76,10 +83,32 @@ Worth to check other libraries how they do it, or check the internet.
 - [miot](https://github.com/aholstenson/miot)
 - [hass-xiaomi-miot](https://github.com/al-one/hass-xiaomi-miot)
 
-## Phase 7
+3. Define HTPP/UDP/MQTT notifications in server configuration.
+
+```
+    "notifications": {
+        "udp": {
+            "enabled": true,
+            "address": ""
+        },
+        "http": {
+            "enabled": true,
+            "address": ""
+        },
+        "mqtt": {
+            "enabled": false
+        }
+    }
+```
+
+## Phase 6
 
 We need a mechanism to verify spec (fetch new, compare with cached) on server start (maybe cron).
 We also need internal cache for SimplifiedMiotSpec (Maybe we can optimize the size, speed of access).
+
+## Phase 7
+
+MQTT support
 
 ## Phase 8
 

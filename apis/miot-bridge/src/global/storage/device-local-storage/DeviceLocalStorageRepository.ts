@@ -16,26 +16,42 @@ export class DeviceLocalStorageRepository {
     private readonly filePath: string;
 
     constructor(readonly config: ConfigService) {
-        this.filePath = resolve(process.cwd(), config.config.cachePath ?? './cache/devices.json');
+        this.filePath = resolve(process.cwd(), config.config.cachePath ?? './cache', 'devices.json');
     }
 
     async getAll(): Promise<DeviceLocalStorageDTO[]> {
         return this.read();
     }
 
-    async getById(deviceId: number): Promise<DeviceLocalStorageDTO | undefined> {
+    async getById(id: string): Promise<DeviceLocalStorageDTO | undefined> {
+        const devices = await this.read();
+        return devices.find(d => d.id === id);
+    }
+
+    async getByDeviceId(deviceId: number): Promise<DeviceLocalStorageDTO | undefined> {
         const devices = await this.read();
         return devices.find(d => d.deviceId === deviceId);
     }
 
-    async upsert(dto: DeviceLocalStorageDTO): Promise<void> {
+    async upsert(dto: DeviceLocalStorageDTO): Promise<DeviceLocalStorageDTO> {
         const devices = await this.read();
         const index = devices.findIndex(d => d.deviceId === dto.deviceId);
+        const persisted: DeviceLocalStorageDTO = { ...dto, id: dto.id ?? crypto.randomUUID() };
         if (index >= 0) {
-            devices[index] = dto;
+            devices[index] = persisted;
         } else {
-            devices.push(dto);
+            devices.push(persisted);
         }
+        await this.write(devices);
+        return persisted;
+    }
+
+    async delete(id: string): Promise<void> {
+        const devices = await this.read();
+        await this.write(devices.filter(d => d.id !== id));
+    }
+
+    async writeAll(devices: DeviceLocalStorageDTO[]): Promise<void> {
         await this.write(devices);
     }
 

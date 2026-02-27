@@ -1,14 +1,10 @@
 import { createSocket, type RemoteInfo, type Socket } from 'dgram';
 import { Injectable, Scope, ProviderScope } from '@tsed/di';
 import { $log } from '@tsed/logger';
-import { JSONSchemaValidator, Serializer } from '@radoslavirha/tsed-common';
-import { CommonUtils } from '@radoslavirha/utils';
+import { JSONSchemaValidator } from '@radoslavirha/tsed-common';
 import { ConfigService } from './ConfigService.js';
-import { UdpCommandRequestModel } from '../../v1/models/UdpCommandRequestModel.js';
-import { APIVersion } from '../models/APIVersion.enum.js';
-import { DeviceCommandRequest } from '../../v1/models/DeviceCommandRequest.js';
-import { DeviceCommandService } from '../../v1/services/DeviceCommandService.js';
-import { CommandResponseModel } from '../../v1/models/CommandResponseModel.js';
+import { UdpCommandRouter } from './UdpCommandRouter.js';
+import { UdpCommandRequestModel } from '../models/UdpCommandRequestModel.js';
 
 /** Maximum number of consecutive socket restarts before giving up. */
 const MAX_RESTART_ATTEMPTS = 5;
@@ -32,7 +28,7 @@ export class UdpListenerService {
 
     constructor(
         private readonly configService: ConfigService,
-        private readonly deviceCommandService: DeviceCommandService
+        private readonly router: UdpCommandRouter
     ) {}
 
     /**
@@ -161,39 +157,8 @@ export class UdpListenerService {
             return;
         }
 
-        switch (request.version) {
-            case APIVersion.V1:
-                await this.handleV1Command(request, rinfo);
-                break;
-            default:
-                $log.warn({
-                    event: 'UDP_UNSUPPORTED_VERSION',
-                    message: `Unsupported version "${request.version}" from ${rinfo.address}:${rinfo.port}.`
-                });
-                this.reply(
-                    JSON.stringify({ success: false, error: `Unsupported API version: ${request.version}` }),
-                    rinfo
-                );
-        }
-    }
-
-    private async handleV1Command(request: UdpCommandRequestModel, rinfo: RemoteInfo): Promise<void> {
-        try {
-            const commandRequest = CommonUtils.buildModel(DeviceCommandRequest, {
-                deviceId: request.deviceId,
-                command: request.command,
-                operation: request.operation,
-                value: request.value
-            });
-
-            const response = await this.deviceCommandService.execute(commandRequest);
-
-            this.reply(JSON.stringify(Serializer.serialize(response, CommandResponseModel)), rinfo);
-        } catch (error) {
-            const message = this.stringifyError(error);
-            $log.error({ event: 'UDP_COMMAND_FAILED', message, deviceId: request.deviceId, command: request.command });
-            this.reply(JSON.stringify({ success: false, error: message }), rinfo);
-        }
+        const response = await this.router.route(request, rinfo);
+        this.reply(response, rinfo);
     }
 
     private stringifyError(error: unknown): string {

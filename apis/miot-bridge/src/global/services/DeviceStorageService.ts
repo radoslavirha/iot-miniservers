@@ -2,7 +2,6 @@ import { Injectable, Scope, ProviderScope } from '@tsed/di';
 import { DeviceCache } from '../models/DeviceCache.js';
 import { ConfigService } from './ConfigService.js';
 import { DeviceLocalStorageService } from './DeviceLocalStorageService.js';
-import { IDeviceStorage } from './IDeviceStorage.js';
 
 /**
  * Facade for device persistence.
@@ -13,8 +12,8 @@ import { IDeviceStorage } from './IDeviceStorage.js';
  */
 @Injectable()
 @Scope(ProviderScope.SINGLETON)
-export class DeviceStorageService implements IDeviceStorage {
-    private readonly storage: IDeviceStorage;
+export class DeviceStorageService {
+    private readonly storage: DeviceLocalStorageService;
 
     constructor(
         readonly config: ConfigService,
@@ -30,12 +29,20 @@ export class DeviceStorageService implements IDeviceStorage {
         return this.storage.getAll();
     }
 
-    getById(deviceId: number): Promise<DeviceCache | undefined> {
-        return this.storage.getById(deviceId);
+    getById(id: string): Promise<DeviceCache | undefined> {
+        return this.storage.getById(id);
     }
 
-    upsert(device: DeviceCache): Promise<void> {
+    getByDeviceId(deviceId: number): Promise<DeviceCache | undefined> {
+        return this.storage.getByDeviceId(deviceId);
+    }
+
+    upsert(device: DeviceCache): Promise<DeviceCache> {
         return this.storage.upsert(device);
+    }
+
+    delete(id: string): Promise<void> {
+        return this.storage.delete(id);
     }
 }
 

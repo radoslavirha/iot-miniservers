@@ -75,11 +75,12 @@ apis/<api-name>/
 - Use `@AdditionalProperties(false)` on all model classes
 - Export all models from `models/index.ts`
 - DTO models do not need `@Description` decorator, use JSDoc.
+- Endpoint request/response models follow CamelCase `{Resource}{HTTP Method}{Request/Response}` convention
 
 ### Mappers
 
 - Always do bi-directional mapping between DTO <-> Model.
-- Should extend `MappingUtils` from `@radoslavirha/utils`
+- Extend `MappingUtils` from `@radoslavirha/utils`
 - Export all from `mappers/index.ts`
 
 ### Services & Handlers
@@ -87,6 +88,7 @@ apis/<api-name>/
 - Services contain reusable, stateless logic
 - Handlers orchestrate services for a specific use case and map to controller actions
 - Export all from `services/index.ts` and `handlers/index.ts`
+- avoid constructing models, delegate to mappers
 
 ### Controllers
 

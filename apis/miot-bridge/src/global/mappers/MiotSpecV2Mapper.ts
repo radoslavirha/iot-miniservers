@@ -1,7 +1,15 @@
 import { Injectable, Scope, ProviderScope } from '@tsed/di';
 import { CommonUtils, MappingUtils } from '@radoslavirha/utils';
-import { MiotSpecV2DTO } from '../endpoints/miot-spec-v2/dto/MiotSpecV2DTO.js';
-import { MiotSpecV2PropertyAccessDTO, MiotSpecV2PropertyFormatDTO } from '../endpoints/miot-spec-v2/dto/index.js';
+import {
+    MiotSpecV2DTO,
+    MiotSpecV2ServiceDTO,
+    MiotSpecV2ServicePropertyDTO,
+    MiotSpecV2ServiceActionDTO,
+    MiotSpecV2ServiceEventDTO,
+    MiotSpecV2PropertyValueDTO,
+    MiotSpecV2PropertyAccessDTO,
+    MiotSpecV2PropertyFormatDTO
+} from '../endpoints/miot-spec-v2/dto/index.js';
 import {
     MiotSpecV2,
     MiotSpecV2Service,
@@ -16,6 +24,7 @@ import {
 /**
  * Mapper for the MIoT spec layer.
  * - mapDTOToModel: MiotSpecV2DTO → MiotSpecV2 (1:1 raw domain model)
+ * - mapModelToDTO: MiotSpecV2 → MiotSpecV2DTO (reverse, used when persisting back to storage)
  *
  * For MiotSpecV2 → SimplifiedMiotSpec, see v1/mappers/SimplifiedMiotSpecV2Mapper.
  */
@@ -65,6 +74,54 @@ export class MiotSpecV2Mapper extends MappingUtils {
                             iid: e.iid,
                             type: e.type,
                             description: e.description,
+                            arguments: e.arguments
+                        })
+                    )
+                })
+            )
+        });
+    }
+
+    async mapModelToDTO(model: MiotSpecV2): Promise<MiotSpecV2DTO> {
+        return CommonUtils.buildModel(MiotSpecV2DTO, {
+            type: model.type,
+            description: model.description,
+            services: await this.mapArray(model.services, async (svc) =>
+                CommonUtils.buildModel(MiotSpecV2ServiceDTO, {
+                    iid: svc.iid,
+                    type: svc.type,
+                    description: svc.description,
+                    properties: await this.mapOptionalArray(svc.properties, async (p) =>
+                        CommonUtils.buildModel(MiotSpecV2ServicePropertyDTO, {
+                            iid: p.iid,
+                            type: p.type,
+                            description: p.description,
+                            format: this.mapEnum({ MiotSpecV2PropertyFormat }, { MiotSpecV2PropertyFormatDTO }, p.format),
+                            access: await this.mapArray(p.access, async (a) =>
+                                this.mapEnum({ MiotSpecV2PropertyAccess }, { MiotSpecV2PropertyAccessDTO }, a)
+                            ),
+                            unit: p.unit,
+                            valueList: await this.mapOptionalArray(p.valueList, async (v) =>
+                                CommonUtils.buildModel(MiotSpecV2PropertyValueDTO, {
+                                    value: v.value,
+                                    description: v.description
+                                })
+                            ),
+                            valueRange: p.valueRange,
+                            gattAccess: p.gattAccess
+                        })
+                    ),
+                    actions: await this.mapOptionalArray(svc.actions, async (a) =>
+                        CommonUtils.buildModel(MiotSpecV2ServiceActionDTO, {
+                            iid: a.iid,
+                            type: a.type,
+                            description: a.description,
+                            in: a.in,
+                            out: a.out
+                        })
+                    ),
+                    events: await this.mapOptionalArray(svc.events, async (e) =>
+                        CommonUtils.buildModel(MiotSpecV2ServiceEventDTO, {
                             arguments: e.arguments
                         })
                     )

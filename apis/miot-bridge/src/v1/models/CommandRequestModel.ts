@@ -1,5 +1,5 @@
 import { AdditionalProperties, Description, Enum, Example, Optional, Property, Required } from '@tsed/schema';
-import { DeviceCommandOperation } from './DeviceCommandOperation.enum.js';
+import { DeviceCommandOperation } from '../../global/models/DeviceCommandOperation.enum.js';
 
 @Description('Command request model shared by HTTP and MQTT transports.')
 @AdditionalProperties(false)

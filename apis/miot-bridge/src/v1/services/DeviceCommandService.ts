@@ -1,7 +1,7 @@
 import { Service, Scope, ProviderScope } from '@tsed/di';
 import { BadRequest, NotFound } from '@tsed/exceptions';
 import { CommonUtils } from '@radoslavirha/utils';
-import { DeviceCommandOperation } from '../models/DeviceCommandOperation.enum.js';
+import { DeviceCommandOperation } from '../../global/models/DeviceCommandOperation.enum.js';
 import { DeviceCommandRequest } from '../models/DeviceCommandRequest.js';
 import { DeviceCache } from '../../global/models/DeviceCache.js';
 import { DeviceStorageService } from '../../global/services/DeviceStorageService.js';
@@ -43,7 +43,7 @@ export class DeviceCommandService {
     ) {}
 
     async execute(request: DeviceCommandRequest): Promise<CommandResponseModel> {
-        const device = await this.deviceStorageService.getById(request.deviceId);
+        const device = await this.deviceStorageService.getByDeviceId(request.deviceId);
         if (!device) {
             throw new NotFound(`Device ${request.deviceId} not found in cache. Register the device first.`);
         }

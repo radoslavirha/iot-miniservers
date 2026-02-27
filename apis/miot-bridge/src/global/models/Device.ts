@@ -6,6 +6,12 @@ import { GROUP_NEVER_SIMPLIFIED_SPEC } from '../ModelGroups.js';
  */
 export class Device {
     @Required()
+    @Property(String)
+    @Description('Application-level unique ID (UUID v4) assigned on registration.')
+    @Example('a1b2c3d4-e5f6-7890-abcd-ef1234567890')
+    public id: string;
+
+    @Required()
     @Property(Number)
     @Description('Unique device ID assigned by the device during handshake.')
     @Example(1141132187)

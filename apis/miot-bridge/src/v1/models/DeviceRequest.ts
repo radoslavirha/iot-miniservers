@@ -1,8 +1,8 @@
 import { AdditionalProperties, Description, Example, Property, Required } from '@tsed/schema';
 
-@Description('Request model for device discovery and registration.')
+@Description('Request model for device registration (persists to cache).')
 @AdditionalProperties(false)
-export class DeviceRequestModel {
+export class DeviceRequest {
     @Description('IP address of the Xiaomi device.')
     @Required()
     @Property()

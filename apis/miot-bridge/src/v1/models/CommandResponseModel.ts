@@ -1,5 +1,5 @@
 import { AdditionalProperties, Any, Description, Enum, Example, Optional, Property, Required } from '@tsed/schema';
-import { DeviceCommandOperation } from './DeviceCommandOperation.enum.js';
+import { DeviceCommandOperation } from '../../global/models/DeviceCommandOperation.enum.js';
 
 @Description('Unified command response envelope for all transports.')
 @AdditionalProperties(false)

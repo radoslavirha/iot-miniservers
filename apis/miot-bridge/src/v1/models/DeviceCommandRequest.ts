@@ -1,4 +1,4 @@
-import { DeviceCommandOperation } from './DeviceCommandOperation.enum.js';
+import { DeviceCommandOperation } from '../../global/models/DeviceCommandOperation.enum.js';
 
 /**
  * Transport-agnostic internal command request.

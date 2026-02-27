@@ -1,5 +1,6 @@
 # Instructions
 
+- stick to root [AGENTS.md](../../AGENTS.md) instructions
 - follow developement plan in [DEVELOPMENT documentation](./DEVELOPMENT.md)
 - automatically document API usage (Swagger, .README.hbs => this will be transformed into README.md, you can check [docs.js](../../docs.js)).
 
