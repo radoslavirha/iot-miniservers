@@ -12,6 +12,7 @@ import { MiotProperty } from '../models/simplified-miot-spec/MiotProperty.js';
 import { MiotAction } from '../models/simplified-miot-spec/MiotAction.js';
 import { CommandResponseModel } from '../models/CommandResponseModel.js';
 import { MiotDeviceClient, type GetPropertiesResult } from './MiotDeviceClient.js';
+import { NotificationDispatchService } from './NotificationDispatchService.js';
 
 /** Per-key result returned by {@link DeviceCommandService.getProperties}. */
 export type KeyedPropertyResult = GetPropertiesResult & { key: string };
@@ -42,7 +43,8 @@ export class DeviceCommandService {
     constructor(
         private readonly deviceStorageService: DeviceStorageService,
         private readonly simplifiedMiotSpecMapper: SimplifiedMiotSpecV2Mapper,
-        private readonly miotDeviceClient: MiotDeviceClient
+        private readonly miotDeviceClient: MiotDeviceClient,
+        private readonly notificationDispatch: NotificationDispatchService
     ) {}
 
     /**
@@ -88,6 +90,16 @@ export class DeviceCommandService {
             device,
             stamp => this.dispatch(request, device, stamp, resolved)
         );
+
+        if (resolved.operation === DeviceCommandOperation.GetProperty) {
+            this.notificationDispatch.receive({
+                deviceId: device.id,
+                property: request.command,
+                oldValue: undefined,
+                newValue: value,
+                timestamp: Date.now()
+            });
+        }
 
         return CommonUtils.buildModel(CommandResponseModel, {
             deviceId: request.deviceId,

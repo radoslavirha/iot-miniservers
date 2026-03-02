@@ -5,7 +5,6 @@ import { CommonUtils, ObjectUtils } from '@radoslavirha/utils';
 import { Server } from './Server.js';
 import { injector } from '@tsed/di';
 import { ConfigService } from './global/services/ConfigService.js';
-import { UdpListenerService } from './global/services/UdpListenerService.js';
 import { APIVersion } from './global/models/APIVersion.enum.js';
 
 const SIG_EVENTS = [
@@ -51,12 +50,8 @@ try {
     const platform = await Platform.bootstrap(Server, configuration);
     await platform.listen();
 
-    const udpListener = injector().get<UdpListenerService>(UdpListenerService)!;
-    udpListener.start();
-
     SIG_EVENTS.forEach((evt) =>
         process.on(evt, () => {
-            udpListener.stop();
             platform.stop();
         })
     );
@@ -64,7 +59,6 @@ try {
     ['uncaughtException', 'unhandledRejection'].forEach((evt) =>
         process.on(evt, async (error) => {
             $log.error({ event: 'SERVER_' + evt.toUpperCase(), message: error.message, stack: error.stack });
-            udpListener.stop();
             await platform.stop();
         })
     );

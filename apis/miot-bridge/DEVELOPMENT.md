@@ -83,7 +83,12 @@ Create UDP listener in server using this port.
 - [miot](https://github.com/aholstenson/miot)
 - [hass-xiaomi-miot](https://github.com/al-one/hass-xiaomi-miot)
 
-3. Define HTPP/UDP/MQTT notifications in server configuration.
+### Phase 6
+
+1. Empty notification service receiving all updates from polling and direct HTTP/UDP/MQTT calls (get property).
+Sending notifications out will be solved later.
+
+2. Define HTPP/UDP/MQTT notifications in server configuration.
 
 ```
     "notifications": {
@@ -101,15 +106,15 @@ Create UDP listener in server using this port.
     }
 ```
 
-## Phase 6
+## Phase 7
 
 We need a mechanism to verify spec (fetch new, compare with cached) on server start (maybe cron).
 We also need internal cache for SimplifiedMiotSpec (Maybe we can optimize the size, speed of access).
 
-## Phase 7
+## Phase 8
 
 MQTT support
 
-## Phase 8
+## Phase 9
 
 Optional (server configuration) MongoDB integration and replacement of JSON cache.

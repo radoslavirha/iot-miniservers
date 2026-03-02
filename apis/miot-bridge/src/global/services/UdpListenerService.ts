@@ -1,5 +1,5 @@
 import { createSocket, type RemoteInfo, type Socket } from 'dgram';
-import { Injectable, Scope, ProviderScope } from '@tsed/di';
+import { Injectable, Scope, ProviderScope, OnDestroy, OnInit } from '@tsed/di';
 import { $log } from '@tsed/logger';
 import { JSONSchemaValidator } from '@radoslavirha/tsed-common';
 import { ConfigService } from './ConfigService.js';
@@ -21,7 +21,7 @@ const RESTART_DELAY_MS = 1_000;
  */
 @Injectable()
 @Scope(ProviderScope.SINGLETON)
-export class UdpListenerService {
+export class UdpListenerService implements OnInit, OnDestroy {
     private socket: Socket | null = null;
     private restartAttempts = 0;
     private stopped = false;
@@ -35,7 +35,7 @@ export class UdpListenerService {
      * Bind a UDP4 socket on the configured port and start accepting messages.
      * No-op when `udp.enabled` is falsy.
      */
-    public start(): void {
+    private start(): void {
         const udpConfig = this.configService.config.udp;
 
         if (!udpConfig?.enabled) {
@@ -51,7 +51,7 @@ export class UdpListenerService {
      * Gracefully close the socket and mark the service as stopped so it
      * will not attempt to restart.
      */
-    public stop(): void {
+    private stop(): void {
         this.stopped = true;
         this.closeSocket();
         $log.info({ event: 'UDP_LISTENER_STOPPED', message: 'UDP listener stopped.' });
@@ -170,5 +170,13 @@ export class UdpListenerService {
         } catch {
             return String(error);
         }
+    }
+    
+    public async $onInit(): Promise<void> {
+        await this.start();
+    }
+
+    public async $onDestroy(): Promise<void> {
+        await this.stop();
     }
 }

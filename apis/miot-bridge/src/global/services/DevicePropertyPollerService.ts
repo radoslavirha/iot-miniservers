@@ -1,10 +1,11 @@
 import { EventEmitter } from 'events';
-import { Service, Scope, ProviderScope } from '@tsed/di';
+import { Service, Scope, ProviderScope, OnDestroy, OnInit } from '@tsed/di';
 import { $log } from '@tsed/logger';
 import type { PropertyChangeEvent } from '../models/PropertyChangeEvent.js';
 import { ConfigService } from './ConfigService.js';
 import { NotificationStorageService } from './NotificationStorageService.js';
 import { DeviceCommandService } from './DeviceCommandService.js';
+import { NotificationDispatchService } from './NotificationDispatchService.js';
 
 /**
  * Event name emitted on every detected property change (or every cycle when dispatchOnChange = false).
@@ -27,7 +28,7 @@ export const PROPERTY_CHANGED = 'property:changed' as const;
  */
 @Service()
 @Scope(ProviderScope.SINGLETON)
-export class DevicePropertyPollerService extends EventEmitter {
+export class DevicePropertyPollerService extends EventEmitter implements OnInit, OnDestroy {
     private _timer: NodeJS.Timeout | undefined;
     private _ticking = false;
 
@@ -46,7 +47,8 @@ export class DevicePropertyPollerService extends EventEmitter {
     constructor(
         private readonly configService: ConfigService,
         private readonly notificationStorageService: NotificationStorageService,
-        private readonly deviceCommandService: DeviceCommandService
+        private readonly deviceCommandService: DeviceCommandService,
+        private readonly notificationDispatch: NotificationDispatchService
     ) {
         super();
     }
@@ -57,7 +59,7 @@ export class DevicePropertyPollerService extends EventEmitter {
      * Registers one or more property subscriptions for a device.
      * Called by `NotificationPostHandler` after persisting to storage.
      */
-    addSubscriptions(deviceId: string, properties: string[]): void {
+    public addSubscriptions(deviceId: string, properties: string[]): void {
         const set = this._subscriptions.get(deviceId) ?? new Set<string>();
         for (const p of properties) set.add(p);
         this._subscriptions.set(deviceId, set);
@@ -94,7 +96,7 @@ export class DevicePropertyPollerService extends EventEmitter {
      * Hydrates the in-memory subscription cache from storage, then starts the
      * polling interval. Called from `Server.$onReady()`.
      */
-    async start(): Promise<void> {
+    private async start(): Promise<void> {
         const config = this.configService.config.polling;
         if (!config?.enabled) {
             $log.info({ event: 'POLLER_DISABLED', message: 'Device property polling is disabled.' });
@@ -114,7 +116,7 @@ export class DevicePropertyPollerService extends EventEmitter {
     }
 
     /** Stops the polling interval. */
-    stop(): void {
+    private stop(): void {
         if (this._timer) {
             clearTimeout(this._timer);
             this._timer = undefined;
@@ -199,5 +201,14 @@ export class DevicePropertyPollerService extends EventEmitter {
                 $log.warn({ event: 'POLLER_ERROR', deviceId, message: `(${count}/${maxErrors}) ${message}` });
             }
         }
+    }
+
+    public async $onInit(): Promise<void> {
+        await this.start();
+        this.on(PROPERTY_CHANGED, (event) => this.notificationDispatch.receive(event));   
+    }
+
+    public async $onDestroy(): Promise<void> {
+        await this.stop();
     }
 }
