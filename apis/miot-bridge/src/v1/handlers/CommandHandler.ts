@@ -1,9 +1,9 @@
 import { Injectable, Scope, ProviderScope } from '@tsed/di';
 import { CommonUtils } from '@radoslavirha/utils';
-import { DeviceCommandRequest } from '../models/DeviceCommandRequest.js';
+import { DeviceCommandRequest } from '../../global/models/DeviceCommandRequest.js';
 import { CommandRequestModel } from '../models/CommandRequestModel.js';
-import { CommandResponseModel } from '../models/CommandResponseModel.js';
-import { DeviceCommandService } from '../services/DeviceCommandService.js';
+import { CommandResponseModel } from '../../global/models/CommandResponseModel.js';
+import { DeviceCommandService } from '../../global/services/DeviceCommandService.js';
 
 @Injectable()
 @Scope(ProviderScope.SINGLETON)

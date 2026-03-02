@@ -4,7 +4,7 @@ import { Description, Post, Returns } from '@tsed/schema';
 import { Docs } from '@tsed/swagger';
 import { CommandHandler } from '../handlers/CommandHandler.js';
 import { CommandRequestModel } from '../models/CommandRequestModel.js';
-import { CommandResponseModel } from '../models/CommandResponseModel.js';
+import { CommandResponseModel } from '../../global/models/CommandResponseModel.js';
 import { APIVersion } from '../../global/models/APIVersion.enum.js';
 
 @Description('Endpoint for sending commands (read/write property, execute action) to registered devices.')

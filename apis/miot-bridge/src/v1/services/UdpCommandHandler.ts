@@ -7,9 +7,9 @@ import { APIVersion } from '../../global/models/APIVersion.enum.js';
 import { UdpCommandRequestModel } from '../../global/models/UdpCommandRequestModel.js';
 import { UDPHandlerToken } from '../../global/tokens/UDPHandlerToken.js';
 import type { IUdpVersionHandler } from '../../global/services/IUdpVersionHandler.js';
-import { DeviceCommandRequest } from '../models/DeviceCommandRequest.js';
-import { CommandResponseModel } from '../models/CommandResponseModel.js';
-import { DeviceCommandService } from './DeviceCommandService.js';
+import { DeviceCommandRequest } from '../../global/models/DeviceCommandRequest.js';
+import { CommandResponseModel } from '../../global/models/CommandResponseModel.js';
+import { DeviceCommandService } from '../../global/services/DeviceCommandService.js';
 
 /**
  * Handles v1 UDP command requests.

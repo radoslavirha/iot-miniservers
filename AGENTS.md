@@ -61,6 +61,7 @@ apis/<api-name>/
 - Files from `src/global` can't import from `src/{v1, v2,...}`.
 - Avoid constructing DTOs and calling endpoints/repositories from handler. Delegate DTO construction to services.
 - Use `@radoslavirha/*` packages from [toolkit-hub](https://github.com/radoslavirha/toolkit-hub)
+- always use class member visibility modifiers
 
 ### Dependency Injection (Ts.ED)
 

@@ -26,7 +26,7 @@ import {
  * - mapDTOToModel: MiotSpecV2DTO → MiotSpecV2 (1:1 raw domain model)
  * - mapModelToDTO: MiotSpecV2 → MiotSpecV2DTO (reverse, used when persisting back to storage)
  *
- * For MiotSpecV2 → SimplifiedMiotSpec, see v1/mappers/SimplifiedMiotSpecV2Mapper.
+ * For MiotSpecV2 → SimplifiedMiotSpec, see global/mappers/SimplifiedMiotSpecV2Mapper.
  */
 @Injectable()
 @Scope(ProviderScope.SINGLETON)

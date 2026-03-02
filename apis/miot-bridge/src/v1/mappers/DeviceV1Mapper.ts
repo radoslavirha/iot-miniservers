@@ -2,7 +2,7 @@ import { Injectable, Scope, ProviderScope } from '@tsed/di';
 import { CommonUtils, MappingUtils } from '@radoslavirha/utils';
 import { DeviceCache } from '../../global/models/DeviceCache.js';
 import { MiotSpecV2 } from '../../global/models/miot-spec-v2/index.js';
-import { SimplifiedMiotSpec } from '../models/simplified-miot-spec/SimplifiedMiotSpec.js';
+import { SimplifiedMiotSpec } from '../../global/models/simplified-miot-spec/SimplifiedMiotSpec.js';
 import { DeviceDiscoverResponse } from '../models/DeviceDiscoverResponse.js';
 import { DeviceGetResponse } from '../models/DeviceGetResponse.js';
 import { DevicePostResponse } from '../models/DevicePostResponse.js';

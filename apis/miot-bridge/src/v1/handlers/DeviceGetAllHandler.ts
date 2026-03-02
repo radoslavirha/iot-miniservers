@@ -3,7 +3,7 @@ import { CommonUtils } from '@radoslavirha/utils';
 import { DeviceStorageService } from '../../global/services/DeviceStorageService.js';
 import { DevicesGetResponse } from '../models/DevicesGetResponse.js';
 import { DeviceV1Mapper } from '../mappers/DeviceV1Mapper.js';
-import { SimplifiedMiotSpecV2Mapper } from '../mappers/SimplifiedMiotSpecV2Mapper.js';
+import { SimplifiedMiotSpecV2Mapper } from '../../global/mappers/SimplifiedMiotSpecV2Mapper.js';
 
 @Injectable()
 @Scope(ProviderScope.SINGLETON)

@@ -1,6 +1,6 @@
 import { Description, ForwardGroups, Property, Required } from '@tsed/schema';
 import { Device } from '../../global/models/Device.js';
-import { SimplifiedMiotSpec } from './simplified-miot-spec/SimplifiedMiotSpec.js';
+import { SimplifiedMiotSpec } from '../../global/models/simplified-miot-spec/SimplifiedMiotSpec.js';
 
 /**
  * Abstract base for device response models that include a parsed MIoT spec.

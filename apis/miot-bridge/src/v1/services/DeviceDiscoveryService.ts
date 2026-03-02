@@ -2,9 +2,9 @@ import { Service, Scope, ProviderScope } from '@tsed/di';
 import { MiotSpecV2 } from '../../global/models/miot-spec-v2/index.js';
 import { MiotSpecV2Endpoint } from '../../global/endpoints/miot-spec-v2/MiotSpecV2Endpoint.js';
 import { MiotSpecV2Mapper } from '../../global/mappers/MiotSpecV2Mapper.js';
-import { SimplifiedMiotSpec } from '../models/index.js';
-import { MiotDeviceClient } from './MiotDeviceClient.js';
-import { SimplifiedMiotSpecV2Mapper } from '../mappers/index.js';
+import { SimplifiedMiotSpec } from '../../global/models/simplified-miot-spec/SimplifiedMiotSpec.js';
+import { MiotDeviceClient } from '../../global/services/MiotDeviceClient.js';
+import { SimplifiedMiotSpecV2Mapper } from '../../global/mappers/SimplifiedMiotSpecV2Mapper.js';
 
 /** Minimal device address info accepted by discover(). Both DeviceDiscoverRequest and DeviceRequest satisfy this. */
 export interface DeviceAddressInput {

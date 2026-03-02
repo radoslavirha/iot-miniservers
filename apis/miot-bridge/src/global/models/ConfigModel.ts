@@ -1,6 +1,7 @@
 import { BaseConfig } from '@radoslavirha/tsed-configuration';
 import { Description, Optional, Property } from '@tsed/schema';
 import { MongoConfig } from './MongoConfig.js';
+import { PollingConfig } from './PollingConfig.js';
 import { UdpConfig } from './UdpConfig.js';
 
 export class ConfigModel extends BaseConfig {
@@ -18,4 +19,9 @@ export class ConfigModel extends BaseConfig {
     @Optional()
     @Description('UDP listener configuration. When udp.enabled is true, the server accepts commands over UDP.')
     public udp?: UdpConfig;
+
+    @Property(PollingConfig)
+    @Optional()
+    @Description('Device property polling configuration. When polling.enabled is true, subscribed properties are polled at the configured interval.')
+    public polling?: PollingConfig;
 }

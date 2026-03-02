@@ -3,7 +3,7 @@ import { NotFound } from '@tsed/exceptions';
 import { DeviceStorageService } from '../../global/services/DeviceStorageService.js';
 import { DeviceGetResponse } from '../models/DeviceGetResponse.js';
 import { DeviceV1Mapper } from '../mappers/DeviceV1Mapper.js';
-import { SimplifiedMiotSpecV2Mapper } from '../mappers/SimplifiedMiotSpecV2Mapper.js';
+import { SimplifiedMiotSpecV2Mapper } from '../../global/mappers/SimplifiedMiotSpecV2Mapper.js';
 
 @Injectable()
 @Scope(ProviderScope.SINGLETON)
