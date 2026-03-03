@@ -1,5 +1,11 @@
 # interactive-map-feeder
 
+## 0.2.4
+
+### Patch Changes
+
+- [`0d504b7`](https://github.com/radoslavirha/iot-miniservers/commit/0d504b7e0fcf1b28ad59e8bb1b01844777e75073) Thanks [@radoslavirha](https://github.com/radoslavirha)! - Fix docs build in CI
+
 ## 0.2.3
 
 ### Patch Changes
