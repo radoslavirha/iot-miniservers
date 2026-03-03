@@ -99,6 +99,14 @@ export class DeviceCommandService {
                 newValue: value,
                 timestamp: Date.now()
             });
+        } else if (resolved.operation === DeviceCommandOperation.SetProperty) {
+            this.notificationDispatch.receive({
+                deviceId: device.id,
+                property: request.command,
+                oldValue: undefined, // We don't have the old value here, but it could be fetched if needed
+                newValue: request.value,
+                timestamp: Date.now()
+            });
         }
 
         return CommonUtils.buildModel(CommandResponseModel, {

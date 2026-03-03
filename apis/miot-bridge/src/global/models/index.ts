@@ -1,5 +1,7 @@
 export * from './ConfigModel.js';
 export * from './Device.js';
+export * from './NotificationPayload.js';
+export * from './NotificationsConfig.js';
 export * from './DeviceCache.js';
 export * from './DeviceCommandOperation.enum.js';
 export * from './DeviceNotificationCache.js';

@@ -88,7 +88,7 @@ Create UDP listener in server using this port.
 1. Empty notification service receiving all updates from polling and direct HTTP/UDP/MQTT calls (get property).
 Sending notifications out will be solved later.
 
-2. Define HTPP/UDP/MQTT notifications in server configuration.
+2. Define HTPP/UDP/MQTT notifications in server configuration and prepare NotificationDispatchService. Send notifications only via HTTP/UDP. Response model contains deviceId, value and property only. 
 
 ```
     "notifications": {

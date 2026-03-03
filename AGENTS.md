@@ -77,6 +77,7 @@ apis/<api-name>/
 - Export all models from `models/index.ts`
 - DTO models do not need `@Description` decorator, use JSDoc.
 - Endpoint request/response models follow CamelCase `{Resource}{HTTP Method}{Request/Response}` convention
+- always build models using `CommonUtils.buildModel` from `@radoslavirha/utils`
 
 ### Mappers
 
