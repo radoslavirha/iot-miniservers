@@ -38,5 +38,13 @@
   "os": [
     "darwin",
     "linux"
-  ]
+  ],
+  "pnpm": {
+    "ignoredBuiltDependencies": [
+      "@scarf/scarf",
+      "@swc/core",
+      "esbuild",
+      "sharp"
+    ]
+  }
 }

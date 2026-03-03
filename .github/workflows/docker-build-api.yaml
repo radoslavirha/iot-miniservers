@@ -77,8 +77,9 @@ jobs:
         with:
           push: ${{ inputs.PUBLISH }}
           load: true
-          context: apis/${{ inputs.TARGET }}
-          file: apis/${{ inputs.TARGET }}/Dockerfile
+          context: .
+          file: Dockerfile
+          target: ${{ inputs.TARGET }}
           tags: |
             ${{ needs.image-data.outputs.image }}:latest
             ${{ needs.image-data.outputs.image }}:${{ needs.image-data.outputs.version }}
