@@ -11,4 +11,4 @@ runs:
       uses: EndBug/add-and-commit@v9
       with:
         message: 'Update API Readme files'
-        pull: ' '
+        pull: '--rebase'
