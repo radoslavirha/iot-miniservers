@@ -58,7 +58,6 @@ jobs:
   build-api-images:
     name: Publish ${{ matrix.name }} ${{ matrix.version }}
     needs:
-      - docs
       - release
     if: ${{ needs.release.outputs.matrix != '{}' }}
     strategy:
