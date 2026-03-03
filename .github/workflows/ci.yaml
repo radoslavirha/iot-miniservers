@@ -93,18 +93,14 @@ jobs:
       - name: Run tests
         run: pnpm --filter ./apis/${{ matrix.api }} test
 
-  lint-api-dockerfile:
-    name: Dockerfile lint => ${{ matrix.api }}
+  lint-dockerfile:
+    name: Dockerfile lint
     needs: changes
     runs-on: ubuntu-latest
-    if: ${{ needs.changes.outputs.apis != '[]' }}
-    strategy:
-      matrix:
-        api: ${{ fromJSON(needs.changes.outputs.apis) }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-      - name: Run API Dockerfile lint
+      - name: Run Dockerfile lint
         uses: hadolint/hadolint-action@v3.1.0
         with:
-          dockerfile: ./apis/${{ matrix.api }}/Dockerfile
+          dockerfile: ./Dockerfile
