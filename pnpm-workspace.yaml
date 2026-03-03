@@ -7,3 +7,7 @@ onlyBuiltDependencies:
   - '@swc/core'
   - esbuild
   - sharp
+
+syncInjectedDepsAfterScripts:
+  - build
+injectWorkspacePackages: true
