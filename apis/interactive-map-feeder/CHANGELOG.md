@@ -1,5 +1,11 @@
 # interactive-map-feeder
 
+## 0.2.1
+
+### Patch Changes
+
+- [`2d0434e`](https://github.com/radoslavirha/iot-miniservers/commit/2d0434ef7643841284d2c96368ed53adef02434c) Thanks [@radoslavirha](https://github.com/radoslavirha)! - Fixed build after changes in toolkit-hub packages
+
 ## 0.2.0
 
 ### Minor Changes
