@@ -1,6 +1,6 @@
 import { ProviderScope, Scope, Service } from '@tsed/di';
 import axios from 'axios';
-import { CommonUtils, NumberUtils } from '@radoslavirha/utils';
+import { CommonUtils, NumberUtils, ObjectUtils } from '@radoslavirha/utils';
 import { CITIES } from '../Cities.js';
 import { BBox, CityLED, Coordinates, RGB } from '../models/index.js';
 import { CHMIService } from './CHMIService.js';
@@ -37,7 +37,7 @@ export class RadarService extends CHMIService {
         const buffer = await this.getCurrentRadarSituation();
         const image = this.rasterService.createImage(buffer);
 
-        const cities = CommonUtils.cloneDeep(CITIES);
+        const cities = ObjectUtils.cloneDeep(CITIES);
         const citiesLED: CityLED[] = [];
 
         for (const city of cities) {

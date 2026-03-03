@@ -1,5 +1,5 @@
 import { ProviderScope, Scope, Service } from '@tsed/di';
-import { CommonUtils, GeoUtils, NumberUtils } from '@radoslavirha/utils';
+import { CommonUtils, GeoUtils, NumberUtils, ObjectUtils } from '@radoslavirha/utils';
 import Sharp from 'sharp';
 import { BBox, Position, RGBA } from '../models/index.js';
 import { CITIES } from '../Cities.js';
@@ -37,7 +37,7 @@ export class RasterService {
         const channels = 4; // RGBA format
         const buffer = Buffer.alloc(width * height * channels, 0); // Initialize with black (RGBA)
 
-        const cities = CommonUtils.cloneDeep(CITIES);
+        const cities = ObjectUtils.cloneDeep(CITIES);
         
         const offset = this.getCityPixelOffset(height, width);
 
@@ -103,6 +103,10 @@ export class RasterService {
         const endY = NumberUtils.min([height - 1, y + radius]);
 
         const pixels: RGBA[] = [];
+
+        if (CommonUtils.isUndefined(startX) || CommonUtils.isUndefined(endX) || CommonUtils.isUndefined(startY) || CommonUtils.isUndefined(endY)) {
+            throw new Error('Invalid start or end coordinates');
+        }
 
         for (let j = startY; j <= endY; j++) {
             for (let i = startX; i <= endX; i++) {
