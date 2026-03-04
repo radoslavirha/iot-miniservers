@@ -135,6 +135,8 @@ export class UdpListenerService implements OnInit, OnDestroy {
     private async handleMessage(msg: Buffer, rinfo: RemoteInfo): Promise<void> {
         let payload: unknown;
 
+        $log.info({ event: 'UDP_MESSAGE_RECEIVED', message: `Received UDP message from ${rinfo.address}:${rinfo.port}. Payload: ${msg.toString('utf8')}` });
+
         try {
             payload = JSON.parse(msg.toString('utf8'));
         } catch {
