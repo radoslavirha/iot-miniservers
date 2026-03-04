@@ -1,5 +1,11 @@
 # miot-bridge
 
+## 0.2.6
+
+### Patch Changes
+
+- [`efd4d94`](https://github.com/radoslavirha/iot-miniservers/commit/efd4d9454164b7214247100f54f4b2882f07abfd) Thanks [@radoslavirha](https://github.com/radoslavirha)! - Log incoming UDP
+
 ## 0.2.5
 
 ### Patch Changes
