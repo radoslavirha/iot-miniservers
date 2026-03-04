@@ -1,0 +1,10 @@
+{
+  "sandbox": {
+    "file": "helm-values/iot/sandbox/miot-bridge.yaml",
+    "yamlPath": ".apps.miot-bridge.image.tag"
+  },
+  "production": {
+    "file": "helm-values/iot/production/miot-bridge.yaml",
+    "yamlPath": ".apps.miot-bridge.image.tag"
+  }
+}

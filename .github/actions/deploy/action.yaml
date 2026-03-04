@@ -1,0 +1,61 @@
+---
+name: Deploy to environment
+description: Updates Helm image tags in home-server and pushes a single commit
+
+inputs:
+  environment:
+    description: Target environment (sandbox or production)
+    required: true
+  packages:
+    description: 'JSON array of apps, e.g. [{"name":"miot-bridge","version":"0.2.3"}]'
+    required: true
+  home_server_pat:
+    description: PAT with contents:write on radoslavirha/home-server
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Checkout home-server
+      uses: actions/checkout@v4
+      with:
+        repository: radoslavirha/home-server
+        token: ${{ inputs.home_server_pat }}
+        path: home-server
+    - name: Install yq
+      shell: bash
+      run: |
+        sudo wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
+        sudo chmod +x /usr/local/bin/yq
+    - name: Update image tags
+      shell: bash
+      env:
+        ENV: ${{ inputs.environment }}
+        PACKAGES: ${{ inputs.packages }}
+      run: |
+        echo "$PACKAGES" | jq -c '.[]' | while read pkg; do
+          NAME=$(echo "$pkg" | jq -r '.name')
+          VERSION=$(echo "$pkg" | jq -r '.version')
+          DEPLOY_CONFIG="apis/$NAME/deploy.json"
+          if [ ! -f "$DEPLOY_CONFIG" ]; then
+            echo "No deploy.json for $NAME, skipping"
+            continue
+          fi
+          FILE=$(jq -r ".$ENV.file" "$DEPLOY_CONFIG")
+          YAML_PATH=$(jq -r ".$ENV.yamlPath" "$DEPLOY_CONFIG")
+          echo "Updating $NAME to $VERSION in home-server/$FILE at $YAML_PATH"
+          yq e "$YAML_PATH = \"$VERSION\"" -i "home-server/$FILE"
+        done
+    - name: Commit and push
+      shell: bash
+      env:
+        ENV: ${{ inputs.environment }}
+        PACKAGES: ${{ inputs.packages }}
+      run: |
+        cd home-server
+        git config user.name "github-actions[bot]"
+        git config user.email "github-actions[bot]@users.noreply.github.com"
+        APPS=$(echo "$PACKAGES" | jq -r '[.[] | "\(.name)@\(.version)"] | join(", ")')
+        git add .
+        git diff --staged --quiet || git commit -m "chore(iot): deploy $ENV [$APPS]"
+        git push

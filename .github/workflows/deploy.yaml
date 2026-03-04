@@ -1,0 +1,35 @@
+---
+name: Deploy APIs
+
+# yamllint disable-line rule:truthy
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Target environment
+        required: true
+        type: choice
+        options:
+          - sandbox
+          - production
+      apps:
+        description: 'JSON array of apps to deploy, e.g. [{"name":"miot-bridge","version":"0.2.3"}]'
+        required: true
+        type: string
+
+jobs:
+  deploy:
+    name: Deploy to ${{ inputs.environment }}
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout iot-miniservers
+        uses: actions/checkout@v4
+      - name: Deploy
+        uses: ./.github/actions/deploy
+        with:
+          environment: ${{ inputs.environment }}
+          packages: ${{ inputs.apps }}
+          home_server_pat: ${{ secrets.HOME_SERVER_PAT }}

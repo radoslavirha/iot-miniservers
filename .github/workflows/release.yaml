@@ -67,3 +67,43 @@ jobs:
     with:
       TARGET: ${{ matrix.name }}
       PUBLISH: true
+
+  deploy-sandbox:
+    name: Deploy to Sandbox
+    needs:
+      - release
+      - build-api-images
+    if: ${{ needs.release.outputs.matrix != '{}' }}
+    runs-on: ubuntu-latest
+    environment: sandbox
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout iot-miniservers
+        uses: actions/checkout@v4
+      - name: Deploy
+        uses: ./.github/actions/deploy
+        with:
+          environment: sandbox
+          packages: ${{ toJSON(fromJSON(needs.release.outputs.matrix).include) }}
+          home_server_pat: ${{ secrets.HOME_SERVER_PAT }}
+
+  deploy-production:
+    name: Deploy to Production
+    needs:
+      - release
+      - deploy-sandbox
+    if: ${{ needs.release.outputs.matrix != '{}' }}
+    runs-on: ubuntu-latest
+    environment: production
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout iot-miniservers
+        uses: actions/checkout@v4
+      - name: Deploy
+        uses: ./.github/actions/deploy
+        with:
+          environment: production
+          packages: ${{ toJSON(fromJSON(needs.release.outputs.matrix).include) }}
+          home_server_pat: ${{ secrets.HOME_SERVER_PAT }}
