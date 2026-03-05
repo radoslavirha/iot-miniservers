@@ -1,5 +1,11 @@
 # miot-bridge
 
+## 0.2.7
+
+### Patch Changes
+
+- [`c751da4`](https://github.com/radoslavirha/iot-miniservers/commit/c751da4c5c50c9e4e5468134cf066ad1ea914873) Thanks [@radoslavirha](https://github.com/radoslavirha)! - MQTT client
+
 ## 0.2.6
 
 ### Patch Changes
