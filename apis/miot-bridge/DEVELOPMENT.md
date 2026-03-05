@@ -55,7 +55,7 @@ In server config model we need to add new optional input for UDP.
 
 Create UDP listener in server using this port.
 
-## Phase 5
+## Phase 5 (done)
 
 1. Endpoint updates (done)
 
@@ -105,6 +105,10 @@ Sending notifications out will be solved later.
         }
     }
 ```
+
+3. Implement MQTT client. Enhance configuration model similar to UDP listener config. We need also credentials and maybe we should define also topic? But then we need to add v1 to topic, so maybe we should just hardcode and document it. We should create mqtt client via <https://tsed.dev/docs/custom-providers.html#custom-providers>. Maybe we should create UDP listener same way.
+
+4. Integrate MQTT client in pub/sub operations.
 
 ## Phase 7
 

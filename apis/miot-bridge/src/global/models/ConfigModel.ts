@@ -1,6 +1,7 @@
 import { BaseConfig } from '@radoslavirha/tsed-configuration';
 import { Description, Optional, Property } from '@tsed/schema';
 import { MongoConfig } from './MongoConfig.js';
+import { MqttConfig } from './MqttConfig.js';
 import { NotificationsConfig } from './NotificationsConfig.js';
 import { PollingConfig } from './PollingConfig.js';
 import { UdpConfig } from './UdpConfig.js';
@@ -30,4 +31,9 @@ export class ConfigModel extends BaseConfig {
     @Optional()
     @Description('Outbound notification transport configuration.')
     public notifications?: NotificationsConfig;
+
+    @Property(MqttConfig)
+    @Optional()
+    @Description('MQTT client configuration. Connection is shared by the inbound command subscriber and outbound notification publisher.')
+    public mqtt?: MqttConfig;
 }

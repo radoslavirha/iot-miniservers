@@ -30,7 +30,7 @@ export class HttpNotificationConfig {
 export class MqttNotificationConfig {
     @Required()
     @Property(Boolean)
-    @Description('Whether MQTT outbound notifications are enabled. Full MQTT support is implemented in Phase 8.')
+    @Description('Whether MQTT outbound notifications are enabled. Connection details are configured under the top-level `mqtt` key.')
     public enabled: boolean;
 }
 

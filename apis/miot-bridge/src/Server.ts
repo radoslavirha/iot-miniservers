@@ -5,7 +5,7 @@ import { Configuration } from '@tsed/di';
 import * as restV1 from './v1/controllers/index.js';
 import { APIVersion } from './global/models/APIVersion.enum.js';
 import { ObjectUtils } from '@radoslavirha/utils';
-// Ensure UdpCommandHandler (registered as UDPHandlerToken) is discovered by the DI container.
+import './global/providers/index.js';
 import './global/services/UdpListenerService.js';
 import './v1/services/UdpCommandHandler.js';
 

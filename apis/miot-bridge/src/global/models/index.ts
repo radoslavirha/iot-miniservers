@@ -6,6 +6,7 @@ export * from './DeviceCache.js';
 export * from './DeviceCommandOperation.enum.js';
 export * from './DeviceNotificationCache.js';
 export * from './MongoConfig.js';
+export * from './MqttConfig.js';
 export * from './PollingConfig.js';
 export * from './PropertyChangeEvent.js';
 export * from './UdpCommandRequestModel.js';
