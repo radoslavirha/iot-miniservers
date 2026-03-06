@@ -125,8 +125,6 @@ export class DeviceCommandService {
         });
     }
 
-    // ─── Private ─────────────────────────────────────────────
-
     /**
      * Runs `fn` with stamp-refresh retry, then persists the updated stamp.
      * Single source of truth for the stamp management cycle used by every public method.

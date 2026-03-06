@@ -124,8 +124,6 @@ export class DevicePropertyPollerService extends EventEmitter implements OnInit,
         }
     }
 
-    // ─── Private ─────────────────────────────────────────────
-
     private scheduleNext(intervalMs: number): void {
         this._timer = setTimeout(() => void this.tick(intervalMs), intervalMs);
     }

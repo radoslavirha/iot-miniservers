@@ -30,8 +30,6 @@ export class MqttListenerService implements OnInit {
         this.start();
     }
 
-    // ─── Private ─────────────────────────────────────────────
-
     private start(): void {
         if (!this.mqttClient) {
             $log.info({ event: 'MQTT_LISTENER_DISABLED', message: 'MQTT client not available — skipping command subscription.' });
@@ -46,6 +44,8 @@ export class MqttListenerService implements OnInit {
                     $log.error({ event: 'MQTT_SUBSCRIBE_ERROR', topic: pair.command, message: err.message });
                 } else {
                     $log.info({ event: 'MQTT_SUBSCRIBED', topic: pair.command });
+                    $log.info({ event: 'MQTT_RESPONSE_TOPIC', topic: pair.response });
+                    $log.info({ event: 'MQTT_NOTIFICATION_TOPIC', topic: pair.notifications });
                 }
             });
         }

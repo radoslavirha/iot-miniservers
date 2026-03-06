@@ -26,4 +26,9 @@ export class MqttConfig {
     @Property(String)
     @Description('Password for broker authentication. For EMQX, this is the Secret Key.')
     public password: string;
+
+    @Property(String)
+    @Optional()
+    @Description('Optional prefix prepended to all MQTT topics, separated by "/". For example "home/office" produces topics like "home/office/miot-bridge/v1/command".')
+    public topicPrefix?: string;
 }

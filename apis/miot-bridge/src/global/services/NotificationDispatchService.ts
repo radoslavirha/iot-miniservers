@@ -6,8 +6,9 @@ import type { MqttClient } from 'mqtt';
 import type { PropertyChangeEvent } from '../models/PropertyChangeEvent.js';
 import { NotificationPayload } from '../models/NotificationPayload.js';
 import { MqttClientProvider } from '../providers/MqttClientProvider.js';
-import { MQTT_NOTIFICATION_TOPIC } from './MqttCommandRouter.js';
 import { ConfigService } from './ConfigService.js';
+import { MqttTopicService } from './MqttTopicService.js';
+import { APIVersion } from '../models/APIVersion.enum.js';
 
 /**
  * Central hub for all inbound property-value observations, regardless of transport.
@@ -23,7 +24,8 @@ import { ConfigService } from './ConfigService.js';
 export class NotificationDispatchService {
     constructor(
         private readonly configService: ConfigService,
-        @Inject(MqttClientProvider) private readonly mqttClient: MqttClient | null
+        @Inject(MqttClientProvider) private readonly mqttClient: MqttClient | null,
+        private readonly mqttTopicService: MqttTopicService
     ) {}
 
     /**
@@ -55,14 +57,13 @@ export class NotificationDispatchService {
         }
     }
 
-    // ─── Private ─────────────────────────────────────────────
-
     private sendMqtt(payload: NotificationPayload): void {
-        this.mqttClient!.publish(MQTT_NOTIFICATION_TOPIC, JSON.stringify(payload), { qos: 1 }, (err) => {
+        const topic = this.mqttTopicService.for(APIVersion.V1).notifications;
+        this.mqttClient!.publish(topic, JSON.stringify(payload), { qos: 1 }, (err) => {
             if (err) {
                 $log.warn({
                     event: 'NOTIFICATION_MQTT_ERROR',
-                    topic: MQTT_NOTIFICATION_TOPIC,
+                    topic,
                     deviceId: payload.deviceId,
                     property: payload.property,
                     message: err.message
@@ -70,7 +71,7 @@ export class NotificationDispatchService {
             } else {
                 $log.debug({
                     event: 'NOTIFICATION_MQTT_SENT',
-                    topic: MQTT_NOTIFICATION_TOPIC,
+                    topic,
                     deviceId: payload.deviceId,
                     property: payload.property
                 });

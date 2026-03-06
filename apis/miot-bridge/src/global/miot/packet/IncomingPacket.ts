@@ -77,8 +77,6 @@ export class IncomingPacket extends BasePacket {
         };
     }
 
-    // ─── Private ─────────────────────────────────────────────
-
     private parseAndDecrypt(msg: Buffer): Buffer | null {
         if (msg.length < HEADER_SIZE) {
             throw new Error(`Packet too short: ${msg.length} bytes`);

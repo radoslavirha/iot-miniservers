@@ -91,8 +91,6 @@ export class OutgoingPacket extends BasePacket {
             .join('');
     }
 
-    // ─── Private ─────────────────────────────────────────────
-
     private buildCommandPacket(): Buffer {
         if (!this.token || !this.tokenKey || !this.tokenIV) {
             throw new Error('Token is required to send command packets');
