@@ -7,7 +7,9 @@ import { APIVersion } from './global/models/APIVersion.enum.js';
 import { ObjectUtils } from '@radoslavirha/utils';
 import './global/providers/index.js';
 import './global/services/UdpListenerService.js';
+import './global/services/MqttListenerService.js';
 import './v1/services/UdpCommandHandler.js';
+import './v1/services/MqttCommandHandler.js';
 
 @Configuration({
     ...getServerDefaultConfig(),

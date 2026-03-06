@@ -117,8 +117,4 @@ We also need internal cache for SimplifiedMiotSpec (Maybe we can optimize the si
 
 ## Phase 8
 
-MQTT support
-
-## Phase 9
-
 Optional (server configuration) MongoDB integration and replacement of JSON cache.

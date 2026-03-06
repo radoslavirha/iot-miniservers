@@ -1,9 +1,12 @@
 import { createSocket } from 'dgram';
-import { Service, Scope, ProviderScope } from '@tsed/di';
+import { Inject, Service, Scope, ProviderScope } from '@tsed/di';
 import { $log } from '@tsed/logger';
 import { CommonUtils } from '@radoslavirha/utils';
+import type { MqttClient } from 'mqtt';
 import type { PropertyChangeEvent } from '../models/PropertyChangeEvent.js';
 import { NotificationPayload } from '../models/NotificationPayload.js';
+import { MqttClientProvider } from '../providers/MqttClientProvider.js';
+import { MQTT_NOTIFICATION_TOPIC } from './MqttCommandRouter.js';
 import { ConfigService } from './ConfigService.js';
 
 /**
@@ -18,7 +21,10 @@ import { ConfigService } from './ConfigService.js';
 @Service()
 @Scope(ProviderScope.SINGLETON)
 export class NotificationDispatchService {
-    constructor(private readonly configService: ConfigService) {}
+    constructor(
+        private readonly configService: ConfigService,
+        @Inject(MqttClientProvider) private readonly mqttClient: MqttClient | null
+    ) {}
 
     /**
      * Receives a property-value observation and forwards it to all enabled
@@ -32,7 +38,9 @@ export class NotificationDispatchService {
         });
 
         const config = this.configService.config.notifications;
-        if (!config) return;
+        if (!config) {
+            return;
+        }
 
         if (config.http?.enabled && config.http.address) {
             void this.sendHttp(config.http.address, payload);
@@ -41,9 +49,34 @@ export class NotificationDispatchService {
         if (config.udp?.enabled && config.udp.address) {
             void this.sendUdp(config.udp.address, payload);
         }
+
+        if (config.mqtt?.enabled && this.mqttClient) {
+            this.sendMqtt(payload);
+        }
     }
 
     // ─── Private ─────────────────────────────────────────────
+
+    private sendMqtt(payload: NotificationPayload): void {
+        this.mqttClient!.publish(MQTT_NOTIFICATION_TOPIC, JSON.stringify(payload), { qos: 1 }, (err) => {
+            if (err) {
+                $log.warn({
+                    event: 'NOTIFICATION_MQTT_ERROR',
+                    topic: MQTT_NOTIFICATION_TOPIC,
+                    deviceId: payload.deviceId,
+                    property: payload.property,
+                    message: err.message
+                });
+            } else {
+                $log.debug({
+                    event: 'NOTIFICATION_MQTT_SENT',
+                    topic: MQTT_NOTIFICATION_TOPIC,
+                    deviceId: payload.deviceId,
+                    property: payload.property
+                });
+            }
+        });
+    }
 
     private async sendHttp(address: string, payload: NotificationPayload): Promise<void> {
         try {
