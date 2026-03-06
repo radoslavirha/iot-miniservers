@@ -1,5 +1,11 @@
 # miot-bridge
 
+## 0.3.1
+
+### Patch Changes
+
+- [`a2c282c`](https://github.com/radoslavirha/iot-miniservers/commit/a2c282cca72175b94673d0bb5e45dc9f04bd0724) Thanks [@radoslavirha](https://github.com/radoslavirha)! - configurable MQTT topic prefix
+
 ## 0.3.0
 
 ### Minor Changes
