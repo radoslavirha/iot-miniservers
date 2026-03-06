@@ -17,6 +17,9 @@ import { NotificationDispatchService } from './NotificationDispatchService.js';
 /** Per-key result returned by {@link DeviceCommandService.getProperties}. */
 export type KeyedPropertyResult = GetPropertiesResult & { key: string };
 
+/** Bulk result returned by {@link DeviceCommandService.getProperties}. */
+export type GetPropertiesResponse = { miotDeviceId: number; results: KeyedPropertyResult[] };
+
 /** Strongly-typed discriminated union of a validated, spec-resolved command. */
 type ResolvedCommand =
     | { operation: DeviceCommandOperation.GetProperty; property: MiotProperty }
@@ -52,7 +55,7 @@ export class DeviceCommandService {
      * Uses the same stamp-refresh + retry logic as {@link execute}.
      * Unresolvable keys are silently omitted from the result.
      */
-    async getProperties(storageId: string, keys: string[]): Promise<KeyedPropertyResult[]> {
+    async getProperties(storageId: string, keys: string[]): Promise<GetPropertiesResponse> {
         const device = await this.deviceStorageService.getById(storageId);
         if (!device) throw new NotFound(`Device ${storageId} not found.`);
 
@@ -62,19 +65,21 @@ export class DeviceCommandService {
             const property = spec.properties.get(key);
             if (property) props.push({ key, siid: property.siid, piid: property.piid });
         }
-        if (!props.length) return [];
+        if (!props.length) return { miotDeviceId: device.deviceId, results: [] };
 
         const coords = props.map(p => ({ siid: p.siid, piid: p.piid }));
-        const results = await this.runWithStamp(
+        const rawResults = await this.runWithStamp(
             device,
             stamp => this.miotDeviceClient.getProperties(device.address, device.token, device.deviceId, stamp, coords)
                 .then(r => r.results)
         );
 
-        return props.map(p => {
-            const r = results.find(x => x.siid === p.siid && x.piid === p.piid);
+        const results = props.map(p => {
+            const r = rawResults.find(x => x.siid === p.siid && x.piid === p.piid);
             return { key: p.key, siid: p.siid, piid: p.piid, value: r?.value, code: r?.code ?? -1 };
         });
+
+        return { miotDeviceId: device.deviceId, results };
     }
 
     async execute(request: DeviceCommandRequest): Promise<CommandResponseModel> {
@@ -94,6 +99,7 @@ export class DeviceCommandService {
         if (resolved.operation === DeviceCommandOperation.GetProperty) {
             this.notificationDispatch.receive({
                 deviceId: device.id,
+                miotDeviceId: device.deviceId,
                 property: request.command,
                 oldValue: undefined,
                 newValue: value,
@@ -102,6 +108,7 @@ export class DeviceCommandService {
         } else if (resolved.operation === DeviceCommandOperation.SetProperty) {
             this.notificationDispatch.receive({
                 deviceId: device.id,
+                miotDeviceId: device.deviceId,
                 property: request.command,
                 oldValue: undefined, // We don't have the old value here, but it could be fetched if needed
                 newValue: request.value,

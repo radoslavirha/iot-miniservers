@@ -7,10 +7,10 @@ import { AdditionalProperties, Description, Example, Property, Required } from '
 @AdditionalProperties(false)
 export class NotificationPayload {
     @Required()
-    @Property(String)
-    @Description('Application-level device ID (UUID v4).')
-    @Example('a1b2c3d4-e5f6-7890-abcd-ef1234567890')
-    public deviceId: string;
+    @Property(Number)
+    @Description('Xiaomi device ID.')
+    @Example(1141132187)
+    public deviceId: number;
 
     @Required()
     @Property(String)

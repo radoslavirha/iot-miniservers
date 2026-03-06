@@ -153,7 +153,7 @@ export class DevicePropertyPollerService extends EventEmitter implements OnInit,
         }
 
         try {
-            const results = await this.deviceCommandService.getProperties(deviceId, properties);
+            const { miotDeviceId, results } = await this.deviceCommandService.getProperties(deviceId, properties);
 
             const config = this.configService.config.polling!;
             const now = Date.now();
@@ -169,6 +169,7 @@ export class DevicePropertyPollerService extends EventEmitter implements OnInit,
                     this._lastValues.set(cacheKey, newValue);
                     this.emit(PROPERTY_CHANGED, {
                         deviceId,
+                        miotDeviceId,
                         property: key,
                         oldValue: hasChanged ? oldValue : newValue,
                         newValue,

@@ -32,7 +32,7 @@ export class NotificationDispatchService {
      */
     public receive(event: PropertyChangeEvent): void {
         const payload = CommonUtils.buildModel(NotificationPayload, {
-            deviceId: event.deviceId,
+            deviceId: event.miotDeviceId,
             property: event.property,
             value: event.newValue
         });

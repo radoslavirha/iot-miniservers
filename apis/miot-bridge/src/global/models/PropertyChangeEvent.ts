@@ -8,6 +8,8 @@
 export interface PropertyChangeEvent {
     /** Application-level device ID (UUID v4). */
     deviceId: string;
+    /** Xiaomi device ID. */
+    miotDeviceId: number;
     /** Miot spec composite property key (e.g. `vacuum:mode`). */
     property: string;
     /** Value last seen before this update. `undefined` on the first observation. */
