@@ -1,5 +1,11 @@
 # miot-bridge
 
+## 0.4.0
+
+### Minor Changes
+
+- [`ebdfa57`](https://github.com/radoslavirha/iot-miniservers/commit/ebdfa57944736c9cd2bd61fd4750aff5f9331c15) Thanks [@radoslavirha](https://github.com/radoslavirha)! - Remove API versioning, not needed
+
 ## 0.3.1
 
 ### Patch Changes
