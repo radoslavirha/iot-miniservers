@@ -4,8 +4,8 @@ import { SwaggerConfig, SwaggerDocumentConfig, SwaggerProvider } from '@radoslav
 import { CommonUtils, ObjectUtils } from '@radoslavirha/utils';
 import { Server } from './Server.js';
 import { injector } from '@tsed/di';
-import { ConfigService } from './global/services/ConfigService.js';
-import { APIVersion } from './global/models/APIVersion.enum.js';
+import { ConfigService } from './services/ConfigService.js';
+import { SwaggerDocs } from './models/SwaggerDocs.enum.js';
 
 const SIG_EVENTS = [
     'beforeExit',
@@ -30,9 +30,9 @@ try {
         title: config.api.service,
         version: config.api.version,
         description: config.api.description,
-        documents: ObjectUtils.values(APIVersion).map((version) =>
+        documents: ObjectUtils.values(SwaggerDocs).map((doc) =>
             CommonUtils.buildModel(SwaggerDocumentConfig, {
-                docs: version,
+                docs: doc,
                 security: []
             })
         ),

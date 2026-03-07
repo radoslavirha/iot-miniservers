@@ -2,20 +2,16 @@ import { SwaggerController } from '@radoslavirha/tsed-swagger';
 import { getServerDefaultConfig } from '@radoslavirha/tsed-configuration';
 import { BaseServer } from '@radoslavirha/tsed-platform';
 import { Configuration } from '@tsed/di';
-import * as restV1 from './v1/controllers/index.js';
-import { APIVersion } from './global/models/APIVersion.enum.js';
+import * as rest from './controllers/index.js';
 import { ObjectUtils } from '@radoslavirha/utils';
-import './global/providers/index.js';
-import './global/services/UdpListenerService.js';
-import './global/services/MqttListenerService.js';
-import './v1/services/UdpCommandHandler.js';
-import './v1/services/MqttCommandHandler.js';
+import './providers/index.js';
+import './services/UdpListenerService.js';
+import './services/MqttListenerService.js';
 
 @Configuration({
     ...getServerDefaultConfig(),
     mount: {
-        '/': [SwaggerController],
-        [`/${APIVersion.V1}`]: [...ObjectUtils.values(restV1)]
+        '/': [SwaggerController, ...ObjectUtils.values(rest)]
     }
 })
 export class Server extends BaseServer {
