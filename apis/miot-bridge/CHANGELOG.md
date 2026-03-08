@@ -1,5 +1,11 @@
 # miot-bridge
 
+## 0.6.0
+
+### Minor Changes
+
+- [`c8b9b54`](https://github.com/radoslavirha/iot-miniservers/commit/c8b9b54b5fd4a25850420a5ea67b00d2beca7b2b) Thanks [@radoslavirha](https://github.com/radoslavirha)! - MongoDB connection
+
 ## 0.5.0
 
 ### Minor Changes
