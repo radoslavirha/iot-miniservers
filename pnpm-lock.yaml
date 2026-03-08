@@ -227,6 +227,9 @@ importers:
       '@radoslavirha/tsed-configuration':
         specifier: ^0.5.0
         version: 0.5.0(@tsed/core@8.25.1)(@tsed/di@8.25.1(@tsed/core@8.25.1)(@tsed/hooks@8.25.1)(@tsed/logger@8.0.4))(@tsed/exceptions@8.25.1(@tsed/core@8.25.1))(@tsed/json-mapper@8.25.1(@tsed/core@8.25.1)(@tsed/schema@8.25.1(@tsed/core@8.25.1)(@tsed/hooks@8.25.1)(@tsed/openspec@8.25.1)))(@tsed/schema@8.25.1(@tsed/core@8.25.1)(@tsed/hooks@8.25.1)(@tsed/openspec@8.25.1))(ajv-errors@3.0.0(ajv@8.18.0))(zod@4.3.6)
+      '@radoslavirha/tsed-mongoose':
+        specifier: ^3.0.2
+        version: 3.0.2(713520c66ff7d821ed1544388d57fbd1)
       '@radoslavirha/tsed-platform':
         specifier: ^0.3.3
         version: 0.3.3(d26d10330609e69424188368c90f2387)
@@ -266,6 +269,9 @@ importers:
       '@tsed/logger':
         specifier: ^8.0.4
         version: 8.0.4
+      '@tsed/mongoose':
+        specifier: ^8.19.4
+        version: 8.25.1(@tsed/ajv@8.25.1(@tsed/core@8.25.1)(@tsed/di@8.25.1(@tsed/core@8.25.1)(@tsed/hooks@8.25.1)(@tsed/logger@8.0.4))(@tsed/exceptions@8.25.1(@tsed/core@8.25.1))(@tsed/schema@8.25.1(@tsed/core@8.25.1)(@tsed/hooks@8.25.1)(@tsed/openspec@8.25.1))(ajv-errors@3.0.0(ajv@8.18.0))(ajv@8.18.0))(@tsed/core@8.25.1)(@tsed/di@8.25.1(@tsed/core@8.25.1)(@tsed/hooks@8.25.1)(@tsed/logger@8.0.4))(@tsed/json-mapper@8.25.1(@tsed/core@8.25.1)(@tsed/schema@8.25.1(@tsed/core@8.25.1)(@tsed/hooks@8.25.1)(@tsed/openspec@8.25.1)))(@tsed/logger@8.0.4)(@tsed/schema@8.25.1(@tsed/core@8.25.1)(@tsed/hooks@8.25.1)(@tsed/openspec@8.25.1))(mongoose@9.2.4(socks@2.8.7))
       '@tsed/openspec':
         specifier: ^8.19.4
         version: 8.25.1
@@ -332,6 +338,9 @@ importers:
       method-override:
         specifier: ^3.0.0
         version: 3.0.0
+      mongoose:
+        specifier: ^9.2.1
+        version: 9.2.4(socks@2.8.7)
       mqtt:
         specifier: ^5.15.0
         version: 5.15.0
@@ -921,6 +930,9 @@ packages:
   '@manypkg/get-packages@1.1.3':
     resolution: {integrity: sha512-fo+QhuU3qE/2TQMQmbVMqaQ6EWbMhi4ABWP+O4AM1NqPBuy0OrApV5LO6BrrgnhtAHS2NH6RrVk9OL181tTi8A==}
 
+  '@mongodb-js/saslprep@1.4.6':
+    resolution: {integrity: sha512-y+x3H1xBZd38n10NZF/rEBlvDOOMQ6LKUTHqr8R9VkJ+mmQOYtJFxIlkkK8fZrtOiL6VixbOBWMbZGBdal3Z1g==}
+
   '@napi-rs/nice-android-arm-eabi@1.1.1':
     resolution: {integrity: sha512-kjirL3N6TnRPv5iuHw36wnucNqXAO46dzK9oPb0wj076R5Xm8PfUVA9nAFB5ZNMmfJQJVKACAPd/Z2KYMppthw==}
     engines: {node: '>= 10'}
@@ -1256,6 +1268,17 @@ packages:
       '@tsed/json-mapper': 8.25.1
       '@tsed/schema': 8.25.1
       zod: 4.3.6
+
+  '@radoslavirha/tsed-mongoose@3.0.2':
+    resolution: {integrity: sha512-ynHm7KlFMeMhLYmkxcfP0RmC2ODJgIiF/RkfEE34KQRzMWxyy3Jcv9I/2MD+w0ltdqoey1UWdMsTCcLfPSLFIQ==, tarball: https://npm.pkg.github.com/download/@radoslavirha/tsed-mongoose/3.0.2/755356aa46500049bbe412c10b46f301b8e433bb}
+    engines: {node: '>= 24', pnpm: '>= 10'}
+    os: [darwin, linux]
+    peerDependencies:
+      '@radoslavirha/tsed-common': 0.4.2
+      '@tsed/core': 8.25.1
+      '@tsed/mongoose': 8.25.1
+      '@tsed/schema': 8.25.1
+      mongoose: 9.2.1
 
   '@radoslavirha/tsed-platform@0.3.3':
     resolution: {integrity: sha512-Dej+LY/VFYVDcfty5xJanno5W3tKWbhHAee6bgir19Mf2lTLe3k+RtbweBLdloSKNr7KrxHIih/nnyOilSDiRw==, tarball: https://npm.pkg.github.com/download/@radoslavirha/tsed-platform/0.3.3/7bb5b908de55b1d831156f6ab02a06e5e330706d}
@@ -1627,6 +1650,17 @@ packages:
   '@tsed/logger@8.0.4':
     resolution: {integrity: sha512-Ml7oqulFu2v2gZKly39zhpXVsi8G7ybu1NObn+oBI9CYDXqEyxyLbIzp3DB2kMo641ywrwIvdtq7j9d8xTtl9Q==}
 
+  '@tsed/mongoose@8.25.1':
+    resolution: {integrity: sha512-IGv4Ro0PZcTNmpk1+Q8zniOk24E9eGxEPN/tp+20VMNac3tal/NrZqjREbVBFxgvwJhw5ejnG1WTH43aGAGrwA==}
+    peerDependencies:
+      '@tsed/ajv': '>=8.0.0'
+      '@tsed/core': '>=8.0.0'
+      '@tsed/di': '>=8.0.0'
+      '@tsed/json-mapper': '>=8.0.0'
+      '@tsed/logger': '>=8.0.0'
+      '@tsed/schema': '>=8.0.0'
+      mongoose: '>=6.0.0'
+
   '@tsed/normalize-path@8.25.1':
     resolution: {integrity: sha512-I/WYSqzhFDP8hcJkj/Hxzy5KMk4iI9tYNuvQtCgSK6+6XPWV8B025oeaoOs2wdMY3jzZviywQSXKiexf3HgpXw==}
 
@@ -1860,6 +1894,12 @@ packages:
 
   '@types/supertest@6.0.3':
     resolution: {integrity: sha512-8WzXq62EXFhJ7QsH3Ocb/iKQ/Ty9ZVWnVzoTKc9tyyFRRF3a74Tk2+TLFgaFFw364Ere+npzHKEJ6ga2LzIL7w==}
+
+  '@types/webidl-conversions@7.0.3':
+    resolution: {integrity: sha512-CiJJvcRtIgzadHCYXw7dqEnMNRjhGZlYK05Mj9OyktqV8uVT8fD2BFOB7S1uwBE3Kj2Z+4UyPmFw/Ixgw/LAlA==}
+
+  '@types/whatwg-url@13.0.0':
+    resolution: {integrity: sha512-N8WXpbE6Wgri7KUSvrmQcqrMllKZ9uxkYWMt+mCSGwNc0Hsw9VQTW7ApqI4XNrx6/SaM2QQJCzMPDEXE058s+Q==}
 
   '@types/ws@8.18.1':
     resolution: {integrity: sha512-ThVF6DCVhA8kUGy+aazFQ4kXQ7E1Ty7A3ypFOe0IcJV8O/M511G99AW24irKrW56Wt44yG9+ij8FaqoBGkuBXg==}
@@ -2253,6 +2293,10 @@ packages:
 
   broker-factory@3.1.13:
     resolution: {integrity: sha512-H2VALe31mEtO/SRcNp4cUU5BAm1biwhc/JaF77AigUuni/1YT0FLCJfbUxwIEs9y6Kssjk2fmXgf+Y9ALvmKlw==}
+
+  bson@7.2.0:
+    resolution: {integrity: sha512-YCEo7KjMlbNlyHhz7zAZNDpIpQbd+wOEHJYezv0nMYTn4x31eIUM2yomNNubclAt63dObUzKHWsBLJ9QcZNSnQ==}
+    engines: {node: '>=20.19.0'}
 
   buffer-crc32@0.2.13:
     resolution: {integrity: sha512-VO9Ht/+p3SN7SKWqcrgEzjGbRSJYTx+Q1pTQC0wrWqHx0vpJraQ6GtHx8tvcg1rlK1byhU5gccxgOgj7B0TDkQ==}
@@ -3017,6 +3061,10 @@ packages:
   jsonfile@4.0.0:
     resolution: {integrity: sha512-m6F1R3z8jjlf2imQHS2Qez5sjKWQzbuuhuJ/FKYFRZvPE3PuHcSMVZzfsLhGVOkfd20obL5SWEBew5ShlquNxg==}
 
+  kareem@3.2.0:
+    resolution: {integrity: sha512-VS8MWZz/cT+SqBCpVfNN4zoVz5VskR3N4+sTmUXme55e9avQHntpwpNq0yjnosISXqwJ3AQVjlbI4Dyzv//JtA==}
+    engines: {node: '>=18.0.0'}
+
   keyv@4.5.4:
     resolution: {integrity: sha512-oxVHkHR/EJf2CNXnWxRLW6mg7JyCCUcG0DtEGmL2ctUo1PNTin1PUil+r/+4r5MpVgC/fn1kjsx7mjSujKqIpw==}
 
@@ -3084,6 +3132,9 @@ packages:
   media-typer@1.1.0:
     resolution: {integrity: sha512-aisnrDP4GNe06UcKFnV5bfMNPBUw4jsLGaWwWfnH3v02GnBuXX2MCVn5RbrWo0j3pczUilYblq7fQ7Nw2t5XKw==}
     engines: {node: '>= 0.8'}
+
+  memory-pager@1.5.0:
+    resolution: {integrity: sha512-ZS4Bp4r/Zoeq6+NLJpP+0Zzm0pR8whtGPf1XExKLJBAczGMnSi3It14OiNCStjQjM6NU1okjQGSxgEZN8eBYKg==}
 
   merge-descriptors@2.0.0:
     resolution: {integrity: sha512-Snk314V5ayFLhp3fkUREub6WtjBfPdCPY1Ln8/8munuLuiYhsABgBVWsozAG+MWMbVEvcdcpbi9R7ww22l9Q3g==}
@@ -3159,6 +3210,45 @@ packages:
   minimist@1.2.8:
     resolution: {integrity: sha512-2yyAR8qBkN3YuheJanUpWC5U3bb5osDywNB8RzDVlDwDHbocAJveqqj1u8+SVD7jkWT4yvsHCpWqqWqAxb0zCA==}
 
+  mongodb-connection-string-url@7.0.1:
+    resolution: {integrity: sha512-h0AZ9A7IDVwwHyMxmdMXKy+9oNlF0zFoahHiX3vQ8e3KFcSP3VmsmfvtRSuLPxmyv2vjIDxqty8smTgie/SNRQ==}
+    engines: {node: '>=20.19.0'}
+
+  mongodb@7.0.0:
+    resolution: {integrity: sha512-vG/A5cQrvGGvZm2mTnCSz1LUcbOPl83hfB6bxULKQ8oFZauyox/2xbZOoGNl+64m8VBrETkdGCDBdOsCr3F3jg==}
+    engines: {node: '>=20.19.0'}
+    peerDependencies:
+      '@aws-sdk/credential-providers': ^3.806.0
+      '@mongodb-js/zstd': ^7.0.0
+      gcp-metadata: ^7.0.1
+      kerberos: ^7.0.0
+      mongodb-client-encryption: '>=7.0.0 <7.1.0'
+      snappy: ^7.3.2
+      socks: ^2.8.6
+    peerDependenciesMeta:
+      '@aws-sdk/credential-providers':
+        optional: true
+      '@mongodb-js/zstd':
+        optional: true
+      gcp-metadata:
+        optional: true
+      kerberos:
+        optional: true
+      mongodb-client-encryption:
+        optional: true
+      snappy:
+        optional: true
+      socks:
+        optional: true
+
+  mongoose@9.2.4:
+    resolution: {integrity: sha512-XNh+jiztVMddDFDCv8TWxVxi/rGx+0FfsK3Ftj6hcYzEmhTcos2uC144OJRmUFPHSu3hJr6Pgip++Ab2+Da35Q==}
+    engines: {node: '>=20.19.0'}
+
+  mpath@0.9.0:
+    resolution: {integrity: sha512-ikJRQTk8hw5DEoFVxHG1Gn9T/xcjtdnOKIU1JTmGjZZlg9LST2mBLmcX3/ICIbgJydT2GOc15RnNy5mHmzfSew==}
+    engines: {node: '>=4.0.0'}
+
   mqtt-packet@9.0.2:
     resolution: {integrity: sha512-MvIY0B8/qjq7bKxdN1eD+nrljoeaai+qjLJgfRn3TiMuz0pamsIWY2bFODPZMSNmabsLANXsLl4EMoWvlaTZWA==}
 
@@ -3166,6 +3256,10 @@ packages:
     resolution: {integrity: sha512-KC+wAssYk83Qu5bT8YDzDYgUJxPhbLeVsDvpY2QvL28PnXYJzC2WkKruyMUgBAZaQ7h9lo9k2g4neRNUUxzgMw==}
     engines: {node: '>=16.0.0'}
     hasBin: true
+
+  mquery@6.0.0:
+    resolution: {integrity: sha512-b2KQNsmgtkscfeDgkYMcWGn9vZI9YoXh802VDEwE6qc50zxBFQ0Oo8ROkawbPAsXCY1/Z1yp0MagqsZStPWJjw==}
+    engines: {node: '>=20.19.0'}
 
   mri@1.2.0:
     resolution: {integrity: sha512-tzzskb3bG8LvYGFF/mDTpq3jpI6Q9wc3LEmBaghu+DdCssd1FakN7Bc0hVNmEyGq1bq3RgfkCb3cmQLpNPOroA==}
@@ -3550,6 +3644,9 @@ packages:
     resolution: {integrity: sha512-ZX99e6tRweoUXqR+VBrslhda51Nh5MTQwou5tnUDgbtyM0dBgmhEDtWGP/xbKn6hqfPRHujUNwz5fy/wbbhnpw==}
     engines: {node: '>= 0.4'}
 
+  sift@17.1.3:
+    resolution: {integrity: sha512-Rtlj66/b0ICeFzYTuNvX/EF1igRbbnGSvEyT79McoZa/DeGhMyC5pWKOEsZKnpkqtSeovd5FL/bjHWC3CIIvCQ==}
+
   siginfo@2.0.0:
     resolution: {integrity: sha512-ybx0WO1/8bSBLEWXZvEd7gMW3Sn3JFlW3TvX1nREbDLRNQNaeNN8WK0meBwPdAaOI7TtRRRJn/Es1zhrrCHu7g==}
 
@@ -3598,6 +3695,9 @@ packages:
   source-map@0.7.6:
     resolution: {integrity: sha512-i5uvt8C3ikiWeNZSVZNWcfZPItFQOsYTUAOkcUPGd8DqDy1uOUikjt5dG+uRlwyvR108Fb9DOd4GvXfT0N2/uQ==}
     engines: {node: '>= 12'}
+
+  sparse-bitfield@3.0.3:
+    resolution: {integrity: sha512-kvzhi7vqKTfkh0PZU+2D2PIllw2ymqJKujUcyPMd9Y75Nv4nPbGJZXNhxsgdQab2BmlDct1YnfQCguEvHr7VsQ==}
 
   spawndamnit@3.0.1:
     resolution: {integrity: sha512-MmnduQUuHCoFckZoWnXsTg7JaiLBJrKFj9UI2MbRPGaJeVpsLcVBu6P/IGZovziM/YBsellCmsprgNA+w0CzVg==}
@@ -3736,6 +3836,10 @@ packages:
 
   tr46@0.0.3:
     resolution: {integrity: sha512-N3WMsuqV66lT30CrXNbEjx4GEwlow3v6rr4mCcv6prnfwhS01rkgyFdjPNBYd9br7LpXV1+Emh01fHnq2Gdgrw==}
+
+  tr46@5.1.1:
+    resolution: {integrity: sha512-hdF5ZgjTqgAntKkklYw0R03MG2x/bSzTtkxmIRw/sTNV8YXsCJ1tfLAX23lhxhHJlEf3CRCOCGGWw3vI3GaSPw==}
+    engines: {node: '>=18'}
 
   ts-api-utils@2.4.0:
     resolution: {integrity: sha512-3TaVTaAv2gTiMB35i3FiGJaRfwb3Pyn/j3m/bfAvGe8FB7CF6u+LMYqYlDh7reQf7UNvoTvdfAqHGmPGOSsPmA==}
@@ -3935,8 +4039,16 @@ packages:
   webidl-conversions@3.0.1:
     resolution: {integrity: sha512-2JAn3z8AR6rjK8Sm8orRC0h/bcl/DqL7tRPdGZ4I1CjdF+EaMLmYxBHyXuKL849eucPFhvBoxMsflfOb8kxaeQ==}
 
+  webidl-conversions@7.0.0:
+    resolution: {integrity: sha512-VwddBukDzu71offAQR975unBIGqfKZpM+8ZX6ySk8nYhVoo5CYaZyzt3YBvYtRtO+aoGlqxPg/B87NGVZ/fu6g==}
+    engines: {node: '>=12'}
+
   webpack-virtual-modules@0.6.2:
     resolution: {integrity: sha512-66/V2i5hQanC51vBQKPH4aI8NMAcBW59FVBs+rC7eGHupMyfn34q7rZIE+ETlJ+XTevqfUhVVBgSUNSW2flEUQ==}
+
+  whatwg-url@14.2.0:
+    resolution: {integrity: sha512-De72GdQZzNTUBBChsXueQUnPKDkg/5A5zp7pFDuQAj5UFoENpiACU0wlCvzpAGnTkj++ihpKwKyYewn/XNUbKw==}
+    engines: {node: '>=18'}
 
   whatwg-url@5.0.0:
     resolution: {integrity: sha512-saE57nupxk6v3HY35+jzBwYa0rKSy0XR8JSxZPwgLr7ys0IBzhGviA1/TUGJLmSVqs8pb9AnvICXEuOHLprYTw==}
@@ -4503,6 +4615,10 @@ snapshots:
       globby: 11.1.0
       read-yaml-file: 1.1.0
 
+  '@mongodb-js/saslprep@1.4.6':
+    dependencies:
+      sparse-bitfield: 3.0.3
+
   '@napi-rs/nice-android-arm-eabi@1.1.1':
     optional: true
 
@@ -4773,6 +4889,16 @@ snapshots:
     transitivePeerDependencies:
       - '@tsed/exceptions'
       - ajv-errors
+
+  '@radoslavirha/tsed-mongoose@3.0.2(713520c66ff7d821ed1544388d57fbd1)':
+    dependencies:
+      '@radoslavirha/tsed-common': 0.4.2(@tsed/core@8.25.1)(@tsed/di@8.25.1(@tsed/core@8.25.1)(@tsed/hooks@8.25.1)(@tsed/logger@8.0.4))(@tsed/exceptions@8.25.1(@tsed/core@8.25.1))(@tsed/json-mapper@8.25.1(@tsed/core@8.25.1)(@tsed/schema@8.25.1(@tsed/core@8.25.1)(@tsed/hooks@8.25.1)(@tsed/openspec@8.25.1)))(@tsed/schema@8.25.1(@tsed/core@8.25.1)(@tsed/hooks@8.25.1)(@tsed/openspec@8.25.1))(ajv-errors@3.0.0(ajv@8.18.0))(zod@4.3.6)
+      '@radoslavirha/utils': 0.5.0
+      '@swc/helpers': 0.5.18
+      '@tsed/core': 8.25.1
+      '@tsed/mongoose': 8.25.1(@tsed/ajv@8.25.1(@tsed/core@8.25.1)(@tsed/di@8.25.1(@tsed/core@8.25.1)(@tsed/hooks@8.25.1)(@tsed/logger@8.0.4))(@tsed/exceptions@8.25.1(@tsed/core@8.25.1))(@tsed/schema@8.25.1(@tsed/core@8.25.1)(@tsed/hooks@8.25.1)(@tsed/openspec@8.25.1))(ajv-errors@3.0.0(ajv@8.18.0))(ajv@8.18.0))(@tsed/core@8.25.1)(@tsed/di@8.25.1(@tsed/core@8.25.1)(@tsed/hooks@8.25.1)(@tsed/logger@8.0.4))(@tsed/json-mapper@8.25.1(@tsed/core@8.25.1)(@tsed/schema@8.25.1(@tsed/core@8.25.1)(@tsed/hooks@8.25.1)(@tsed/openspec@8.25.1)))(@tsed/logger@8.0.4)(@tsed/schema@8.25.1(@tsed/core@8.25.1)(@tsed/hooks@8.25.1)(@tsed/openspec@8.25.1))(mongoose@9.2.4(socks@2.8.7))
+      '@tsed/schema': 8.25.1(@tsed/core@8.25.1)(@tsed/hooks@8.25.1)(@tsed/openspec@8.25.1)
+      mongoose: 9.2.4(socks@2.8.7)
 
   '@radoslavirha/tsed-platform@0.3.3(d26d10330609e69424188368c90f2387)':
     dependencies:
@@ -5109,6 +5235,18 @@ snapshots:
       semver: 7.7.3
       tslib: 2.8.1
 
+  '@tsed/mongoose@8.25.1(@tsed/ajv@8.25.1(@tsed/core@8.25.1)(@tsed/di@8.25.1(@tsed/core@8.25.1)(@tsed/hooks@8.25.1)(@tsed/logger@8.0.4))(@tsed/exceptions@8.25.1(@tsed/core@8.25.1))(@tsed/schema@8.25.1(@tsed/core@8.25.1)(@tsed/hooks@8.25.1)(@tsed/openspec@8.25.1))(ajv-errors@3.0.0(ajv@8.18.0))(ajv@8.18.0))(@tsed/core@8.25.1)(@tsed/di@8.25.1(@tsed/core@8.25.1)(@tsed/hooks@8.25.1)(@tsed/logger@8.0.4))(@tsed/json-mapper@8.25.1(@tsed/core@8.25.1)(@tsed/schema@8.25.1(@tsed/core@8.25.1)(@tsed/hooks@8.25.1)(@tsed/openspec@8.25.1)))(@tsed/logger@8.0.4)(@tsed/schema@8.25.1(@tsed/core@8.25.1)(@tsed/hooks@8.25.1)(@tsed/openspec@8.25.1))(mongoose@9.2.4(socks@2.8.7))':
+    dependencies:
+      '@tsed/ajv': 8.25.1(@tsed/core@8.25.1)(@tsed/di@8.25.1(@tsed/core@8.25.1)(@tsed/hooks@8.25.1)(@tsed/logger@8.0.4))(@tsed/exceptions@8.25.1(@tsed/core@8.25.1))(@tsed/schema@8.25.1(@tsed/core@8.25.1)(@tsed/hooks@8.25.1)(@tsed/openspec@8.25.1))(ajv-errors@3.0.0(ajv@8.18.0))(ajv@8.18.0)
+      '@tsed/core': 8.25.1
+      '@tsed/di': 8.25.1(@tsed/core@8.25.1)(@tsed/hooks@8.25.1)(@tsed/logger@8.0.4)
+      '@tsed/json-mapper': 8.25.1(@tsed/core@8.25.1)(@tsed/schema@8.25.1(@tsed/core@8.25.1)(@tsed/hooks@8.25.1)(@tsed/openspec@8.25.1))
+      '@tsed/logger': 8.0.4
+      '@tsed/schema': 8.25.1(@tsed/core@8.25.1)(@tsed/hooks@8.25.1)(@tsed/openspec@8.25.1)
+      change-case: 5.4.4
+      mongoose: 9.2.4(socks@2.8.7)
+      tslib: 2.7.0
+
   '@tsed/normalize-path@8.25.1':
     dependencies:
       normalize-path: 3.0.0
@@ -5382,6 +5520,12 @@ snapshots:
     dependencies:
       '@types/methods': 1.1.4
       '@types/superagent': 8.1.9
+
+  '@types/webidl-conversions@7.0.3': {}
+
+  '@types/whatwg-url@13.0.0':
+    dependencies:
+      '@types/webidl-conversions': 7.0.3
 
   '@types/ws@8.18.1':
     dependencies:
@@ -5927,6 +6071,8 @@ snapshots:
       fast-unique-numbers: 9.0.26
       tslib: 2.8.1
       worker-factory: 7.0.48
+
+  bson@7.2.0: {}
 
   buffer-crc32@0.2.13: {}
 
@@ -6711,6 +6857,8 @@ snapshots:
     optionalDependencies:
       graceful-fs: 4.2.11
 
+  kareem@3.2.0: {}
+
   keyv@4.5.4:
     dependencies:
       json-buffer: 3.0.1
@@ -6765,6 +6913,8 @@ snapshots:
   media-typer@0.3.0: {}
 
   media-typer@1.1.0: {}
+
+  memory-pager@1.5.0: {}
 
   merge-descriptors@2.0.0: {}
 
@@ -6826,6 +6976,38 @@ snapshots:
 
   minimist@1.2.8: {}
 
+  mongodb-connection-string-url@7.0.1:
+    dependencies:
+      '@types/whatwg-url': 13.0.0
+      whatwg-url: 14.2.0
+
+  mongodb@7.0.0(socks@2.8.7):
+    dependencies:
+      '@mongodb-js/saslprep': 1.4.6
+      bson: 7.2.0
+      mongodb-connection-string-url: 7.0.1
+    optionalDependencies:
+      socks: 2.8.7
+
+  mongoose@9.2.4(socks@2.8.7):
+    dependencies:
+      kareem: 3.2.0
+      mongodb: 7.0.0(socks@2.8.7)
+      mpath: 0.9.0
+      mquery: 6.0.0
+      ms: 2.1.3
+      sift: 17.1.3
+    transitivePeerDependencies:
+      - '@aws-sdk/credential-providers'
+      - '@mongodb-js/zstd'
+      - gcp-metadata
+      - kerberos
+      - mongodb-client-encryption
+      - snappy
+      - socks
+
+  mpath@0.9.0: {}
+
   mqtt-packet@9.0.2:
     dependencies:
       bl: 6.1.6
@@ -6856,6 +7038,8 @@ snapshots:
       - bufferutil
       - supports-color
       - utf-8-validate
+
+  mquery@6.0.0: {}
 
   mri@1.2.0: {}
 
@@ -7294,6 +7478,8 @@ snapshots:
       side-channel-map: 1.0.1
       side-channel-weakmap: 1.0.2
 
+  sift@17.1.3: {}
+
   siginfo@2.0.0: {}
 
   signal-exit@3.0.7: {}
@@ -7331,6 +7517,10 @@ snapshots:
   source-map@0.6.1: {}
 
   source-map@0.7.6: {}
+
+  sparse-bitfield@3.0.3:
+    dependencies:
+      memory-pager: 1.5.0
 
   spawndamnit@3.0.1:
     dependencies:
@@ -7485,6 +7675,10 @@ snapshots:
   touch@3.1.1: {}
 
   tr46@0.0.3: {}
+
+  tr46@5.1.1:
+    dependencies:
+      punycode: 2.3.1
 
   ts-api-utils@2.4.0(typescript@5.9.3):
     dependencies:
@@ -7651,7 +7845,14 @@ snapshots:
 
   webidl-conversions@3.0.1: {}
 
+  webidl-conversions@7.0.0: {}
+
   webpack-virtual-modules@0.6.2: {}
+
+  whatwg-url@14.2.0:
+    dependencies:
+      tr46: 5.1.1
+      webidl-conversions: 7.0.0
 
   whatwg-url@5.0.0:
     dependencies:

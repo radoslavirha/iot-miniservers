@@ -1,15 +1,21 @@
 import { z } from 'zod';
 
+const ConnectionOptionsSchema = z.looseObject({
+    user: z.string().optional().describe('Username for auth.'),
+    pass: z.string().optional().describe('Password for auth.')
+})
+    .describe('Additional MongoDB connection options.');
+
 const MongoEnabledSchema = z.object({
     enabled: z.literal(true),
     url: z.string().describe('MongoDB connection URL.'),
-    connectionOptions: z.record(z.string(), z.unknown()).optional().describe('Additional MongoDB connection options. See https://www.npmjs.com/package/mongodb#options for details.')
+    connectionOptions: ConnectionOptionsSchema.optional()
 });
 
 const MongoDisabledSchema = z.object({
     enabled: z.literal(false).optional(),
     url: z.string().optional(),
-    connectionOptions: z.record(z.string(), z.unknown()).optional().describe('Additional MongoDB connection options. See https://www.npmjs.com/package/mongodb#options for details.')
+    connectionOptions: ConnectionOptionsSchema.optional()
 });
 
 export const MongoConfigSchema = z.union([MongoEnabledSchema, MongoDisabledSchema]);

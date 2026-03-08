@@ -21,6 +21,7 @@
     "@radoslavirha/config-typescript": "^0.3.0",
     "@radoslavirha/tsed-common": "^0.4.2",
     "@radoslavirha/tsed-configuration": "^0.5.0",
+    "@radoslavirha/tsed-mongoose": "^3.0.2",
     "@radoslavirha/tsed-platform": "^0.3.3",
     "@radoslavirha/tsed-swagger": "^4.0.0",
     "@radoslavirha/utils": "^0.5.0",
@@ -34,6 +35,7 @@
     "@tsed/exceptions": "^8.19.4",
     "@tsed/json-mapper": "^8.19.4",
     "@tsed/logger": "^8.0.4",
+    "@tsed/mongoose": "^8.19.4",
     "@tsed/openspec": "^8.19.4",
     "@tsed/platform-cache": "^8.19.4",
     "@tsed/platform-exceptions": "^8.19.4",
@@ -56,6 +58,7 @@
     "dotenv": "^17.2.3",
     "express": "^5.2.1",
     "method-override": "^3.0.0",
+    "mongoose": "^9.2.1",
     "mqtt": "^5.15.0",
     "typescript": "^5.9.3"
   },

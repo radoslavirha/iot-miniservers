@@ -48,7 +48,7 @@ try {
         swagger: new SwaggerProvider(swaggerConfig).config,
         mongoose: ObjectUtils.isEnabled(config.config.mongodb) ? [
             {
-                id: 'miot-bridge',
+                id: 'default',
                 url: config.config.mongodb.url,
                 connectionOptions: config.config.mongodb.connectionOptions
             }
