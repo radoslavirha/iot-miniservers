@@ -41,10 +41,18 @@ try {
         },
         serverUrl: config.api.publicURL
     });
+
     const configuration: ServerConfiguration = {
         ...config.server,
         api: config.api,
-        swagger: new SwaggerProvider(swaggerConfig).config
+        swagger: new SwaggerProvider(swaggerConfig).config,
+        mongoose: ObjectUtils.isEnabled(config.config.mongodb) ? [
+            {
+                id: 'miot-bridge',
+                url: config.config.mongodb.url,
+                connectionOptions: config.config.mongodb.connectionOptions
+            }
+        ] : undefined
     };
 
     const platform = await Platform.bootstrap(Server, configuration);

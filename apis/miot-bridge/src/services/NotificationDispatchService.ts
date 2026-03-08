@@ -1,7 +1,7 @@
 import { createSocket } from 'dgram';
 import { Inject, Service, Scope, ProviderScope } from '@tsed/di';
 import { $log } from '@tsed/logger';
-import { CommonUtils } from '@radoslavirha/utils';
+import { CommonUtils, ObjectUtils } from '@radoslavirha/utils';
 import type { MqttClient } from 'mqtt';
 import type { PropertyChangeEvent } from '../models/PropertyChangeEvent.js';
 import { NotificationPayload } from '../models/NotificationPayload.js';
@@ -38,20 +38,17 @@ export class NotificationDispatchService {
             value: event.newValue
         });
 
-        const config = this.configService.config.notifications;
-        if (!config) {
-            return;
+        const config = this.configService.config;
+
+        if (ObjectUtils.isEnabled(config.http?.notifications)) {
+            void this.sendHttp(config.http.notifications.address, payload);
         }
 
-        if (config.http?.enabled && config.http.address) {
-            void this.sendHttp(config.http.address, payload);
+        if (ObjectUtils.isEnabled(config.udp?.notifications)) {
+            void this.sendUdp(config.udp.notifications.address, payload);
         }
 
-        if (config.udp?.enabled && config.udp.address) {
-            void this.sendUdp(config.udp.address, payload);
-        }
-
-        if (config.mqtt?.enabled && this.mqttClient) {
+        if (ObjectUtils.isEnabled(config.mqtt?.notifications) && this.mqttClient) {
             this.sendMqtt(payload);
         }
     }

@@ -112,9 +112,8 @@ Sending notifications out will be solved later.
 
 ## Phase 7
 
-We need a mechanism to verify spec (fetch new, compare with cached) on server start (maybe cron).
-We also need internal cache for SimplifiedMiotSpec (Maybe we can optimize the size, speed of access).
+MongoDB integration.
 
 ## Phase 8
 
-Optional (server configuration) MongoDB integration and replacement of JSON cache.
+Ensure app is scaleable (redis?).

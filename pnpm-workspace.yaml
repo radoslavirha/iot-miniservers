@@ -11,3 +11,6 @@ onlyBuiltDependencies:
 syncInjectedDepsAfterScripts:
   - build
 injectWorkspacePackages: true
+
+catalog:
+  zod: 4.3.6

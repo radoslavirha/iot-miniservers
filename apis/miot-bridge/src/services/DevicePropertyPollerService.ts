@@ -6,6 +6,7 @@ import { ConfigService } from './ConfigService.js';
 import { NotificationStorageService } from './NotificationStorageService.js';
 import { DeviceCommandService } from './DeviceCommandService.js';
 import { NotificationDispatchService } from './NotificationDispatchService.js';
+import { ObjectUtils } from '@radoslavirha/utils';
 
 /**
  * Event name emitted on every detected property change (or every cycle when dispatchOnChange = false).
@@ -98,7 +99,7 @@ export class DevicePropertyPollerService extends EventEmitter implements OnInit,
      */
     private async start(): Promise<void> {
         const config = this.configService.config.polling;
-        if (!config?.enabled) {
+        if (!ObjectUtils.isEnabled(config)) {
             $log.info({ event: 'POLLER_DISABLED', message: 'Device property polling is disabled.' });
             return;
         }

@@ -2,6 +2,7 @@ import { Injectable, Scope, ProviderScope } from '@tsed/di';
 import { DeviceCache } from '../models/DeviceCache.js';
 import { ConfigService } from './ConfigService.js';
 import { DeviceLocalStorageService } from './DeviceLocalStorageService.js';
+import { ObjectUtils } from '@radoslavirha/utils';
 
 /**
  * Facade for device persistence.
@@ -19,7 +20,7 @@ export class DeviceStorageService {
         readonly config: ConfigService,
         private readonly fileDeviceService: DeviceLocalStorageService
     ) {
-        if (config.config.mongodb?.enabled) {
+        if (ObjectUtils.isEnabled(config.config.mongodb)) {
             throw new Error('MongoDB storage is not supported yet.');
         }
         this.storage = this.fileDeviceService;

@@ -2,6 +2,7 @@ import { injectable, inject } from '@tsed/di';
 import { $log } from '@tsed/logger';
 import { connect, type MqttClient } from 'mqtt';
 import { ConfigService } from '../services/ConfigService.js';
+import { ObjectUtils } from '@radoslavirha/utils';
 
 /**
  * Ts.ED custom provider that holds a connected MQTT client instance.
@@ -22,7 +23,7 @@ export const MqttClientProvider = injectable(Symbol.for('MqttClient'))
         const configService = inject<ConfigService>(ConfigService);
         const mqttConfig = configService.config.mqtt;
 
-        if (!mqttConfig?.enabled) {
+        if (!ObjectUtils.isEnabled(mqttConfig)) {
             $log.info({ event: 'MQTT_CLIENT_DISABLED', message: 'MQTT is disabled — skipping broker connection.' });
             return null;
         }

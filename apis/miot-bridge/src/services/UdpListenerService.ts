@@ -1,7 +1,7 @@
 import { createSocket, type RemoteInfo, type Socket } from 'dgram';
 import { Injectable, Scope, ProviderScope, OnDestroy, OnInit } from '@tsed/di';
 import { $log } from '@tsed/logger';
-import { CommonUtils } from '@radoslavirha/utils';
+import { CommonUtils, ObjectUtils } from '@radoslavirha/utils';
 import { JSONSchemaValidator, Serializer } from '@radoslavirha/tsed-common';
 import { ConfigService } from './ConfigService.js';
 import { DeviceCommandService } from './DeviceCommandService.js';
@@ -41,7 +41,7 @@ export class UdpListenerService implements OnInit, OnDestroy {
     private start(): void {
         const udpConfig = this.configService.config.udp;
 
-        if (!udpConfig?.enabled) {
+        if (!ObjectUtils.isEnabled(udpConfig)) {
             return;
         }
 

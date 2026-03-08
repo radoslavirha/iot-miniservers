@@ -17,12 +17,13 @@
     "test:watch": "vitest"
   },
   "dependencies": {
+    "zod": "catalog:",
     "@radoslavirha/config-typescript": "^0.3.0",
-    "@radoslavirha/tsed-common": "^0.4.0",
-    "@radoslavirha/tsed-configuration": "^0.4.0",
-    "@radoslavirha/tsed-platform": "^0.3.1",
-    "@radoslavirha/tsed-swagger": "^3.0.0",
-    "@radoslavirha/utils": "^0.4.0",
+    "@radoslavirha/tsed-common": "^0.4.2",
+    "@radoslavirha/tsed-configuration": "^0.5.0",
+    "@radoslavirha/tsed-platform": "^0.3.3",
+    "@radoslavirha/tsed-swagger": "^4.0.0",
+    "@radoslavirha/utils": "^0.5.0",
     "@swc-node/register": "^1.11.1",
     "@swc/cli": "^0.7.9",
     "@swc/helpers": "^0.5.17",
