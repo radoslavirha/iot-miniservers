@@ -1,7 +1,7 @@
 import { BaseConfig } from '@radoslavirha/tsed-configuration';
 import { z } from 'zod';
 import { HttpConfigSchema } from './HttpConfig.js';
-import { MongoConfigSchema } from './MongoConfig.js';
+import { MongoConfigSchema } from '@radoslavirha/tsed-mongoose';
 import { MqttConfigSchema } from './MqttConfig.js';
 import { PollingConfigSchema } from './PollingConfig.js';
 import { UdpConfigSchema } from './UdpConfig.js';
