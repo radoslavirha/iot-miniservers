@@ -83,7 +83,7 @@ Create UDP listener in server using this port.
 - [miot](https://github.com/aholstenson/miot)
 - [hass-xiaomi-miot](https://github.com/al-one/hass-xiaomi-miot)
 
-### Phase 6
+### Phase 6 (done)
 
 1. Empty notification service receiving all updates from polling and direct HTTP/UDP/MQTT calls (get property).
 Sending notifications out will be solved later.
@@ -110,9 +110,11 @@ Sending notifications out will be solved later.
 
 4. Integrate MQTT client in pub/sub operations.
 
-## Phase 7
+## Phase 7 (done)
 
-MongoDB integration.
+MongoDB integration. Mongo DB is already connected. Read [toolkit-hub](https://github.com/radoslavirha/toolkit-hub), especially focus on `@radoslavirha/tsed-mongoose`.
+
+Create repositories and DTOs (Mongo models) under `src/storage`. Rest should be clean. No tests for now.
 
 ## Phase 8
 

@@ -4,6 +4,9 @@ import { connect, type MqttClient } from 'mqtt';
 import { ConfigService } from '../services/ConfigService.js';
 import { ObjectUtils } from '@radoslavirha/utils';
 
+const RECONNECT_PERIOD_MS = 5_000;
+const MAX_STARTUP_ERRORS = 5;
+
 /**
  * Ts.ED custom provider that holds a connected MQTT client instance.
  *
@@ -12,6 +15,9 @@ import { ObjectUtils } from '@radoslavirha/utils';
  *   with a simple null-check.
  * - The connection is established asynchronously during server startup
  *   (`asyncFactory`) and torn down cleanly via the `$onDestroy` hook.
+ * - Reconnects automatically on transient errors (e.g. ECONNRESET).
+ *   During startup, up to {@link MAX_STARTUP_ERRORS} consecutive errors are
+ *   tolerated before the bootstrap promise is rejected.
  *
  * Inject via:
  * ```ts
@@ -29,25 +35,42 @@ export const MqttClientProvider = injectable(Symbol.for('MqttClient'))
         }
 
         return new Promise<MqttClient>((resolve, reject) => {
+            let connected = false;
+            let startupErrorCount = 0;
+
             const client = connect(mqttConfig.url, {
                 clientId: mqttConfig.clientId,
                 username: mqttConfig.username,
-                password: mqttConfig.password
+                password: mqttConfig.password,
+                reconnectPeriod: RECONNECT_PERIOD_MS
             });
 
             client.once('connect', () => {
+                connected = true;
                 $log.info({ event: 'MQTT_CLIENT_CONNECTED', url: mqttConfig.url, clientId: mqttConfig.clientId });
                 resolve(client);
             });
 
-            client.once('error', (err: Error) => {
-                $log.error({ event: 'MQTT_CLIENT_CONNECT_ERROR', url: mqttConfig.url, message: err.message });
-                client.end(true);
-                reject(err);
-            });
-
             client.on('error', (err: Error) => {
-                $log.error({ event: 'MQTT_CLIENT_ERROR', url: mqttConfig.url, message: err.message });
+                if (connected) {
+                    $log.error({ event: 'MQTT_CLIENT_ERROR', url: mqttConfig.url, message: err.message });
+                    return;
+                }
+
+                startupErrorCount++;
+                $log.error({
+                    event: 'MQTT_CLIENT_CONNECT_ERROR',
+                    url: mqttConfig.url,
+                    message: err.message,
+                    attempt: startupErrorCount,
+                    maxAttempts: MAX_STARTUP_ERRORS
+                });
+
+                if (startupErrorCount >= MAX_STARTUP_ERRORS) {
+                    $log.error({ event: 'MQTT_CLIENT_CONNECT_FAILED', url: mqttConfig.url, message: `Failed to connect after ${MAX_STARTUP_ERRORS} attempts.` });
+                    client.end(true);
+                    reject(new Error(`MQTT connection failed after ${MAX_STARTUP_ERRORS} attempts: ${err.message}`));
+                }
             });
 
             client.on('disconnect', () => {

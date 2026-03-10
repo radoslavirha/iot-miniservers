@@ -1,10 +1,14 @@
 import { Injectable, Scope, ProviderScope } from '@tsed/di';
 import { DeviceNotificationCache } from '../models/DeviceNotificationCache.js';
 import { NotificationLocalStorageService } from './NotificationLocalStorageService.js';
+import { DeviceNotificationMongoService } from './DeviceNotificationMongoService.js';
+import { ConfigService } from './ConfigService.js';
+import { ObjectUtils } from '@radoslavirha/utils';
 
 /**
  * Facade for notification subscription persistence.
- * Selects the active repository at startup based on configuration:
+ * Selects the active backend at startup based on configuration:
+ *  - mongodb.enabled → DeviceNotificationMongoService (MongoDB)
  *  - fallback → NotificationLocalStorageService (local JSON cache)
  *
  * Handlers depend only on this service and are unaware of the backend.
@@ -12,10 +16,16 @@ import { NotificationLocalStorageService } from './NotificationLocalStorageServi
 @Injectable()
 @Scope(ProviderScope.SINGLETON)
 export class NotificationStorageService {
-    private readonly storage: NotificationLocalStorageService;
+    private readonly storage: NotificationLocalStorageService | DeviceNotificationMongoService;
 
-    constructor(private readonly fileNotificationService: NotificationLocalStorageService) {
-        this.storage = this.fileNotificationService;
+    constructor(
+        readonly config: ConfigService,
+        private readonly fileNotificationService: NotificationLocalStorageService,
+        private readonly mongoNotificationService: DeviceNotificationMongoService
+    ) {
+        this.storage = ObjectUtils.isEnabled(config.config.mongodb)
+            ? this.mongoNotificationService
+            : this.fileNotificationService;
     }
 
     getAll(): Promise<DeviceNotificationCache[]> {

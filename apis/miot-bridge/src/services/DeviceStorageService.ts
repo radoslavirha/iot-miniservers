@@ -2,11 +2,13 @@ import { Injectable, Scope, ProviderScope } from '@tsed/di';
 import { DeviceCache } from '../models/DeviceCache.js';
 import { ConfigService } from './ConfigService.js';
 import { DeviceLocalStorageService } from './DeviceLocalStorageService.js';
+import { DeviceMongoService } from './DeviceMongoService.js';
 import { ObjectUtils } from '@radoslavirha/utils';
 
 /**
  * Facade for device persistence.
- * Selects the active repository at startup based on configuration:
+ * Selects the active backend at startup based on configuration:
+ *  - mongodb.enabled → DeviceMongoService (MongoDB)
  *  - fallback → DeviceLocalStorageService (local JSON cache)
  *
  * Handlers and other consumers depend only on this service and are unaware of the backend.
@@ -14,16 +16,16 @@ import { ObjectUtils } from '@radoslavirha/utils';
 @Injectable()
 @Scope(ProviderScope.SINGLETON)
 export class DeviceStorageService {
-    private readonly storage: DeviceLocalStorageService;
+    private readonly storage: DeviceLocalStorageService | DeviceMongoService;
 
     constructor(
         readonly config: ConfigService,
-        private readonly fileDeviceService: DeviceLocalStorageService
+        private readonly fileDeviceService: DeviceLocalStorageService,
+        private readonly mongoDeviceService: DeviceMongoService
     ) {
-        if (ObjectUtils.isEnabled(config.config.mongodb)) {
-            throw new Error('MongoDB storage is not supported yet.');
-        }
-        this.storage = this.fileDeviceService;
+        this.storage = ObjectUtils.isEnabled(config.config.mongodb)
+            ? this.mongoDeviceService
+            : this.fileDeviceService;
     }
 
     getAll(): Promise<DeviceCache[]> {

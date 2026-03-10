@@ -26,3 +26,8 @@ API - device is UDP
 client (Loxone) - API is UDP/HTTP/MQTT
 
 All possible communication protocols must have same payload required/returned from/to client.
+
+## Coding rules
+
+- Never use `any` type.
+- Repositories return `null` (not `undefined`) for missing single-document results. Services convert to `undefined` where callers expect it.

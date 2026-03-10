@@ -403,8 +403,8 @@ importers:
         specifier: 'catalog:'
         version: 0.5.2(@tsed/core@8.25.1)(@tsed/di@8.25.1(@tsed/core@8.25.1)(@tsed/hooks@8.25.1)(@tsed/logger@8.0.4))(@tsed/json-mapper@8.25.1(@tsed/core@8.25.1)(@tsed/schema@8.25.1(@tsed/core@8.25.1)(@tsed/hooks@8.25.1)(@tsed/openspec@8.25.1)))(@tsed/schema@8.25.1(@tsed/core@8.25.1)(@tsed/hooks@8.25.1)(@tsed/openspec@8.25.1))(zod@4.3.6)
       '@radoslavirha/tsed-mongoose':
-        specifier: ^3.1.1
-        version: 3.1.1(57f82e5511f49ef50ce1f9a4130bc5ab)
+        specifier: ^3.1.2
+        version: 3.1.2(57f82e5511f49ef50ce1f9a4130bc5ab)
       '@radoslavirha/tsed-platform':
         specifier: 'catalog:'
         version: 0.3.5(147611be5dd74e655f32fe4c103e7a14)
@@ -1423,8 +1423,8 @@ packages:
       '@tsed/schema': 8.25.1
       zod: 4.3.6
 
-  '@radoslavirha/tsed-mongoose@3.1.1':
-    resolution: {integrity: sha512-m1Sc1OiBC3gH9cGDX6+mrswKIgcr91yIxkRoS9g3IIyC6FhDwn40NxnYDlp6ZoxwfDetfyibVy094iD87xWVSw==, tarball: https://npm.pkg.github.com/download/@radoslavirha/tsed-mongoose/3.1.1/f118bc5bfaf67826d880b880e081032092cd583e}
+  '@radoslavirha/tsed-mongoose@3.1.2':
+    resolution: {integrity: sha512-swZVz+vosdakPLoKIyG/Gp+HVg9yx0Jp97B+xRPraXUhTS6fKVbkY81bmRDKaF06GIh/FJs3cWamGquvf2YwTQ==, tarball: https://npm.pkg.github.com/download/@radoslavirha/tsed-mongoose/3.1.2/46c7b7476ff8d98a6ffcc9d53871632bc18bc926}
     engines: {node: '>= 24', pnpm: '>= 10'}
     os: [darwin, linux]
     peerDependencies:
@@ -2322,8 +2322,8 @@ packages:
   bare-path@3.0.0:
     resolution: {integrity: sha512-tyfW2cQcB5NN8Saijrhqn0Zh7AnFNsnczRcuWODH0eYAXBsJ5gVxAUuNr7tsHSC6IZ77cA0SitzT+s47kot8Mw==}
 
-  bare-stream@2.8.0:
-    resolution: {integrity: sha512-reUN0M2sHRqCdG4lUK3Fw8w98eeUIZHL5c3H7Mbhk2yVBL+oofgaIp0ieLfD5QXwPCypBpmEEKU2WZKzbAk8GA==}
+  bare-stream@2.8.1:
+    resolution: {integrity: sha512-bSeR8RfvbRwDpD7HWZvn8M3uYNDrk7m9DQjYOFkENZlXW8Ju/MPaqUPQq5LqJ3kyjEm07siTaAQ7wBKCU59oHg==}
     peerDependencies:
       bare-buffer: '*'
       bare-events: '*'
@@ -4894,7 +4894,7 @@ snapshots:
       - '@tsed/core'
       - '@tsed/json-mapper'
 
-  '@radoslavirha/tsed-mongoose@3.1.1(57f82e5511f49ef50ce1f9a4130bc5ab)':
+  '@radoslavirha/tsed-mongoose@3.1.2(57f82e5511f49ef50ce1f9a4130bc5ab)':
     dependencies:
       '@radoslavirha/tsed-common': 0.4.4(@tsed/core@8.25.1)(@tsed/json-mapper@8.25.1(@tsed/core@8.25.1)(@tsed/schema@8.25.1(@tsed/core@8.25.1)(@tsed/hooks@8.25.1)(@tsed/openspec@8.25.1)))(@tsed/schema@8.25.1(@tsed/core@8.25.1)(@tsed/hooks@8.25.1)(@tsed/openspec@8.25.1))(zod@4.3.6)
       '@radoslavirha/utils': 0.5.2
@@ -5863,7 +5863,7 @@ snapshots:
     dependencies:
       bare-events: 2.8.2
       bare-path: 3.0.0
-      bare-stream: 2.8.0(bare-events@2.8.2)
+      bare-stream: 2.8.1(bare-events@2.8.2)
       bare-url: 2.3.2
       fast-fifo: 1.3.2
     transitivePeerDependencies:
@@ -5876,7 +5876,7 @@ snapshots:
     dependencies:
       bare-os: 3.7.1
 
-  bare-stream@2.8.0(bare-events@2.8.2):
+  bare-stream@2.8.1(bare-events@2.8.2):
     dependencies:
       streamx: 2.23.0
       teex: 1.0.1

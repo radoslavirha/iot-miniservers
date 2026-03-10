@@ -2,6 +2,8 @@ export * from './ConfigService.js';
 export * from './DeviceCommandService.js';
 export * from './DeviceDiscoveryService.js';
 export * from './DeviceLocalStorageService.js';
+export * from './DeviceMongoService.js';
+export * from './DeviceNotificationMongoService.js';
 export * from './DevicePropertyPollerService.js';
 export * from './DeviceStorageService.js';
 export * from './MiotDeviceClient.js';

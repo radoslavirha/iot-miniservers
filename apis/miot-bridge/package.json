@@ -20,7 +20,7 @@
     "@radoslavirha/config-typescript": "catalog:",
     "@radoslavirha/tsed-common": "catalog:",
     "@radoslavirha/tsed-configuration": "catalog:",
-    "@radoslavirha/tsed-mongoose": "^3.1.1",
+    "@radoslavirha/tsed-mongoose": "^3.1.2",
     "@radoslavirha/tsed-platform": "catalog:",
     "@radoslavirha/tsed-swagger": "catalog:",
     "@radoslavirha/utils": "catalog:",
