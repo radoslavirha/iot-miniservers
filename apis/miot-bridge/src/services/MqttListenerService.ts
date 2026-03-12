@@ -57,6 +57,9 @@ export class MqttListenerService implements OnInit {
             }
 
             void this.handleMessage(payload).then((result) => {
+                if (CommonUtils.isNil(result)) {
+                    return;
+                }
                 this.mqttClient!.publish(topics.response, result, { qos: 1 }, (err) => {
                     if (CommonUtils.notNil(err)) {
                         $log.error({ event: 'MQTT_RESPONSE_PUBLISH_ERROR', topic: topics.response, message: err.message });
@@ -68,7 +71,11 @@ export class MqttListenerService implements OnInit {
         });
     }
 
-    private async handleMessage(payload: Buffer): Promise<string> {
+    private async handleMessage(payload: Buffer): Promise<string | null> {
+        if (payload.length === 0) {
+            return null;
+        }
+
         let parsed: unknown;
 
         try {
