@@ -1,5 +1,11 @@
 # interactive-map-feeder
 
+## 0.4.0
+
+### Minor Changes
+
+- [`54e2c78`](https://github.com/radoslavirha/iot-miniservers/commit/54e2c787e0fc0b13a3fab8fcc593f9be96f1f87e) Thanks [@radoslavirha](https://github.com/radoslavirha)! - Spring vibe coding cleanup
+
 ## 0.3.0
 
 ### Minor Changes
