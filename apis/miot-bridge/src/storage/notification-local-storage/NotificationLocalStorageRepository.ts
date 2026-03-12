@@ -34,9 +34,10 @@ export class NotificationLocalStorageRepository {
         return items.filter(n => n.deviceId === deviceId);
     }
 
-    async create(dto: Omit<NotificationLocalStorageDTO, 'id'>): Promise<NotificationLocalStorageDTO> {
+    async create(dto: Omit<NotificationLocalStorageDTO, 'id' | 'createdAt' | 'updatedAt'>): Promise<NotificationLocalStorageDTO> {
         const items = await this.read();
-        const created: NotificationLocalStorageDTO = { ...dto, id: crypto.randomUUID() };
+        const now = new Date();
+        const created: NotificationLocalStorageDTO = { ...dto, id: crypto.randomUUID(), createdAt: now, updatedAt: now };
         items.push(created);
         await this.write(items);
         return created;

@@ -12,7 +12,7 @@ export class FileDeviceMapper extends MappingUtils {
     }
 
     public async mapDTOToModel(dto: DeviceLocalStorageDTO): Promise<DeviceCache> {
-        return CommonUtils.buildModel(DeviceCache, {
+        return CommonUtils.buildModelStrict(DeviceCache, {
             id: dto.id,
             deviceId: dto.deviceId,
             address: dto.address,
@@ -21,12 +21,27 @@ export class FileDeviceMapper extends MappingUtils {
             model: dto.model,
             specURL: dto.specURL,
             rawSpec: await this.miotSpecV2Mapper.mapDTOToModel(dto.rawSpec),
-            stampUpdatedAt: dto.stampUpdatedAt ?? 0
+            stampUpdatedAt: dto.stampUpdatedAt,
+            createdAt: dto.createdAt,
+            updatedAt: dto.updatedAt
+        });
+    }
+
+    public async mapModelToCreateDTO(entity: Omit<DeviceCache, 'id' | 'createdAt' | 'updatedAt'>): Promise<Omit<DeviceLocalStorageDTO, 'id' | 'createdAt' | 'updatedAt'>> {
+        return CommonUtils.buildModelCore(DeviceLocalStorageDTO, {
+            deviceId: entity.deviceId,
+            address: entity.address,
+            token: entity.token,
+            stamp: entity.stamp,
+            model: entity.model,
+            specURL: entity.specURL,
+            rawSpec: await this.miotSpecV2Mapper.mapModelToDTO(entity.rawSpec),
+            stampUpdatedAt: entity.stampUpdatedAt
         });
     }
 
     public async mapModelToDTO(entity: DeviceCache): Promise<DeviceLocalStorageDTO> {
-        return CommonUtils.buildModel(DeviceLocalStorageDTO, {
+        return CommonUtils.buildModelStrict(DeviceLocalStorageDTO, {
             id: entity.id,
             deviceId: entity.deviceId,
             address: entity.address,
@@ -35,7 +50,9 @@ export class FileDeviceMapper extends MappingUtils {
             model: entity.model,
             specURL: entity.specURL,
             rawSpec: await this.miotSpecV2Mapper.mapModelToDTO(entity.rawSpec),
-            stampUpdatedAt: entity.stampUpdatedAt ?? 0
+            stampUpdatedAt: entity.stampUpdatedAt,
+            createdAt: entity.createdAt,
+            updatedAt: entity.updatedAt
         });
     }
 }

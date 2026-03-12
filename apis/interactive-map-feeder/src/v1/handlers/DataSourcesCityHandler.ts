@@ -22,7 +22,7 @@ export class DataSourcesCityHandler {
             default:
                 throw new InternalServerError(`Unhandled data source: ${dataSource}`);
         }
-        return CommonUtils.buildModel(DataSourceCitiesResponse, {
+        return CommonUtils.buildModelStrict(DataSourceCitiesResponse, {
             cities: cities
         });
     }

@@ -8,15 +8,16 @@
  *
  *   // Command packet
  *   const raw = new OutgoingPacket({
- *       token:    '76506e394d327a617875497243654749',
+ *       token:    'XXXX...',  // device token (hex string or Buffer)
  *       payload:  { method: 'action', params: { did: '...', siid: 2, aiid: 1 } },
- *       deviceId: 1141132187,
+ *       deviceId: 1234,
  *       stamp:    52460,
  *   }).raw;
  */
 
 import { createCipheriv, createHash } from 'crypto';
 import { BasePacket, HEADER_SIZE } from './BasePacket.js';
+import { CommonUtils } from '@radoslavirha/utils';
 
 export interface OutgoingPacketConfig {
     /** Device token: 32-char hex string or 16-byte Buffer. Required for command packets. */
@@ -43,17 +44,19 @@ export class OutgoingPacket extends BasePacket {
     constructor(config?: OutgoingPacketConfig) {
         super(config?.token);
 
-        if (!config) return;
+        if (CommonUtils.isNil(config)) {
+            return;
+        }
 
-        if (config.deviceId !== undefined) {
+        if (CommonUtils.notNil(config.deviceId)) {
             this.header.writeUInt32BE(config.deviceId, 8);
         }
 
-        if (config.stamp !== undefined) {
+        if (CommonUtils.notNil(config.stamp)) {
             this.header.writeUInt32BE(config.stamp, 12);
         }
 
-        if (config.payload !== undefined) {
+        if (CommonUtils.notNil(config.payload)) {
             // Auto-inject `id` — required by miot for the device to send back a response
             this.payload = {
                 id: Math.floor(Date.now() / 1000),
@@ -69,7 +72,7 @@ export class OutgoingPacket extends BasePacket {
      * - With payload           → AES-128-CBC encrypted command packet
      */
     get raw(): Buffer {
-        if (this.payload) {
+        if (CommonUtils.notNil(this.payload)) {
             return this.buildCommandPacket();
         }
 
@@ -92,7 +95,7 @@ export class OutgoingPacket extends BasePacket {
     }
 
     private buildCommandPacket(): Buffer {
-        if (!this.token || !this.tokenKey || !this.tokenIV) {
+        if (CommonUtils.isNil(this.token) || CommonUtils.isNil(this.tokenKey) || CommonUtils.isNil(this.tokenIV)) {
             throw new Error('Token is required to send command packets');
         }
 

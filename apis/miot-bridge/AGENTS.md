@@ -1,8 +1,36 @@
 # Instructions
 
-- stick to root [AGENTS.md](../../AGENTS.md) instructions
-- follow developement plan in [DEVELOPMENT documentation](./DEVELOPMENT.md)
-- automatically document API usage (Swagger, .README.hbs => this will be transformed into README.md, you can check [docs.js](../../docs.js)).
+- Stick to root [AGENTS.md](../../AGENTS.md) instructions.
+- API end-user documentation lives in [.README.hbs](./.README.hbs) (compiled to `README.md` via `docs.js`). Keep it up to date when adding or changing endpoints, config keys, or protocols. Swagger UI is mounted at `/`.
+- Technical architecture reference lives in [DEVELOPMENT.md](./DEVELOPMENT.md).
+
+## Source structure
+
+```
+src/
+├── controllers/        # Ts.ED HTTP controllers — one file per resource
+├── endpoints/
+│   └── miot-spec-v2/   # External MIoT spec v2 API wrapper + DTOs
+├── handlers/           # Business logic per route action
+│   └── notifications/  # Notification subscription CRUD handlers
+├── mappers/            # Bi-directional DTO ↔ model transforms
+├── miot/
+│   └── packet/         # MIoT binary protocol packet encoding/decoding
+├── models/             # Ts.ED schema models, enums, request/response types
+│   ├── config/         # Zod config schemas
+│   ├── miot-spec-v2/   # Raw MIoT spec v2 shape models
+│   ├── notifications/  # Notification request/response models
+│   └── simplified-miot-spec/  # Internal simplified property/action map
+├── providers/          # Custom Ts.ED providers (MqttClientProvider)
+├── services/           # Core services (poller, dispatch, storage facades, command execution, listeners)
+└── storage/            # Repositories + DTOs, one subfolder per backend+entity
+    ├── device-local-storage/
+    ├── device-mongo/
+    ├── notification-local-storage/
+    └── notification-mongo/
+```
+
+All controllers are mounted at `/` — there is no API version prefix in routes.
 
 ## Miot protocol
 

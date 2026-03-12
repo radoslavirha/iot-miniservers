@@ -1,4 +1,4 @@
-import { Injectable, Scope, ProviderScope } from '@tsed/di';
+import { Injectable, Inject, Scope, ProviderScope } from '@tsed/di';
 import { DeviceCache } from '../models/DeviceCache.js';
 import { DeviceMongoRepository } from '../storage/device-mongo/DeviceMongoRepository.js';
 import { MongoDeviceMapper } from '../mappers/MongoDeviceMapper.js';
@@ -11,36 +11,36 @@ import { CommonUtils } from '@radoslavirha/utils';
 @Injectable()
 @Scope(ProviderScope.SINGLETON)
 export class DeviceMongoService {
-    constructor(
-        private readonly repository: DeviceMongoRepository,
-        private readonly mapper: MongoDeviceMapper
-    ) {}
+    @Inject(DeviceMongoRepository)
+    private repository: DeviceMongoRepository;
+
+    @Inject(MongoDeviceMapper)
+    private mapper: MongoDeviceMapper;
 
     public async getAll(): Promise<DeviceCache[]> {
         const dtos = await this.repository.findAll();
-        return this.mapper.mapArray(dtos, (dto) => this.mapper.mapDTOToModel(dto));
+        return Promise.all(dtos.map(dto => this.mapper.mongoToModel(dto)));
     }
 
     public async getById(id: string): Promise<DeviceCache | undefined> {
         const dto = await this.repository.findById(id);
-        if (CommonUtils.isNull(dto)) {
-            return undefined;
-        }
-        return this.mapper.mapDTOToModel(dto);
+        return CommonUtils.isNil(dto) ? undefined : this.mapper.mongoToModel(dto);
     }
 
     public async getByDeviceId(deviceId: number): Promise<DeviceCache | undefined> {
         const dto = await this.repository.findByDeviceId(deviceId);
-        if (CommonUtils.isNull(dto)) {
-            return undefined;
-        }
-        return this.mapper.mapDTOToModel(dto);
+        return CommonUtils.isNil(dto) ? undefined : this.mapper.mongoToModel(dto);
     }
 
-    public async upsert(device: DeviceCache): Promise<DeviceCache> {
-        const updateObj = await this.mapper.mapModelToUpdateObj(device);
-        const dto = await this.repository.upsertByDeviceId(device.deviceId, updateObj);
-        return this.mapper.mapDTOToModel(dto);
+    public async create(device: Omit<DeviceCache, 'id' | 'createdAt' | 'updatedAt'>): Promise<DeviceCache> {
+        const dto = await this.repository.create(await this.mapper.buildMongoCreate(device));
+        return this.mapper.mongoToModel(dto);
+    }
+
+    public async update(device: DeviceCache): Promise<DeviceCache> {
+        const updateObj = await this.mapper.buildMongoUpdate(device);
+        const dto = await this.repository.updateById(device.id, updateObj);
+        return this.mapper.mongoToModel(dto);
     }
 
     public async delete(id: string): Promise<void> {

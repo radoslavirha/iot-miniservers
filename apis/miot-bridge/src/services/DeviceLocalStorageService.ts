@@ -1,7 +1,8 @@
-import { Injectable, Scope, ProviderScope } from '@tsed/di';
+import { Injectable, Inject, Scope, ProviderScope } from '@tsed/di';
 import { DeviceCache } from '../models/DeviceCache.js';
 import { DeviceLocalStorageRepository } from '../storage/device-local-storage/DeviceLocalStorageRepository.js';
 import { FileDeviceMapper } from '../mappers/FileDeviceMapper.js';
+import { CommonUtils } from '@radoslavirha/utils';
 
 /**
  * Orchestration service for file-backed device storage.
@@ -10,28 +11,34 @@ import { FileDeviceMapper } from '../mappers/FileDeviceMapper.js';
 @Injectable()
 @Scope(ProviderScope.SINGLETON)
 export class DeviceLocalStorageService {
-    constructor(
-        private readonly repository: DeviceLocalStorageRepository,
-        private readonly mapper: FileDeviceMapper
-    ) {}
+    @Inject(DeviceLocalStorageRepository)
+    private repository: DeviceLocalStorageRepository;
+
+    @Inject(FileDeviceMapper)
+    private mapper: FileDeviceMapper;
 
     public async getAll(): Promise<DeviceCache[]> {
         const dtos = await this.repository.getAll();
-        return this.mapper.mapArray(dtos, (dto) => this.mapper.mapDTOToModel(dto));
+        return Promise.all(dtos.map(dto => this.mapper.mapDTOToModel(dto)));
     }
 
     public async getById(id: string): Promise<DeviceCache | undefined> {
         const dto = await this.repository.getById(id);
-        return this.mapper.mapOptionalModel(dto, (dto) => this.mapper.mapDTOToModel(dto));
+        return CommonUtils.isNil(dto) ? undefined : this.mapper.mapDTOToModel(dto);
     }
 
     public async getByDeviceId(deviceId: number): Promise<DeviceCache | undefined> {
         const dto = await this.repository.getByDeviceId(deviceId);
-        return this.mapper.mapOptionalModel(dto, (dto) => this.mapper.mapDTOToModel(dto));
+        return CommonUtils.isNil(dto) ? undefined : this.mapper.mapDTOToModel(dto);
     }
 
-    public async upsert(device: DeviceCache): Promise<DeviceCache> {
-        const dto = await this.repository.upsert(await this.mapper.mapModelToDTO(device));
+    public async create(device: Omit<DeviceCache, 'id' | 'createdAt' | 'updatedAt'>): Promise<DeviceCache> {
+        const dto = await this.repository.create(await this.mapper.mapModelToCreateDTO(device));
+        return this.mapper.mapDTOToModel(dto);
+    }
+
+    public async update(device: DeviceCache): Promise<DeviceCache> {
+        const dto = await this.repository.update(await this.mapper.mapModelToDTO(device));
         return this.mapper.mapDTOToModel(dto);
     }
 

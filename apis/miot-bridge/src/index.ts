@@ -26,12 +26,12 @@ const SIG_EVENTS = [
 try {
     const config = injector().get<ConfigService>(ConfigService);
 
-    const swaggerConfig = CommonUtils.buildModel(SwaggerConfig, {
+    const swaggerConfig = CommonUtils.buildModelStrict(SwaggerConfig, {
         title: config.api.service,
         version: config.api.version,
-        description: config.api.description,
+        description: config.api.description!,
         documents: ObjectUtils.values(SwaggerDocs).map((doc) =>
-            CommonUtils.buildModel(SwaggerDocumentConfig, {
+            CommonUtils.buildModelStrict(SwaggerDocumentConfig, {
                 docs: doc,
                 security: []
             })

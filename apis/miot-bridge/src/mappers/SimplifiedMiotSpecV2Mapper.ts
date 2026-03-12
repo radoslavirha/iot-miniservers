@@ -24,13 +24,13 @@ export class SimplifiedMiotSpecV2Mapper extends MappingUtils {
                 // svc.properties?.filter(p => p.access.length),
                 async (p) => {
                     const values = await this.mapOptionalArray(p.valueList, async (v) =>
-                        CommonUtils.buildModel(MiotPropertyValue, {
+                        CommonUtils.buildModelStrict(MiotPropertyValue, {
                             value: v.value,
                             description: v.description
                         })
                     );
 
-                    properties.set(`${serviceKey}:${p.type.split(':')[3]}`, CommonUtils.buildModel(MiotProperty, {
+                    properties.set(`${serviceKey}:${p.type.split(':')[3]}`, CommonUtils.buildModelStrict(MiotProperty, {
                         siid: svc.iid,
                         piid: p.iid,
                         access: await this.mapArray(p.access, async (value) => await this.mapEnum({ MiotSpecV2PropertyAccess }, { PropertyAccess }, value)),
@@ -40,12 +40,12 @@ export class SimplifiedMiotSpecV2Mapper extends MappingUtils {
             );
 
             await this.mapOptionalArray(svc.actions, async (a) => {
-                actions.set(`${serviceKey}:${a.type.split(':')[3]}`, CommonUtils.buildModel(MiotAction, {
+                actions.set(`${serviceKey}:${a.type.split(':')[3]}`, CommonUtils.buildModelStrict(MiotAction, {
                     siid: svc.iid,
                     aiid: a.iid,
                     in: a.in.map(piid => {
                         const inputProperty = svc.properties?.find(p => p.iid === piid);
-                        if (!inputProperty) {
+                        if (CommonUtils.isNil(inputProperty)) {
                             throw new Error(`Action '${a.type}' references non-existent input property with PIID ${piid} in service '${svc.type}'.`);
                         }
                         return `${serviceKey}:${inputProperty.type.split(':')[3]}`;
@@ -54,7 +54,7 @@ export class SimplifiedMiotSpecV2Mapper extends MappingUtils {
             });
         });
 
-        return CommonUtils.buildModel(SimplifiedMiotSpec, {
+        return CommonUtils.buildModelStrict(SimplifiedMiotSpec, {
             name: data.description,
             type: data.type,
             properties,

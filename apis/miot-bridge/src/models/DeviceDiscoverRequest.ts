@@ -6,13 +6,11 @@ export class DeviceDiscoverRequest {
     @Description('IP address of the Xiaomi device.')
     @Required()
     @Property()
-    @Example('192.168.1.100')
     public address: string;
 
     @Description('Device token (32-char hex string), obtained from Xiaomi Cloud Tokens Extractor.')
     @Required()
     @Property()
-    @Example('76506e394d327a617875497243654749')
     public token: string;
 
     @Description('Device model identifier (e.g. xiaomi.vacuum.c102gl).')

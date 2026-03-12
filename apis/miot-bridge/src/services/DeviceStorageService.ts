@@ -40,8 +40,12 @@ export class DeviceStorageService {
         return this.storage.getByDeviceId(deviceId);
     }
 
-    upsert(device: DeviceCache): Promise<DeviceCache> {
-        return this.storage.upsert(device);
+    create(device: Omit<DeviceCache, 'id' | 'createdAt' | 'updatedAt'>): Promise<DeviceCache> {
+        return this.storage.create(device);
+    }
+
+    update(device: DeviceCache): Promise<DeviceCache> {
+        return this.storage.update(device);
     }
 
     delete(id: string): Promise<void> {

@@ -84,7 +84,7 @@ export class UdpListenerService implements OnInit, OnDestroy {
     }
 
     private closeSocket(): void {
-        if (this.socket) {
+        if (CommonUtils.notNil(this.socket)) {
             try {
                 this.socket.removeAllListeners();
                 this.socket.close();
@@ -121,12 +121,12 @@ export class UdpListenerService implements OnInit, OnDestroy {
     }
 
     private reply(data: string, rinfo: RemoteInfo): void {
-        if (!this.socket) {
+        if (CommonUtils.isNil(this.socket)) {
             return;
         }
 
         this.socket.send(data, rinfo.port, rinfo.address, (err) => {
-            if (err) {
+            if (CommonUtils.notNil(err)) {
                 $log.warn({
                     event: 'UDP_REPLY_FAILED',
                     message: `Failed to send UDP response to ${rinfo.address}:${rinfo.port} — ${err.message}`
@@ -163,7 +163,7 @@ export class UdpListenerService implements OnInit, OnDestroy {
         }
 
         try {
-            const commandRequest = CommonUtils.buildModel(DeviceCommandRequest, {
+            const commandRequest = CommonUtils.buildModelStrict(DeviceCommandRequest, {
                 deviceId: request.deviceId,
                 command: request.command,
                 operation: request.operation,

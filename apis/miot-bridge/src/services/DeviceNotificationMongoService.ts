@@ -1,5 +1,5 @@
-import { Injectable, Scope, ProviderScope } from '@tsed/di';
-import { DeviceNotificationCache } from '../models/DeviceNotificationCache.js';
+import { Injectable, Inject, Scope, ProviderScope } from '@tsed/di';
+import { DeviceNotification } from '../models/notifications/DeviceNotification.js';
 import { DeviceNotificationMongoRepository } from '../storage/notification-mongo/DeviceNotificationMongoRepository.js';
 import { MongoNotificationMapper } from '../mappers/MongoNotificationMapper.js';
 import { CommonUtils } from '@radoslavirha/utils';
@@ -11,33 +11,30 @@ import { CommonUtils } from '@radoslavirha/utils';
 @Injectable()
 @Scope(ProviderScope.SINGLETON)
 export class DeviceNotificationMongoService {
-    constructor(
-        private readonly repository: DeviceNotificationMongoRepository,
-        private readonly mapper: MongoNotificationMapper
-    ) {}
+    @Inject(DeviceNotificationMongoRepository)
+    private repository: DeviceNotificationMongoRepository;
 
-    public async getAll(): Promise<DeviceNotificationCache[]> {
+    @Inject(MongoNotificationMapper)
+    private mapper: MongoNotificationMapper;
+
+    public async getAll(): Promise<DeviceNotification[]> {
         const dtos = await this.repository.findAll();
-        return this.mapper.mapArray(dtos, (dto) => Promise.resolve(this.mapper.mapDTOToModel(dto)));
+        return dtos.map(dto => this.mapper.mongoToModel(dto));
     }
 
-    public async getById(id: string): Promise<DeviceNotificationCache | undefined> {
+    public async getById(id: string): Promise<DeviceNotification | undefined> {
         const dto = await this.repository.findById(id);
-        if (CommonUtils.isNull(dto)) {
-            return undefined;
-        }
-        return this.mapper.mapDTOToModel(dto);
+        return CommonUtils.isNil(dto) ? undefined : this.mapper.mongoToModel(dto);
     }
 
-    public async getAllByDeviceId(deviceId: string): Promise<DeviceNotificationCache[]> {
+    public async getAllByDeviceId(deviceId: string): Promise<DeviceNotification[]> {
         const dtos = await this.repository.findAllByDeviceId(deviceId);
-        return this.mapper.mapArray(dtos, (dto) => Promise.resolve(this.mapper.mapDTOToModel(dto)));
+        return dtos.map(dto => this.mapper.mongoToModel(dto));
     }
 
-    public async create(notification: Omit<DeviceNotificationCache, 'id'>): Promise<DeviceNotificationCache> {
-        const createObj = this.mapper.mapModelToCreateObj(notification);
-        const dto = await this.repository.create(createObj);
-        return this.mapper.mapDTOToModel(dto);
+    public async create(notification: Omit<DeviceNotification, 'id' | 'createdAt' | 'updatedAt'>): Promise<DeviceNotification> {
+        const dto = await this.repository.create(this.mapper.buildMongoCreate(notification));
+        return this.mapper.mongoToModel(dto);
     }
 
     public async deleteById(id: string): Promise<void> {

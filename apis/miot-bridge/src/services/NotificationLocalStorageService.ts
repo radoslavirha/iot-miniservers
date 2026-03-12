@@ -1,7 +1,8 @@
-import { Injectable, Scope, ProviderScope } from '@tsed/di';
-import { DeviceNotificationCache } from '../models/DeviceNotificationCache.js';
+import { Injectable, Inject, Scope, ProviderScope } from '@tsed/di';
+import { DeviceNotification } from '../models/notifications/DeviceNotification.js';
 import { NotificationLocalStorageRepository } from '../storage/notification-local-storage/NotificationLocalStorageRepository.js';
 import { FileNotificationMapper } from '../mappers/FileNotificationMapper.js';
+import { CommonUtils } from '@radoslavirha/utils';
 
 /**
  * Orchestration service for file-backed notification subscription storage.
@@ -10,27 +11,28 @@ import { FileNotificationMapper } from '../mappers/FileNotificationMapper.js';
 @Injectable()
 @Scope(ProviderScope.SINGLETON)
 export class NotificationLocalStorageService {
-    constructor(
-        private readonly repository: NotificationLocalStorageRepository,
-        private readonly mapper: FileNotificationMapper
-    ) {}
+    @Inject(NotificationLocalStorageRepository)
+    private repository: NotificationLocalStorageRepository;
 
-    public async getAll(): Promise<DeviceNotificationCache[]> {
+    @Inject(FileNotificationMapper)
+    private mapper: FileNotificationMapper;
+
+    public async getAll(): Promise<DeviceNotification[]> {
         const dtos = await this.repository.getAll();
-        return this.mapper.mapArray(dtos, (dto) => this.mapper.mapDTOToModel(dto));
+        return Promise.all(dtos.map(dto => this.mapper.mapDTOToModel(dto)));
     }
 
-    public async getById(id: string): Promise<DeviceNotificationCache | undefined> {
+    public async getById(id: string): Promise<DeviceNotification | undefined> {
         const dto = await this.repository.getById(id);
-        return this.mapper.mapOptionalModel(dto, (dto) => this.mapper.mapDTOToModel(dto));
+        return CommonUtils.isNil(dto) ? undefined : this.mapper.mapDTOToModel(dto);
     }
 
-    public async getAllByDeviceId(deviceId: string): Promise<DeviceNotificationCache[]> {
+    public async getAllByDeviceId(deviceId: string): Promise<DeviceNotification[]> {
         const dtos = await this.repository.getAllByDeviceId(deviceId);
-        return this.mapper.mapArray(dtos, (dto) => this.mapper.mapDTOToModel(dto));
+        return Promise.all(dtos.map(dto => this.mapper.mapDTOToModel(dto)));
     }
 
-    public async create(notification: Omit<DeviceNotificationCache, 'id'>): Promise<DeviceNotificationCache> {
+    public async create(notification: Omit<DeviceNotification, 'id' | 'createdAt' | 'updatedAt'>): Promise<DeviceNotification> {
         const dto = await this.repository.create(await this.mapper.mapModelToDTO(notification));
         return this.mapper.mapDTOToModel(dto);
     }

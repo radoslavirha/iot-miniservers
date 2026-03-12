@@ -31,17 +31,17 @@ import {
 @Injectable()
 @Scope(ProviderScope.SINGLETON)
 export class MiotSpecV2Mapper extends MappingUtils {
-    async mapDTOToModel(dto: MiotSpecV2DTO): Promise<MiotSpecV2> {
-        return CommonUtils.buildModel(MiotSpecV2, {
+    public async mapDTOToModel(dto: MiotSpecV2DTO): Promise<MiotSpecV2> {
+        return CommonUtils.buildModelStrict(MiotSpecV2, {
             type: dto.type,
             description: dto.description,
             services: await this.mapArray(dto.services, async (svc) =>
-                CommonUtils.buildModel(MiotSpecV2Service, {
+                CommonUtils.buildModelStrict(MiotSpecV2Service, {
                     iid: svc.iid,
                     type: svc.type,
                     description: svc.description,
                     properties: await this.mapOptionalArray(svc.properties, async (p) =>
-                        CommonUtils.buildModel(MiotSpecV2ServiceProperty, {
+                        CommonUtils.buildModelStrict(MiotSpecV2ServiceProperty, {
                             iid: p.iid,
                             type: p.type,
                             description: p.description,
@@ -51,7 +51,7 @@ export class MiotSpecV2Mapper extends MappingUtils {
                             ),
                             unit: p.unit,
                             valueList: await this.mapOptionalArray(p.valueList, async (v) =>
-                                CommonUtils.buildModel(MiotSpecV2PropertyValue, {
+                                CommonUtils.buildModelStrict(MiotSpecV2PropertyValue, {
                                     value: v.value,
                                     description: v.description
                                 })
@@ -61,7 +61,7 @@ export class MiotSpecV2Mapper extends MappingUtils {
                         })
                     ),
                     actions: await this.mapOptionalArray(svc.actions, async (a) =>
-                        CommonUtils.buildModel(MiotSpecV2ServiceAction, {
+                        CommonUtils.buildModelStrict(MiotSpecV2ServiceAction, {
                             iid: a.iid,
                             type: a.type,
                             description: a.description,
@@ -70,7 +70,7 @@ export class MiotSpecV2Mapper extends MappingUtils {
                         })
                     ),
                     events: await this.mapOptionalArray(svc.events, async (e) =>
-                        CommonUtils.buildModel(MiotSpecV2ServiceEvent, {
+                        CommonUtils.buildModelStrict(MiotSpecV2ServiceEvent, {
                             iid: e.iid,
                             type: e.type,
                             description: e.description,
@@ -82,17 +82,17 @@ export class MiotSpecV2Mapper extends MappingUtils {
         });
     }
 
-    async mapModelToDTO(model: MiotSpecV2): Promise<MiotSpecV2DTO> {
-        return CommonUtils.buildModel(MiotSpecV2DTO, {
+    public async mapModelToDTO(model: MiotSpecV2): Promise<MiotSpecV2DTO> {
+        return CommonUtils.buildModelStrict(MiotSpecV2DTO, {
             type: model.type,
             description: model.description,
             services: await this.mapArray(model.services, async (svc) =>
-                CommonUtils.buildModel(MiotSpecV2ServiceDTO, {
+                CommonUtils.buildModelStrict(MiotSpecV2ServiceDTO, {
                     iid: svc.iid,
                     type: svc.type,
                     description: svc.description,
                     properties: await this.mapOptionalArray(svc.properties, async (p) =>
-                        CommonUtils.buildModel(MiotSpecV2ServicePropertyDTO, {
+                        CommonUtils.buildModelStrict(MiotSpecV2ServicePropertyDTO, {
                             iid: p.iid,
                             type: p.type,
                             description: p.description,
@@ -102,7 +102,7 @@ export class MiotSpecV2Mapper extends MappingUtils {
                             ),
                             unit: p.unit,
                             valueList: await this.mapOptionalArray(p.valueList, async (v) =>
-                                CommonUtils.buildModel(MiotSpecV2PropertyValueDTO, {
+                                CommonUtils.buildModelStrict(MiotSpecV2PropertyValueDTO, {
                                     value: v.value,
                                     description: v.description
                                 })
@@ -112,7 +112,7 @@ export class MiotSpecV2Mapper extends MappingUtils {
                         })
                     ),
                     actions: await this.mapOptionalArray(svc.actions, async (a) =>
-                        CommonUtils.buildModel(MiotSpecV2ServiceActionDTO, {
+                        CommonUtils.buildModelStrict(MiotSpecV2ServiceActionDTO, {
                             iid: a.iid,
                             type: a.type,
                             description: a.description,
@@ -121,7 +121,10 @@ export class MiotSpecV2Mapper extends MappingUtils {
                         })
                     ),
                     events: await this.mapOptionalArray(svc.events, async (e) =>
-                        CommonUtils.buildModel(MiotSpecV2ServiceEventDTO, {
+                        CommonUtils.buildModelStrict(MiotSpecV2ServiceEventDTO, {
+                            iid: e.iid,
+                            type: e.type,
+                            description: e.description,
                             arguments: e.arguments
                         })
                     )

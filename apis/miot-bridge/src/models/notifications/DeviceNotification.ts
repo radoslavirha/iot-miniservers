@@ -1,15 +1,11 @@
 import { AdditionalProperties, Description, Example, Property, Required } from '@tsed/schema';
+import { BaseModel } from '@radoslavirha/tsed-common';
 
 /**
  * Domain model representing a single persisted notification subscription.
  */
 @AdditionalProperties(false)
-export class DeviceNotification {
-    @Required()
-    @Property(String)
-    @Description('Unique notification subscription ID (UUID v4).')
-    @Example('b2c3d4e5-f6a7-8901-bcde-f12345678901')
-    public id: string;
+export class DeviceNotification extends BaseModel {
 
     @Required()
     @Property(String)

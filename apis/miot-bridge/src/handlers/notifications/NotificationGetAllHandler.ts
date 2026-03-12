@@ -15,7 +15,7 @@ export class NotificationGetAllHandler {
     async execute(deviceId: string): Promise<DeviceNotificationsResponse> {
         const caches = await this.notificationStorageService.getAllByDeviceId(deviceId);
 
-        return CommonUtils.buildModel(DeviceNotificationsResponse, {
+        return CommonUtils.buildModelStrict(DeviceNotificationsResponse, {
             notifications: caches.map(c => this.notificationMapper.mapCacheToNotification(c))
         });
     }

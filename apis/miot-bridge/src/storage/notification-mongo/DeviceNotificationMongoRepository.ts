@@ -1,6 +1,5 @@
 import { Injectable, Inject, Scope, ProviderScope } from '@tsed/di';
 import type { MongooseModel } from '@tsed/mongoose';
-import { Type } from '@tsed/core';
 import { MongoRepository, MongoCreate } from '@radoslavirha/tsed-mongoose';
 import { DeviceNotificationMongoDTO } from './dto/DeviceNotificationMongoDTO.js';
 
@@ -13,7 +12,7 @@ import { DeviceNotificationMongoDTO } from './dto/DeviceNotificationMongoDTO.js'
 @Scope(ProviderScope.SINGLETON)
 export class DeviceNotificationMongoRepository extends MongoRepository<DeviceNotificationMongoDTO> {
     @Inject(DeviceNotificationMongoDTO) protected model: MongooseModel<DeviceNotificationMongoDTO>;
-    protected type: Type<DeviceNotificationMongoDTO> = DeviceNotificationMongoDTO;
+    protected mongo = DeviceNotificationMongoDTO;
 
     public async findAll(): Promise<DeviceNotificationMongoDTO[]> {
         const results = await this.model.find({}).lean<DeviceNotificationMongoDTO[]>();

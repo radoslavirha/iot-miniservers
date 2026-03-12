@@ -34,7 +34,7 @@ export class MqttListenerService implements OnInit {
     }
 
     private start(): void {
-        if (!this.mqttClient) {
+        if (CommonUtils.isNil(this.mqttClient)) {
             $log.info({ event: 'MQTT_LISTENER_DISABLED', message: 'MQTT client not available — skipping command subscription.' });
             return;
         }
@@ -42,7 +42,7 @@ export class MqttListenerService implements OnInit {
         const topics = this.mqttTopicService.get();
 
         this.mqttClient.subscribe(topics.command, { qos: 1 }, (err) => {
-            if (err) {
+            if (CommonUtils.notNil(err)) {
                 $log.error({ event: 'MQTT_SUBSCRIBE_ERROR', topic: topics.command, message: err.message });
             } else {
                 $log.info({ event: 'MQTT_SUBSCRIBED', topic: topics.command });
@@ -58,7 +58,7 @@ export class MqttListenerService implements OnInit {
 
             void this.handleMessage(payload).then((result) => {
                 this.mqttClient!.publish(topics.response, result, { qos: 1 }, (err) => {
-                    if (err) {
+                    if (CommonUtils.notNil(err)) {
                         $log.error({ event: 'MQTT_RESPONSE_PUBLISH_ERROR', topic: topics.response, message: err.message });
                     } else {
                         $log.debug({ event: 'MQTT_RESPONSE_PUBLISHED', topic: topics.response });
@@ -88,7 +88,7 @@ export class MqttListenerService implements OnInit {
         }
 
         try {
-            const commandRequest = CommonUtils.buildModel(DeviceCommandRequest, {
+            const commandRequest = CommonUtils.buildModelStrict(DeviceCommandRequest, {
                 deviceId: request.deviceId,
                 command: request.command,
                 operation: request.operation,

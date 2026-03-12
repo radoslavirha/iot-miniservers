@@ -33,15 +33,20 @@ export class DeviceLocalStorageRepository {
         return devices.find(d => d.deviceId === deviceId);
     }
 
-    async upsert(dto: DeviceLocalStorageDTO): Promise<DeviceLocalStorageDTO> {
+    async create(dto: Omit<DeviceLocalStorageDTO, 'id' | 'createdAt' | 'updatedAt'>): Promise<DeviceLocalStorageDTO> {
         const devices = await this.read();
-        const index = devices.findIndex(d => d.deviceId === dto.deviceId);
-        const persisted: DeviceLocalStorageDTO = { ...dto, id: dto.id ?? crypto.randomUUID() };
-        if (index >= 0) {
-            devices[index] = persisted;
-        } else {
-            devices.push(persisted);
-        }
+        const now = new Date();
+        const persisted: DeviceLocalStorageDTO = { ...dto, id: crypto.randomUUID(), createdAt: now, updatedAt: now };
+        devices.push(persisted);
+        await this.write(devices);
+        return persisted;
+    }
+
+    async update(dto: DeviceLocalStorageDTO): Promise<DeviceLocalStorageDTO> {
+        const devices = await this.read();
+        const index = devices.findIndex(d => d.id === dto.id);
+        const persisted: DeviceLocalStorageDTO = { ...dto, updatedAt: new Date() };
+        devices[index] = persisted;
         await this.write(devices);
         return persisted;
     }

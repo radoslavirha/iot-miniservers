@@ -6,7 +6,7 @@ import { ConfigService } from './ConfigService.js';
 import { NotificationStorageService } from './NotificationStorageService.js';
 import { DeviceCommandService } from './DeviceCommandService.js';
 import { NotificationDispatchService } from './NotificationDispatchService.js';
-import { ObjectUtils } from '@radoslavirha/utils';
+import { CommonUtils, ObjectUtils } from '@radoslavirha/utils';
 
 /**
  * Event name emitted on every detected property change (or every cycle when dispatchOnChange = false).
@@ -73,9 +73,11 @@ export class DevicePropertyPollerService extends EventEmitter implements OnInit,
      */
     public removeSubscription(deviceId: string, property: string): void {
         const set = this._subscriptions.get(deviceId);
-        if (set) {
+        if (CommonUtils.notNil(set)) {
             set.delete(property);
-            if (set.size === 0) this._subscriptions.delete(deviceId);
+            if (set.size === 0) {
+                this._subscriptions.delete(deviceId);
+            }
         }
         this._lastValues.delete(`${deviceId}:${property}`);
     }
@@ -118,7 +120,7 @@ export class DevicePropertyPollerService extends EventEmitter implements OnInit,
 
     /** Stops the polling interval. */
     private stop(): void {
-        if (this._timer) {
+        if (CommonUtils.notNil(this._timer)) {
             clearTimeout(this._timer);
             this._timer = undefined;
             $log.info({ event: 'POLLER_STOP', message: 'Device property polling stopped.' });
@@ -130,7 +132,9 @@ export class DevicePropertyPollerService extends EventEmitter implements OnInit,
     }
 
     private async tick(intervalMs: number): Promise<void> {
-        if (this._ticking) return;
+        if (this._ticking) {
+            return;
+        }
         this._ticking = true;
         try {
             for (const [deviceId, propertySet] of this._subscriptions) {
@@ -138,7 +142,9 @@ export class DevicePropertyPollerService extends EventEmitter implements OnInit,
             }
         } finally {
             this._ticking = false;
-            if (this._timer !== undefined) this.scheduleNext(intervalMs);
+            if (CommonUtils.notNil(this._timer)) {
+                this.scheduleNext(intervalMs);
+            }
         }
     }
 
@@ -154,11 +160,17 @@ export class DevicePropertyPollerService extends EventEmitter implements OnInit,
         try {
             const { miotDeviceId, results } = await this.deviceCommandService.getProperties(deviceId, properties);
 
-            const config = this.configService.config.polling!;
+            if (!ObjectUtils.isEnabled(this.configService.config.polling)) {
+                $log.info({ event: 'POLLER_DISABLED', message: 'Device property polling is disabled. Skipping tick.' });
+                return;
+            }
+            const config = this.configService.config.polling;
             const now = Date.now();
 
             for (const { key, value: newValue, code } of results) {
-                if (code !== 0) continue;
+                if (code !== 0) {
+                    continue;
+                }
 
                 const cacheKey = `${deviceId}:${key}`;
                 const oldValue = this._lastValues.get(cacheKey);

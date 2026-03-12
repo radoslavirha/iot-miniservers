@@ -1,13 +1,13 @@
 import { Injectable, Scope, ProviderScope } from '@tsed/di';
 import { BadRequest, NotFound } from '@tsed/exceptions';
 import { CommonUtils } from '@radoslavirha/utils';
-import { DeviceNotificationCache } from '../../models/DeviceNotificationCache.js';
 import { DeviceStorageService } from '../../services/DeviceStorageService.js';
 import { DevicePropertyPollerService } from '../../services/DevicePropertyPollerService.js';
 import { NotificationStorageService } from '../../services/NotificationStorageService.js';
 import { SimplifiedMiotSpecV2Mapper } from '../../mappers/SimplifiedMiotSpecV2Mapper.js';
 import { NotificationMapper } from '../../mappers/NotificationMapper.js';
 import { NotificationRequest } from '../../models/notifications/NotificationRequest.js';
+import { DeviceNotification } from '../../models/notifications/DeviceNotification.js';
 import { DeviceNotificationsResponse } from '../../models/notifications/DeviceNotificationsResponse.js';
 import { PropertyAccess } from '../../models/simplified-miot-spec/PropertyAccess.enum.js';
 
@@ -24,7 +24,7 @@ export class NotificationPostHandler {
 
     async execute(deviceId: string, request: NotificationRequest): Promise<DeviceNotificationsResponse> {
         const device = await this.deviceStorageService.getById(deviceId);
-        if (!device) {
+        if (CommonUtils.isNil(device)) {
             throw new NotFound(`Device ${deviceId} not found.`);
         }
 
@@ -32,7 +32,7 @@ export class NotificationPostHandler {
 
         for (const propertyKey of request.properties) {
             const prop = spec.properties.get(propertyKey);
-            if (!prop) {
+            if (CommonUtils.isNil(prop)) {
                 throw new BadRequest(`Property '${propertyKey}' not found in spec for device ${deviceId}.`);
             }
             if (!prop.access.includes(PropertyAccess.Read) && !prop.access.includes(PropertyAccess.Write)) {
@@ -40,17 +40,15 @@ export class NotificationPostHandler {
             }
         }
 
-        const created: DeviceNotificationCache[] = [];
+        const created: DeviceNotification[] = [];
         for (const property of request.properties) {
-            const notification = await this.notificationStorageService.create(
-                CommonUtils.buildModel(DeviceNotificationCache, { deviceId, property })
-            );
+            const notification = await this.notificationStorageService.create(CommonUtils.buildModelCore(DeviceNotification, { deviceId, property }));
             created.push(notification);
         }
 
         this.devicePropertyPollerService.addSubscriptions(deviceId, request.properties);
 
-        return CommonUtils.buildModel(DeviceNotificationsResponse, {
+        return CommonUtils.buildModelStrict(DeviceNotificationsResponse, {
             notifications: created.map(n => this.notificationMapper.mapCacheToNotification(n))
         });
     }

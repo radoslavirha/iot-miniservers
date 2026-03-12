@@ -32,7 +32,7 @@ export class NotificationDispatchService {
      * outbound notification transports (HTTP, UDP).
      */
     public receive(event: PropertyChangeEvent): void {
-        const payload = CommonUtils.buildModel(NotificationPayload, {
+        const payload = CommonUtils.buildModelStrict(NotificationPayload, {
             deviceId: event.miotDeviceId,
             property: event.property,
             value: event.newValue
@@ -56,7 +56,7 @@ export class NotificationDispatchService {
     private sendMqtt(payload: NotificationPayload): void {
         const topic = this.mqttTopicService.get().notifications;
         this.mqttClient!.publish(topic, JSON.stringify(payload), { qos: 1 }, (err) => {
-            if (err) {
+            if (CommonUtils.notNil(err)) {
                 $log.warn({
                     event: 'NOTIFICATION_MQTT_ERROR',
                     topic,
@@ -109,7 +109,7 @@ export class NotificationDispatchService {
             }
             const host = address.slice(0, colonIndex);
             const port = parseInt(address.slice(colonIndex + 1), 10);
-            if (!host || isNaN(port)) {
+            if (CommonUtils.isNil(host) || isNaN(port)) {
                 $log.warn({ event: 'NOTIFICATION_UDP_ERROR', address, message: 'Invalid UDP address format. Expected host:port.' });
                 return resolve();
             }
@@ -118,7 +118,7 @@ export class NotificationDispatchService {
             const buffer = Buffer.from(JSON.stringify(payload), 'utf8');
             socket.send(buffer, port, host, (error) => {
                 socket.close();
-                if (error) {
+                if (CommonUtils.notNil(error)) {
                     $log.warn({
                         event: 'NOTIFICATION_UDP_ERROR',
                         address,

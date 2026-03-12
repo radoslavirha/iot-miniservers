@@ -2,7 +2,7 @@ import { injectable, inject } from '@tsed/di';
 import { $log } from '@tsed/logger';
 import { connect, type MqttClient } from 'mqtt';
 import { ConfigService } from '../services/ConfigService.js';
-import { ObjectUtils } from '@radoslavirha/utils';
+import { CommonUtils, ObjectUtils } from '@radoslavirha/utils';
 
 const RECONNECT_PERIOD_MS = 5_000;
 const MAX_STARTUP_ERRORS = 5;
@@ -84,7 +84,9 @@ export const MqttClientProvider = injectable(Symbol.for('MqttClient'))
     })
     .hooks({
         async $onDestroy(client: MqttClient | null): Promise<void> {
-            if (client === null) return;
+            if (CommonUtils.isNil(client)) {
+                return;
+            }
             await client.endAsync();
             $log.info({ event: 'MQTT_CLIENT_STOPPED', message: 'MQTT client disconnected.' });
         }

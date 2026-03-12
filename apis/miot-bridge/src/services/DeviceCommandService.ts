@@ -57,7 +57,9 @@ export class DeviceCommandService {
      */
     async getProperties(storageId: string, keys: string[]): Promise<GetPropertiesResponse> {
         const device = await this.deviceStorageService.getById(storageId);
-        if (!device) throw new NotFound(`Device ${storageId} not found.`);
+        if (CommonUtils.isNil(device)) {
+            throw new NotFound(`Device ${storageId} not found.`);
+        }
 
         const spec = await this.simplifiedMiotSpecMapper.map(device.rawSpec);
         const props: Array<{ key: string; siid: number; piid: number }> = [];
@@ -84,7 +86,7 @@ export class DeviceCommandService {
 
     async execute(request: DeviceCommandRequest): Promise<CommandResponseModel> {
         const device = await this.deviceStorageService.getByDeviceId(request.deviceId);
-        if (!device) {
+        if (CommonUtils.isNil(device)) {
             throw new NotFound(`Device ${request.deviceId} not found in cache. Register the device first.`);
         }
 
@@ -116,7 +118,7 @@ export class DeviceCommandService {
             });
         }
 
-        return CommonUtils.buildModel(CommandResponseModel, {
+        return CommonUtils.buildModelStrict(CommandResponseModel, {
             deviceId: request.deviceId,
             command: request.command,
             operation: request.operation,
@@ -131,8 +133,8 @@ export class DeviceCommandService {
      */
     private async runWithStamp<T>(device: DeviceCache, fn: (stamp: number) => Promise<T>): Promise<T> {
         const { result, stamp, stampUpdatedAt } = await this.withStampRefresh(device, fn);
-        await this.deviceStorageService.upsert(
-            CommonUtils.buildModel(DeviceCache, { ...device, stamp, stampUpdatedAt })
+        await this.deviceStorageService.update(
+            CommonUtils.buildModelStrict(DeviceCache, { ...device, stamp, stampUpdatedAt })
         );
         return result;
     }
@@ -179,7 +181,7 @@ export class DeviceCommandService {
     private resolveCommand(request: DeviceCommandRequest, deviceId: number, spec: SimplifiedMiotSpec): ResolvedCommand {
         if (request.operation === DeviceCommandOperation.GetProperty) {
             const property = spec.properties.get(request.command);
-            if (!property) {
+            if (CommonUtils.isNil(property)) {
                 throw new BadRequest(`Property '${request.command}' not found in spec for device ${deviceId}.`);
             }
             if (!property.access.includes(PropertyAccess.Read) && !property.access.includes(PropertyAccess.Notify)) {
@@ -190,7 +192,7 @@ export class DeviceCommandService {
 
         if (request.operation === DeviceCommandOperation.SetProperty) {
             const property = spec.properties.get(request.command);
-            if (!property) {
+            if (CommonUtils.isNil(property)) {
                 throw new BadRequest(`Property '${request.command}' not found in spec for device ${deviceId}.`);
             }
             if (!property.access.includes(PropertyAccess.Write)) {
@@ -202,7 +204,7 @@ export class DeviceCommandService {
 
         if (request.operation === DeviceCommandOperation.Action) {
             const action = spec.actions.get(request.command);
-            if (!action) {
+            if (CommonUtils.isNil(action)) {
                 throw new BadRequest(`Action '${request.command}' not found in spec for device ${deviceId}.`);
             }
             return { operation: DeviceCommandOperation.Action, action };

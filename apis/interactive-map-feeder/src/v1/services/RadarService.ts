@@ -9,12 +9,12 @@ import { RasterService } from './RasterService.js';
 @Service()
 @Scope(ProviderScope.SINGLETON)
 export class RadarService extends CHMIService {
-    public bbox: BBox = CommonUtils.buildModel(BBox, {
-        topLeft: CommonUtils.buildModel(Coordinates, {
+    public bbox: BBox = CommonUtils.buildModelStrict(BBox, {
+        topLeft: CommonUtils.buildModelStrict(Coordinates, {
             latitude: 52.167,
             longitude: 11.267
         }),
-        bottomRight: CommonUtils.buildModel(Coordinates, {
+        bottomRight: CommonUtils.buildModelStrict(Coordinates, {
             latitude: 48.1,
             // latitude: 48.047,
             longitude: 20.770
@@ -44,7 +44,7 @@ export class RadarService extends CHMIService {
             const color = await this.rasterService.getRGBAOnCoordinates(city.latitude, city.longitude, this.bbox, image.clone(), radius);
 
             // TODO: Implement color mapping. Now I return exact color from radar, I need more suitable colors for LEDs?
-            citiesLED.push(CommonUtils.buildModel(CityLED, {
+            citiesLED.push(CommonUtils.buildModelStrict(CityLED, {
                 ...city,
                 color: new RGB(color.r, color.g, color.b)
             }));

@@ -1,121 +1,101 @@
-# Development
+# miot-bridge — Architecture & Technical Reference
 
-This application will be a bridge between Loxone (and other apps) and Xiaomi devices. Communication runs on localhost (important for k8s advices).
+This document is for contributors and AI coding agents. For end-user documentation, see [README.md](./README.md) (generated from [.README.hbs](./.README.hbs)).
 
-API will be able to communicate via HTTP/UDP/MQTT with unified request model.
-Devices will be defined in json configuration, along with server configuration, later it'll be moved to database and managed via REST API.
+## Overview
 
-API will receive instructions and resend them to devices using defined packet structure (miot protocol). API will automatically perform handshake with device when needed and will cache necessary data.
+miot-bridge is a Node.js API (Ts.ED framework) that bridges Loxone and other home-automation controllers to Xiaomi devices via the MIoT binary protocol. It exposes HTTP, UDP, and MQTT command interfaces over a unified payload model and manages device registration, MIoT spec caching, property polling, and notification subscriptions.
 
-Development consists of multiple phases.
-
-## Phase 1 (done)
-
-Running 'empty' server with json configuration and using [toolkit-hub](https://github.com/radoslavirha/toolkit-hub) (@radoslavirha packages)
-
-## Phase 2 (done)
-
-Device registry/discovery, caching.
-
-We need a HTTP endpoint (enumerated v1, check next phase) for device discovery. This endpoint will require only device IP address in local network. This endpoint will perform handshake, if successful, will try to fetch Miot spec. If both successful, will return data from handshake except `stamp` and parsed spec for the user, we can think about limiting it for only necessary data.
-
-We need a HTTP endpoint (enumerated v1, check next phase) for device registry. This endpoint will do the same as discovery endpoint and will cache device data, including `stamp` which will be updated. Now we save raw Miot spec. For now we cache devices in JSON, later we'll introduce option to cache in MongoDB. Device ID from handshake will be identifier for further operations related to the device. This endpoint should allow updating cached devices (spec change, new IP,...)
-
-## Phase 3 (done)
-
-Communication request/response model for client -> api communication. Must be same for UDP/HTTP/MQTT. I'm thinking about versioned routes. In HTTP/MQTT it's easy. Maybe UDP request model will have extra property for version and routing service will be created. In ideal scenario, at some moment, all possible requests should be resolved by one service which communicates with device, validates if action is possible, etc.
-
-In model, we need
-
-- API version (enum) - enumerated value we'll use in HTPP/MQTT routing, UDP post routing, swagger docs, etc.
-- Device ID (integer) - numeric device ID returned from hanshake and unique identifier in app
-- command (string) - property/action Map key from [Miot spec](./AGENTS.md#miot-spec)
-- value (unknown) - allowed value for property, depends on property access type and type itself, can be improved later
-
-I imagine REST API:
-GET /property (further validation if property has read access)
-POST /property (further validation if property has write access)
-
-But this won't fit MQTT/UDP routing. Remember we have properties (read/write/notify access) and actions (no access, just execute action).
-
-## Phase 4 (done)
-
-UDP support.
-
-In server config model we need to add new optional input for UDP.
+## Source structure
 
 ```
-{
-    udp: {
-        enabled: boolean,
-        udpPort: number
-    }
-}
+src/
+├── controllers/        # Ts.ED HTTP controllers (CommandController, DevicesController, DeviceNotificationsController)
+├── endpoints/
+│   └── miot-spec-v2/   # External MIoT spec v2 HTTP fetch wrapper + DTO
+├── handlers/           # Business logic per route action
+│   └── notifications/  # Notification subscription CRUD handlers
+├── mappers/            # Bi-directional DTO ↔ model transforms
+├── miot/
+│   └── packet/         # MIoT binary protocol packet encoding/decoding
+├── models/             # Ts.ED schema models, enums, request/response types
+│   ├── config/         # Zod config schemas (ConfigModel, HttpConfig, MqttConfig, PollingConfig, UdpConfig)
+│   ├── miot-spec-v2/   # Raw MIoT spec v2 shape models
+│   ├── notifications/  # Notification request/response models
+│   └── simplified-miot-spec/  # Internal simplified property/action map
+├── providers/          # Custom Ts.ED providers (MqttClientProvider)
+├── services/           # Core services: command execution, polling, dispatch, storage facades, listeners
+└── storage/            # Storage layer — repositories + DTOs, one subfolder per backend+entity
+    ├── device-local-storage/     # File-based device repository
+    ├── device-mongo/             # MongoDB device repository
+    ├── notification-local-storage/ # File-based notification repository
+    └── notification-mongo/       # MongoDB notification repository
 ```
 
-Create UDP listener in server using this port.
+All controllers are mounted at `/` — there is no API version prefix in routes.
 
-## Phase 5 (done)
+## MIoT binary protocol
 
-1. Endpoint updates (done)
+Communication between the bridge and devices uses the [Xiaomi Mi Home Binary Protocol](https://github.com/OpenMiHome/mihome-binary-protocol/blob/master/doc/PROTOCOL.md) over UDP.
 
-- `DeviceRequestModel` for `/discover` will be renamed to `DeviceDiscoverRequest`
-- `DeviceResponseModel` for  `/discover` will be renamed to `DeviceDiscoverResponse`
-- `/register` will be changed to `/`. Handler will be renamed to `DevicePostHandler`
-- logic in `DevicePostHandler` must be changed to mimic real DB (later MongoDB) and should create unique ID and save. `DeviceResponseModel` must include this newly created ID field and be renamed to `DeviceGetResponse`. `DeviceRequestModel` should be renamed to `DeviceRequest`
-- new GET `/devices/:id` endpoint which just returns device, basically identical to `DeviceResponseModel`, should be called `DeviceGetResponse`. Id is new one (DB id), not current real deviceId we have.
-- new DELETE `/device/:id` endpoint. ID is this newly created ID
-- new `DeviceNotificationsController`, `/notifications` path, mounted as children in `DevicesController`
-- new POST `/` endpoint for registering new notification. `NotificationRequest` model will have property `properties: string[]`. Device ID from path (hope it'll work in nested controller in Ts.ED) will be verified in storage and all properties will be verified against `SimplifiedMiotSpec.properties`. No need to check access, every READ/WRITE property can be subscribed (ignoring NOTIFY access, it's useless for our usage). This will create new records (again preparing for MongoDB) in a new file for notifications (very similar to devices cache json). Includes reference to deviceId (new ID, not real device id we currently have). Returns `DeviceNotificationResponse` which is only extending new `DeviceNotification` model.
-- new GET `/` returns all notifications for device. Returns `DeviceNotificationsResponse` which defines `notifications: DeviceNotification[]` property.
-- new DELETE `/` deletes all notifications for device
-- new DELETE `/:id` deletes notification by id
+### Stamp management
 
+Every MIoT packet carries a `Stamp` counter that the device increments after each call. The bridge:
 
-2. Device value updates. We need to discover, how other libraries handle this, I guess we need to poll device:
+1. Obtains the current stamp via a handshake packet.
+2. Increments and includes the stamp on every subsequent packet.
+3. If a data packet is rejected (stale stamp), performs an automatic handshake to refresh the stamp and retries the packet once.
 
-- [xmihome](https://github.com/alex2844/node-xmihome/tree/main/packages/node), with [abstract-things](https://github.com/thingbound/abstract-things)
-- [mihome-binary-protocol](https://github.com/OpenMiHome/mihome-binary-protocol)
-- [miot-api](https://github.com/nt0xa/miot-api)
-- [python-miot](https://github.com/rytilahti/python-miot)
-- [xiaomi-miot](https://github.com/mvdevries/xiaomi-miot)
-- [homebridge-miot](https://github.com/merdok/homebridge-miot)
-- [miot](https://github.com/aholstenson/miot)
-- [hass-xiaomi-miot](https://github.com/al-one/hass-xiaomi-miot)
+Stamp state is maintained per-device in memory by `MiotDeviceClient`.
 
-### Phase 6 (done)
+## MIoT spec v2
 
-1. Empty notification service receiving all updates from polling and direct HTTP/UDP/MQTT calls (get property).
-Sending notifications out will be solved later.
+The bridge fetches the raw spec JSON for each device from `miot-spec.org` via `MiotSpecV2Endpoint`. `MiotSpecV2Mapper` + `SimplifiedMiotSpecV2Mapper` parse it into a simplified in-memory map where:
 
-2. Define HTPP/UDP/MQTT notifications in server configuration and prepare NotificationDispatchService. Send notifications only via HTTP/UDP. Response model contains deviceId, value and property only. 
+- **Key format**: `<service-type-suffix>:<property-or-action-type-suffix>`
+  Examples: `vacuum:status`, `battery:battery-level`, `vacuum:start-sweep`
+- **Value**: property access flags (`read`, `write`, `notify`), type, allowed values, IIDs (for wire encoding) — or action arguments/results for actions.
 
-```
-    "notifications": {
-        "udp": {
-            "enabled": true,
-            "address": ""
-        },
-        "http": {
-            "enabled": true,
-            "address": ""
-        },
-        "mqtt": {
-            "enabled": false
-        }
-    }
-```
+This map is used to validate commands and notification subscriptions at request time.
 
-3. Implement MQTT client. Enhance configuration model similar to UDP listener config. We need also credentials and maybe we should define also topic? But then we need to add v1 to topic, so maybe we should just hardcode and document it. We should create mqtt client via <https://tsed.dev/docs/custom-providers.html#custom-providers>. Maybe we should create UDP listener same way.
+## Storage
 
-4. Integrate MQTT client in pub/sub operations.
+Two storage backends are supported, selected at startup by `DeviceStorageService` and `NotificationStorageService` based on `mongodb.enabled`.
 
-## Phase 7 (done)
+Layering (bottom-up):
 
-MongoDB integration. Mongo DB is already connected. Read [toolkit-hub](https://github.com/radoslavirha/toolkit-hub), especially focus on `@radoslavirha/tsed-mongoose`.
+1. `src/storage/<group>/dto/` — raw data shapes (no Ts.ED schema decorators needed)
+2. `src/storage/<group>/` — repository class (`DeviceLocalStorageRepository`, `DeviceMongoRepository`, etc.), performs CRUD and returns DTOs
+3. `src/services/Device[Local|Mongo]Service.ts` — maps DTOs to domain models, contains business logic
+4. `src/services/DeviceStorageService.ts` — facade, delegates to the active backend
 
-Create repositories and DTOs (Mongo models) under `src/storage`. Rest should be clean. No tests for now.
+| Backend | Folder | Notes |
+|---|---|---|
+| File (default) | `storage/device-local-storage/`, `storage/notification-local-storage/` | JSON files at `cachePath`. Single-instance only. |
+| MongoDB | `storage/device-mongo/`, `storage/notification-mongo/` | Via `@radoslavirha/tsed-mongoose`. Mongo models extend `BaseMongo`. |
 
-## Phase 8
+Repositories return `null` for missing single-document results. Services convert to `undefined` where callers expect it.
 
-Ensure app is scaleable (redis?).
+## Polling & notification dispatch
+
+`DevicePropertyPollerService` (singleton, extends `EventEmitter`):
+
+- Hydrates an in-memory subscription map from storage on startup.
+- Runs a `setTimeout`-based loop at `polling.intervalMs`.
+- Per-device back-off after `maxErrorCount` consecutive errors (`errorSkipCycles` cycles skipped).
+- Emits `property:changed` events on value changes (or every cycle when `dispatchOnChange = false`).
+
+`NotificationDispatchService` receives `property:changed` events (and direct observations from `DeviceCommandService` for `GetProperty` calls) and forwards to all enabled transports: HTTP POST, UDP datagram, MQTT publish.
+
+Subscription state mutations (`addSubscriptions`, `removeSubscription`, `removeAllSubscriptions`) are called synchronously by the notification REST handlers after persisting to storage, keeping the in-memory cache consistent without a storage round-trip per tick.
+
+## Transport listeners
+
+- **HTTP**: standard Ts.ED/Express HTTP server on `server.httpPort`.
+- **UDP**: `UdpListenerService` binds a UDP4 socket on `udp.port`. Includes exponential back-off socket restart on errors (max 5 attempts). Payload uses `UdpCommandRequestModel` with an added `version` field for future routing.
+- **MQTT**: `MqttClientProvider` creates the `mqtt` client; `MqttListenerService` subscribes to the command topic and routes to `DeviceCommandService`.
+
+## Design decisions
+
+- **Single instance**: The bridge is deployed as a single `replicas: 1` pod. The poller holds in-memory state (`_subscriptions`, `_lastValues`, `_errorCounts`, `_skipCycles`) that cannot be shared across instances without a distributed lock or an extracted poller service. This is intentional — the target use case is monitoring a small number of local devices.
+- **No API versioning in routes**: Controllers are mounted at `/` without a version prefix. The `version` field on UDP payloads exists for future routing flexibility if needed.

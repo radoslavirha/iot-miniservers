@@ -7,7 +7,6 @@ export class CommandResponseModel {
     @Description('Numeric device ID the command was sent to.')
     @Required()
     @Property(Number)
-    @Example(1141132187)
     public deviceId: number;
 
     @Description('Miot spec command key that was executed.')

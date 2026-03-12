@@ -9,7 +9,7 @@ export class DataSourcesListHandler {
     constructor() {}
 
     public async execute(): Promise<DataSourcesResponse> {
-        return CommonUtils.buildModel(DataSourcesResponse, {
+        return CommonUtils.buildModelStrict(DataSourcesResponse, {
             dataSources: ObjectUtils.values(DataSources)
         });
     }

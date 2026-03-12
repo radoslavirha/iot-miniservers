@@ -11,7 +11,7 @@ export class CommandHandler {
     constructor(private readonly deviceCommandService: DeviceCommandService) {}
 
     async execute(request: CommandRequestModel): Promise<CommandResponseModel> {
-        const commandRequest = CommonUtils.buildModel(DeviceCommandRequest, {
+        const commandRequest = CommonUtils.buildModelStrict(DeviceCommandRequest, {
             deviceId: request.deviceId,
             command: request.command,
             operation: request.operation,

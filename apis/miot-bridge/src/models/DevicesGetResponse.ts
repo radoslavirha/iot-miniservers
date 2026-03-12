@@ -1,11 +1,11 @@
 import { AdditionalProperties, CollectionOf, Description, Required } from '@tsed/schema';
-import { DeviceGetResponse } from './DeviceGetResponse.js';
+import { DeviceWithSpec } from './DeviceWithSpec.js';
 
 @Description('Response model for listing all registered devices.')
 @AdditionalProperties(false)
 export class DevicesGetResponse {
     @Required()
-    @CollectionOf(DeviceGetResponse)
+    @CollectionOf(DeviceWithSpec)
     @Description('List of registered devices.')
-    public devices: DeviceGetResponse[];
+    public devices: DeviceWithSpec[];
 }

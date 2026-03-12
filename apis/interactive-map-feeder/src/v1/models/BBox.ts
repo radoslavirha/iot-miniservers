@@ -8,7 +8,7 @@ export class BBox {
     @Description('The top left coordinates.')
     @Required()
     @Property()
-    @Example(CommonUtils.buildModel(Coordinates, {
+    @Example(CommonUtils.buildModelStrict(Coordinates, {
         latitude: 52.167,
         longitude: 11.267
     }))
@@ -17,7 +17,7 @@ export class BBox {
     @Description('The bottom right coordinates.')
     @Required()
     @Property()
-    @Example(CommonUtils.buildModel(Coordinates, {
+    @Example(CommonUtils.buildModelStrict(Coordinates, {
         latitude: 48.1,
         longitude: 20.770
     }))

@@ -9,7 +9,6 @@ export class NotificationPayload {
     @Required()
     @Property(Number)
     @Description('Xiaomi device ID.')
-    @Example(1141132187)
     public deviceId: number;
 
     @Required()

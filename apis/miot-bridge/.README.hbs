@@ -5,9 +5,379 @@
 ![Project Maintenance][maintenance-shield]
 [![License][license-shield]][license-url]
 
-## Description
+## Overview
 
-This API is a bridge between the Miot protocol and other systems. It allows you to control and monitor Miot devices using simple HTTP, UDP, or MQTT commands.
+miot-bridge is an HTTP/UDP/MQTT gateway between [Loxone](https://www.loxone.com/) and other home-automation controllers and Xiaomi devices that speak the [MIoT binary protocol](https://github.com/OpenMiHome/mihome-binary-protocol/blob/master/doc/PROTOCOL.md).
+
+- **Register** devices once; the bridge caches the MIoT spec and manages the stamp/handshake lifecycle automatically.
+- **Send commands** (read property, write property, execute action) via HTTP, UDP, or MQTT using a unified payload.
+- **Subscribe** to device property changes; the bridge polls the device and pushes change events out to HTTP, UDP, or MQTT targets.
+
+Swagger UI is available at the root path (`/`) once the server is running.
+
+## Quick Start
+
+### Docker Compose
+
+Create a `config/production.json` (see [Configuration](#configuration)), then:
+
+```yaml
+services:
+  miot-bridge:
+    image: ghcr.io/radoslavirha/miot-bridge:latest
+    ports:
+      - "4001:4001"       # HTTP API + Swagger UI
+      - "4002:4002/udp"   # UDP command listener (when udp.enabled = true)
+    volumes:
+      - ./config:/home/app/config:ro
+      - ./cache:/home/app/cache     # only needed when mongodb.enabled = false
+    restart: unless-stopped
+```
+
+> The config volume mounts your local `config/` directory to `/home/app/config` inside the container. Only `production.json` is required.
+
+## Configuration
+
+Configuration is loaded from `config/production.json`.
+
+### Minimal configuration
+
+```json
+{
+  "server": {
+    "httpPort": 4001
+  }
+}
+```
+
+### Full configuration reference
+
+| Key | Type | Required | Default | Description |
+|---|---|---|---|---|
+| `server.httpPort` | number | ✅ | — | HTTP server port. |
+| `cachePath` | string | | `./cache` | Path (relative to CWD) for JSON device and notification cache files. Used when MongoDB is disabled. |
+| `mongodb.enabled` | boolean | | `false` | Enable MongoDB as the device/notification storage backend. |
+| `mongodb.url` | string | when enabled | — | MongoDB connection string, e.g. `mongodb://host:27017/miot-bridge`. |
+| `mongodb.connectionOptions.user` | string | | — | MongoDB username. |
+| `mongodb.connectionOptions.pass` | string | | — | MongoDB password. |
+| `udp.enabled` | boolean | | `false` | Enable UDP command listener. |
+| `udp.port` | number | when enabled | — | UDP port to listen on. |
+| `udp.notifications.enabled` | boolean | | `false` | Send property-change notifications via UDP datagram. |
+| `udp.notifications.address` | string | when enabled | — | Target `host:port`, e.g. `XXX:5000`. |
+| `polling.enabled` | boolean | | `false` | Enable periodic device property polling. |
+| `polling.intervalMs` | number | | `15000` | Polling interval in milliseconds. |
+| `polling.dispatchOnChange` | boolean | | `true` | Dispatch a notification only when the value changes. Set to `false` to dispatch on every cycle. |
+| `polling.maxErrorCount` | number | | `3` | Consecutive device failures before the device is placed in back-off. |
+| `polling.errorSkipCycles` | number | | `20` | Polling cycles to skip for a back-off device before retrying. |
+| `http.notifications.enabled` | boolean | | `false` | Send property-change notifications via HTTP POST. |
+| `http.notifications.address` | string | when enabled | — | Target URL, e.g. `http://XXX:5001/notify`. |
+| `mqtt.enabled` | boolean | | `false` | Enable MQTT client (inbound commands + outbound notifications). |
+| `mqtt.url` | string | when enabled | — | Broker URL, e.g. `mqtt://localhost:1883` or `mqtts://broker.example.com:8883`. |
+| `mqtt.clientId` | string | | auto | MQTT client identifier. |
+| `mqtt.username` | string | when enabled | — | Broker username (EMQX: API Key). |
+| `mqtt.password` | string | when enabled | — | Broker password (EMQX: Secret Key). |
+| `mqtt.topicPrefix` | string | | — | Optional prefix prepended to all topics, e.g. `home/office` → `home/office/miot-bridge/command`. |
+| `mqtt.notifications.enabled` | boolean | | `false` | Send property-change notifications via MQTT. |
+
+### Example: HTTP-only with file cache
+
+```json
+{
+  "server": { "httpPort": 4001 },
+  "cachePath": "./cache",
+  "polling": {
+    "enabled": true,
+    "intervalMs": 10000,
+    "dispatchOnChange": true
+  },
+  "http": {
+    "notifications": {
+      "enabled": true,
+      "address": "http://192.168.1.140:5001/notify"
+    }
+  }
+}
+```
+
+### Example: Full stack (MQTT broker + MongoDB)
+
+```json
+{
+  "server": { "httpPort": 4001 },
+  "mongodb": {
+    "enabled": true,
+    "url": "mongodb://mongo:27017/miot-bridge",
+    "connectionOptions": { "user": "miot-bridge", "pass": "secret" }
+  },
+  "udp": { "enabled": true, "port": 4002 },
+  "polling": { "enabled": true, "intervalMs": 15000, "dispatchOnChange": true },
+  "mqtt": {
+    "enabled": true,
+    "url": "mqtt://mosquitto:1883",
+    "username": "miot-bridge",
+    "password": "secret",
+    "notifications": { "enabled": true }
+  }
+}
+```
+
+## REST API
+
+Swagger UI is served at `http://<host>:<httpPort>/`.
+
+All responses use `application/json`. All request bodies must be `Content-Type: application/json`.
+
+> **Device IDs**: Two different IDs appear in this API.
+> - **App UUID** (`deviceId` path parameter) — a UUID assigned by miot-bridge when a device is registered. Used in device management and notification endpoints.
+> - **Hardware ID** (`deviceId` in the command body) — the numeric MIoT device ID returned from the handshake (e.g. `XXX`). Used in the command endpoint only.
+
+### Devices
+
+#### `POST /devices/discover`
+
+Performs a handshake with a device and returns its capabilities via MIoT spec. **Does not persist anything.**
+
+**Request body**
+
+```json
+{
+  "address": "XXX",
+  "token": "XXX",
+  "model": "xiaomi.vacuum.c102gl"
+}
+```
+
+| Field | Type | Description |
+|---|---|---|
+| `address` | string | Device IP address on the local network. |
+| `token` | string | 32-char hex device token (from Xiaomi Cloud Tokens Extractor). |
+| `model` | string | Device model identifier, e.g. `xiaomi.vacuum.c102gl`. |
+
+**Response** `200` — device capabilities (simplified MIoT spec).
+
+---
+
+#### `POST /devices`
+
+Registers a device: performs handshake, fetches MIoT spec, persists to cache.
+
+**Request body** — same fields as `/devices/discover`.
+
+**Response** `201` — registered device with app UUID and simplified MIoT spec.
+
+---
+
+#### `GET /devices`
+
+Returns all registered devices.
+
+**Response** `200`
+
+```json
+{
+  "devices": [ { "..." : "..." } ]
+}
+```
+
+---
+
+#### `GET /devices/:deviceId`
+
+Returns a single registered device by its app UUID.
+
+**Response** `200` — device object.
+
+---
+
+#### `DELETE /devices/:deviceId`
+
+Deletes a registered device from the cache.
+
+**Response** `204 No Content`
+
+---
+
+### Notifications (property subscriptions)
+
+#### `POST /devices/:deviceId/notifications`
+
+Subscribes to one or more device properties. The poller reads these on every interval and dispatches change events.
+
+**Request body**
+
+```json
+{
+  "properties": ["vacuum:status", "battery:battery-level"]
+}
+```
+
+| Field | Type | Description |
+|---|---|---|
+| `properties` | string[] | MIoT spec property keys to subscribe to. |
+
+**Response** `201` — list of created notification subscriptions.
+
+---
+
+#### `GET /devices/:deviceId/notifications`
+
+Returns all active notification subscriptions for the device.
+
+**Response** `200`
+
+```json
+{
+  "notifications": [
+    { "id": "uuid", "deviceId": "app-uuid", "property": "vacuum:status" }
+  ]
+}
+```
+
+---
+
+#### `DELETE /devices/:deviceId/notifications`
+
+Deletes **all** notification subscriptions for the device.
+
+**Response** `204 No Content`
+
+---
+
+#### `DELETE /devices/:deviceId/notifications/:notificationId`
+
+Deletes a single notification subscription.
+
+**Response** `204 No Content`
+
+---
+
+### Command
+
+#### `POST /command`
+
+Sends a command (read property, write property, or execute action) to a registered device. Works identically over HTTP, UDP, and MQTT.
+
+**Request body**
+
+```json
+{
+  "deviceId": XXX,
+  "command": "vacuum:start-sweep",
+  "operation": "Action"
+}
+```
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `deviceId` | number | ✅ | Numeric MIoT hardware device ID (returned from registration). |
+| `command` | string | ✅ | MIoT spec key, format `<service>:<property-or-action>`, e.g. `vacuum:status`, `fan-control:fan-level`. |
+| `operation` | string | ✅ | One of `GetProperty`, `SetProperty`, `Action`. |
+| `value` | number | for SetProperty | Value to set (must conform to property type and allowed values in the MIoT spec). |
+
+**Response** `200`
+
+```json
+{
+  "deviceId": XXX,
+  "command": "vacuum:status",
+  "operation": "GetProperty",
+  "success": true,
+  "value": 3
+}
+```
+
+| Field | Type | Description |
+|---|---|---|
+| `deviceId` | number | Hardware device ID the command was sent to. |
+| `command` | string | Command key that was executed. |
+| `operation` | string | Operation type that was performed. |
+| `success` | boolean | Whether the command succeeded. |
+| `value` | any | Returned value for `GetProperty` operations. |
+| `error` | string | Error message when `success` is `false`. |
+
+## MQTT Protocol
+
+When `mqtt.enabled = true`, the bridge connects to the configured broker and subscribes to the command topic.
+
+### Topics
+
+| Topic | Direction | Description |
+|---|---|---|
+| `miot-bridge/command` | inbound | Publish a command from your controller. |
+| `miot-bridge/response` | outbound | Bridge publishes the command response. |
+| `miot-bridge/notifications` | outbound | Bridge publishes property-change events (when `mqtt.notifications.enabled = true`). |
+
+With `mqtt.topicPrefix = "home/office"` all topics become `home/office/miot-bridge/command`, etc.
+
+### Command payload
+
+Same JSON shape as the HTTP `POST /command` body:
+
+```json
+{
+  "deviceId": XXX,
+  "command": "vacuum:start-sweep",
+  "operation": "Action"
+}
+```
+
+### Response payload
+
+Same JSON shape as the HTTP `POST /command` response:
+
+```json
+{
+  "deviceId": XXX,
+  "command": "vacuum:start-sweep",
+  "operation": "Action",
+  "success": true
+}
+```
+
+### Notification payload
+
+```json
+{
+  "deviceId": XXX,
+  "property": "vacuum:status",
+  "value": 3
+}
+```
+
+## UDP Protocol
+
+When `udp.enabled = true`, the bridge binds a UDP socket on `udp.port`.
+
+The UDP command payload adds a `version` discriminator field to the standard command shape:
+
+```json
+{
+  "version": "v1",
+  "deviceId": XXX,
+  "command": "vacuum:status",
+  "operation": "GetProperty"
+}
+```
+
+The response is sent back to the sender's address and port in the same JSON shape as the HTTP command response.
+
+## Notification Payload
+
+All outbound notification transports (HTTP POST, UDP datagram, MQTT publish) use the same JSON payload:
+
+```json
+{
+  "deviceId": XXX,
+  "property": "vacuum:status",
+  "value": 3
+}
+```
+
+| Field | Type | Description |
+|---|---|---|
+| `deviceId` | number | Hardware MIoT device ID of the reporting device. |
+| `property` | string | MIoT spec property key that changed. |
+| `value` | any | Current property value. |
 
 ## Releases
 
@@ -23,7 +393,7 @@ based on the following:
 
 For an API issue or idea [open an issue here][github-issue]
 
-[maintenance-shield]: https://img.shields.io/maintenance/yes/2025.svg
+[maintenance-shield]: https://img.shields.io/maintenance/yes/2026.svg
 [project-stage-shield]: https://img.shields.io/badge/project%20stage-production%20ready-brightgreen.svg
 [release-shield]: https://img.shields.io/badge/version-{{ package.version }}-blue.svg
 [github-release]: {{ github.payload.repository.html_url }}/releases/tag/{{ package.name }}@{{ package.version }}

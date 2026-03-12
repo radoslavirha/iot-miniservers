@@ -1,5 +1,5 @@
 import { Injectable, Scope, ProviderScope } from '@tsed/di';
-import { DeviceNotificationCache } from '../models/DeviceNotificationCache.js';
+import { DeviceNotification } from '../models/notifications/DeviceNotification.js';
 import { NotificationLocalStorageService } from './NotificationLocalStorageService.js';
 import { DeviceNotificationMongoService } from './DeviceNotificationMongoService.js';
 import { ConfigService } from './ConfigService.js';
@@ -28,19 +28,19 @@ export class NotificationStorageService {
             : this.fileNotificationService;
     }
 
-    getAll(): Promise<DeviceNotificationCache[]> {
+    getAll(): Promise<DeviceNotification[]> {
         return this.storage.getAll();
     }
 
-    getById(id: string): Promise<DeviceNotificationCache | undefined> {
+    getById(id: string): Promise<DeviceNotification | undefined> {
         return this.storage.getById(id);
     }
 
-    getAllByDeviceId(deviceId: string): Promise<DeviceNotificationCache[]> {
+    getAllByDeviceId(deviceId: string): Promise<DeviceNotification[]> {
         return this.storage.getAllByDeviceId(deviceId);
     }
 
-    create(notification: Omit<DeviceNotificationCache, 'id'>): Promise<DeviceNotificationCache> {
+    create(notification: Omit<DeviceNotification, 'id' | 'createdAt' | 'updatedAt'>): Promise<DeviceNotification> {
         return this.storage.create(notification);
     }
 

@@ -7,7 +7,6 @@ export class CommandRequestModel {
     @Description('Numeric device ID returned from registration.')
     @Required()
     @Property(Number)
-    @Example(1141132187)
     public deviceId: number;
 
     @Description('Miot spec command key (e.g. vacuum:start-sweep).')

@@ -1,7 +1,6 @@
 import { Injectable, Inject, Scope, ProviderScope } from '@tsed/di';
 import type { MongooseModel } from '@tsed/mongoose';
-import { Type } from '@tsed/core';
-import { MongoRepository, MongoUpdate } from '@radoslavirha/tsed-mongoose';
+import { MongoRepository, MongoCreate, MongoUpdate } from '@radoslavirha/tsed-mongoose';
 import { DeviceMongoDTO } from './dto/DeviceMongoDTO.js';
 
 /**
@@ -13,7 +12,7 @@ import { DeviceMongoDTO } from './dto/DeviceMongoDTO.js';
 @Scope(ProviderScope.SINGLETON)
 export class DeviceMongoRepository extends MongoRepository<DeviceMongoDTO> {
     @Inject(DeviceMongoDTO) protected model: MongooseModel<DeviceMongoDTO>;
-    protected type: Type<DeviceMongoDTO> = DeviceMongoDTO;
+    protected mongo = DeviceMongoDTO;
 
     public async findAll(): Promise<DeviceMongoDTO[]> {
         const results = await this.model.find({}).lean<DeviceMongoDTO[]>();
@@ -30,18 +29,18 @@ export class DeviceMongoRepository extends MongoRepository<DeviceMongoDTO> {
         return this.deserialize(result);
     }
 
-    /**
-     * Upserts a device by hardware deviceId.
-     * Creates a new document when no match is found; updates and returns the existing document otherwise.
-     * The combination of upsert:true and new:true guarantees a non-null result.
-     */
-    public async upsertByDeviceId(deviceId: number, data: MongoUpdate<DeviceMongoDTO>): Promise<DeviceMongoDTO> {
-        const result = await this.model.findOneAndUpdate(
-            { deviceId },
+    public async create(data: MongoCreate<DeviceMongoDTO>): Promise<DeviceMongoDTO> {
+        const doc = await this.model.create(data);
+        return this.deserialize(this.convertHydratedDocumentToObject(doc));
+    }
+
+    public async updateById(id: string, data: MongoUpdate<DeviceMongoDTO>): Promise<DeviceMongoDTO> {
+        const result = await this.model.findByIdAndUpdate(
+            id,
             { $set: data },
-            { returnDocument: 'after', upsert: true }
+            { returnDocument: 'after' }
         ).lean<DeviceMongoDTO>();
-        return this.deserialize(result);
+        return this.deserialize(result as DeviceMongoDTO);
     }
 
     public async deleteById(id: string): Promise<void> {

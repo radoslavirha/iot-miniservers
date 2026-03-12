@@ -1,6 +1,7 @@
 import { createSocket } from 'dgram';
 import { Service, Scope, ProviderScope } from '@tsed/di';
 import { IncomingPacket, OutgoingPacket } from '../miot/packet/index.js';
+import { CommonUtils } from '@radoslavirha/utils';
 
 export interface HandshakeResult {
     /** Device ID to use in subsequent commands. */
@@ -57,10 +58,14 @@ export class MiotDeviceClient {
             let settled = false;
 
             const done = (err?: Error) => {
-                if (settled) return;
+                if (settled) {
+                    return;
+                }
                 settled = true;
                 socket.close();
-                if (err) reject(err);
+                if (err) {
+                    reject(err);
+                }
             };
 
             const timer = setTimeout(() => {
@@ -69,7 +74,9 @@ export class MiotDeviceClient {
 
             socket.on('message', (msg) => {
                 clearTimeout(timer);
-                if (settled) return;
+                if (settled) {
+                    return;
+                }
                 settled = true;
                 socket.close();
 
@@ -107,7 +114,7 @@ export class MiotDeviceClient {
 
         const results = response.result as MiotPropertyResult[];
         const item = results?.[0];
-        if (!item || item.code !== 0) {
+        if (CommonUtils.isNil(item) || item.code !== 0) {
             throw new Error(`get_properties failed: code ${item?.code ?? 'unknown'}`);
         }
         return item.value;
@@ -166,7 +173,7 @@ export class MiotDeviceClient {
 
         const results = response.result as MiotPropertyResult[];
         const item = results?.[0];
-        if (!item || item.code !== 0) {
+        if (CommonUtils.isNil(item) || item.code !== 0) {
             throw new Error(`set_properties failed: code ${item?.code ?? 'unknown'}`);
         }
     }
@@ -199,10 +206,14 @@ export class MiotDeviceClient {
             let settled = false;
 
             const done = (err?: Error) => {
-                if (settled) return;
+                if (settled) {
+                    return;
+                }
                 settled = true;
                 socket.close();
-                if (err) reject(err);
+                if (err) {
+                    reject(err);
+                }
             };
 
             const timer = setTimeout(() => {
@@ -211,18 +222,20 @@ export class MiotDeviceClient {
 
             socket.on('message', (msg) => {
                 clearTimeout(timer);
-                if (settled) return;
+                if (settled) {
+                    return;
+                }
                 settled = true;
                 socket.close();
 
                 try {
                     const packet = new IncomingPacket(msg, token);
                     const json = packet.json as MiotResponse | null;
-                    if (!json) {
+                    if (CommonUtils.isNil(json)) {
                         reject(new Error('Empty response from device'));
                         return;
                     }
-                    if (json.error) {
+                    if (CommonUtils.notNil(json.error)) {
                         reject(new Error(`Device error ${json.error.code}: ${json.error.message}`));
                         return;
                     }

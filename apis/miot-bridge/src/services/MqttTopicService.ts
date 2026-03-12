@@ -1,5 +1,6 @@
 import { Service, Scope, ProviderScope } from '@tsed/di';
 import { ConfigService } from './ConfigService.js';
+import { CommonUtils } from '@radoslavirha/utils';
 
 export type MqttTopics = {
     readonly command: string;
@@ -34,6 +35,6 @@ export class MqttTopicService {
     private build(path: string): string {
         const raw = this.configService.config.mqtt?.topicPrefix;
         const prefix = raw?.replace(/\/+$/, '');
-        return prefix ? `${prefix}/${path}` : path;
+        return CommonUtils.notNil(prefix) ? `${prefix}/${path}` : path;
     }
 }

@@ -4,7 +4,7 @@
  * Usage:
  *
  *   // Parse a command response
- *   const packet = new IncomingPacket(responseBuffer, '76506e394d327a617875497243654749');
+ *   const packet = new IncomingPacket(responseBuffer, 'XXXX...');  // device token (hex string or Buffer)
  *   const json = packet.json;   // decrypted, parsed JSON object
  *   const data = packet.data;   // raw decrypted Buffer
  *
@@ -15,6 +15,7 @@
 
 import { createDecipheriv, createHash } from 'crypto';
 import { BasePacket, HEADER_SIZE, MAGIC } from './BasePacket.js';
+import { CommonUtils } from '@radoslavirha/utils';
 
 export interface HelloInfo {
     /** Device ID to use in subsequent OutgoingPacket commands. */
@@ -43,7 +44,9 @@ export class IncomingPacket extends BasePacket {
      * Returns null if the packet carried no data.
      */
     get json(): Record<string, unknown> | null {
-        if (!this.data) return null;
+        if (CommonUtils.isNil(this.data)) {
+            return null;
+        }
         // Strip trailing null bytes that may appear due to AES block padding
         const text = this.data.toString('utf8').replace(/\0+$/, '');
         return JSON.parse(text);

@@ -83,7 +83,7 @@ export class RasterService {
             fromLeft = NumberUtils.getPercentFromValue(longitudeDiff, longitude - bbox.topLeft.longitude),
             fromTop = NumberUtils.getPercentFromValue(latitudeDiff, bbox.topLeft.latitude - latitude);
 
-        return CommonUtils.buildModel(Position, {
+        return CommonUtils.buildModelStrict(Position, {
             x: NumberUtils.round(NumberUtils.getValueFromPercent(imageWidth, fromLeft)),
             y: NumberUtils.round(NumberUtils.getValueFromPercent(imageHeight, fromTop))
         });

@@ -20,7 +20,7 @@
     "@radoslavirha/config-typescript": "catalog:",
     "@radoslavirha/tsed-common": "catalog:",
     "@radoslavirha/tsed-configuration": "catalog:",
-    "@radoslavirha/tsed-mongoose": "^3.1.2",
+    "@radoslavirha/tsed-mongoose": "^4.0.1",
     "@radoslavirha/tsed-platform": "catalog:",
     "@radoslavirha/tsed-swagger": "catalog:",
     "@radoslavirha/utils": "catalog:",
@@ -57,7 +57,7 @@
     "dotenv": "catalog:",
     "express": "catalog:",
     "method-override": "catalog:",
-    "mongoose": "^9.2.4",
+    "mongoose": "^9.3.0",
     "mqtt": "^5.15.0",
     "typescript": "catalog:",
     "zod": "catalog:"
