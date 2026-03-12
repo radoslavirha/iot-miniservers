@@ -1,5 +1,11 @@
 # miot-bridge
 
+## 0.8.1
+
+### Patch Changes
+
+- [`f8215a3`](https://github.com/radoslavirha/iot-miniservers/commit/f8215a33d43cb9b566274b2734888fcdccf2fdba) Thanks [@radoslavirha](https://github.com/radoslavirha)! - Fix handling empty mqtt messages
+
 ## 0.8.0
 
 ### Minor Changes
