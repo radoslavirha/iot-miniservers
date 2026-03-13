@@ -1,4 +1,5 @@
 export { CommandHandler } from './CommandHandler.js';
+export { RawCommandHandler } from './RawCommandHandler.js';
 export { DeviceDeleteHandler } from './devices/DeviceDeleteHandler.js';
 export { DeviceDiscoveryHandler } from './devices/DeviceDiscoveryHandler.js';
 export { DeviceGetAllHandler } from './devices/DeviceGetAllHandler.js';

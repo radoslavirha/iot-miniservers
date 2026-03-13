@@ -3,6 +3,7 @@ import { BadRequest, NotFound } from '@tsed/exceptions';
 import { CommonUtils } from '@radoslavirha/utils';
 import { DeviceCommandOperation } from '../models/DeviceCommandOperation.enum.js';
 import { DeviceCommandRequest } from '../models/DeviceCommandRequest.js';
+import { RawCommandRequest } from '../models/RawCommandRequest.js';
 import { DeviceCache } from '../models/DeviceCache.js';
 import { DeviceStorageService } from './DeviceStorageService.js';
 import { SimplifiedMiotSpecV2Mapper } from '../mappers/SimplifiedMiotSpecV2Mapper.js';
@@ -82,6 +83,41 @@ export class DeviceCommandService {
         });
 
         return { miotDeviceId: device.deviceId, results };
+    }
+
+    /**
+     * Executes a raw IID command against a registered device, bypassing spec lookup.
+     * Validates that the required iids are present for the operation type.
+     */
+    async executeRaw(request: RawCommandRequest): Promise<CommandResponseModel> {
+        const device = await this.deviceStorageService.getByDeviceId(request.deviceId);
+        if (CommonUtils.isNil(device)) {
+            throw new NotFound(`Device ${request.deviceId} not found in cache. Register the device first.`);
+        }
+
+        if (
+            (request.operation === DeviceCommandOperation.GetProperty || request.operation === DeviceCommandOperation.SetProperty) &&
+            CommonUtils.isNil(request.piid)
+        ) {
+            throw new BadRequest(`piid is required for ${request.operation} operations.`);
+        }
+
+        if (request.operation === DeviceCommandOperation.Action && CommonUtils.isNil(request.aiid)) {
+            throw new BadRequest(`aiid is required for ${DeviceCommandOperation.Action} operations.`);
+        }
+
+        const value = await this.runWithStamp(
+            device,
+            stamp => this.dispatchRaw(request, device, stamp)
+        );
+
+        return CommonUtils.buildModelStrict(CommandResponseModel, {
+            deviceId: request.deviceId,
+            command: `siid=${request.siid},piid=${request.piid ?? request.aiid}`,
+            operation: request.operation,
+            success: true,
+            value
+        });
     }
 
     async execute(request: DeviceCommandRequest): Promise<CommandResponseModel> {
@@ -249,6 +285,34 @@ export class DeviceCommandService {
                     address, token, deviceId, stamp,
                     resolved.action.siid, resolved.action.aiid, request.value
                 );
+        }
+    }
+
+    private async dispatchRaw(
+        request: RawCommandRequest,
+        device: DeviceCache,
+        stamp: number
+    ): Promise<string | number | undefined> {
+        const { address, token, deviceId } = device;
+
+        switch (request.operation) {
+            case DeviceCommandOperation.GetProperty:
+                return this.miotDeviceClient.getProperty(
+                    address, token, deviceId, stamp,
+                    request.siid, request.piid!
+                );
+            case DeviceCommandOperation.SetProperty:
+                return void this.miotDeviceClient.setProperty(
+                    address, token, deviceId, stamp,
+                    request.siid, request.piid!, request.value as string | number
+                );
+            case DeviceCommandOperation.Action:
+                return void this.miotDeviceClient.callAction(
+                    address, token, deviceId, stamp,
+                    request.siid, request.aiid!, request.value
+                );
+            default:
+                throw new BadRequest(`Unsupported operation: ${request.operation as string}.`);
         }
     }
 }

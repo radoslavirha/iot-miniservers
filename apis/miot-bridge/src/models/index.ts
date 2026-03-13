@@ -15,6 +15,8 @@ export * from './CommandResponseModel.js';
 export * from './SwaggerDocs.enum.js';
 export * from './notifications/index.js';
 export * from './CommandRequestModel.js';
+export * from './RawCommandRequest.js';
+export * from './RawCommandRequestModel.js';
 export * from './DeviceDiscoverRequest.js';
 export * from './DeviceDiscoverResponse.js';
 export * from './DeviceGetResponse.js';
