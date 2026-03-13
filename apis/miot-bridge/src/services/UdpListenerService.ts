@@ -2,11 +2,11 @@ import { createSocket, type RemoteInfo, type Socket } from 'dgram';
 import { Injectable, Scope, ProviderScope, OnDestroy, OnInit } from '@tsed/di';
 import { $log } from '@tsed/logger';
 import { CommonUtils, ObjectUtils } from '@radoslavirha/utils';
-import { JSONSchemaValidator, Serializer } from '@radoslavirha/tsed-common';
+import { JSONSchemaValidator } from '@radoslavirha/tsed-common';
 import { ConfigService } from './ConfigService.js';
 import { DeviceCommandService } from './DeviceCommandService.js';
-import { UdpCommandRequestModel } from '../models/UdpCommandRequestModel.js';
-import { CommandResponseModel } from '../models/CommandResponseModel.js';
+import { CommandRequestModel } from '../models/CommandRequestModel.js';
+import { DeviceCommandOperation } from '../models/DeviceCommandOperation.enum.js';
 import { DeviceCommandRequest } from '../models/DeviceCommandRequest.js';
 
 /** Maximum number of consecutive socket restarts before giving up. */
@@ -144,21 +144,21 @@ export class UdpListenerService implements OnInit, OnDestroy {
             payload = JSON.parse(msg.toString('utf8'));
         } catch {
             $log.warn({ event: 'UDP_INVALID_JSON', message: `Invalid JSON from ${rinfo.address}:${rinfo.port}.` });
-            this.reply(JSON.stringify({ success: false, error: 'Invalid JSON.' }), rinfo);
+            this.reply('error: Invalid JSON.', rinfo);
             return;
         }
 
-        let request: UdpCommandRequestModel;
+        let request: CommandRequestModel;
 
         try {
-            request = JSONSchemaValidator.validate(UdpCommandRequestModel, payload);
+            request = JSONSchemaValidator.validate(CommandRequestModel, payload);
         } catch (error) {
             $log.warn({
                 event: 'UDP_VALIDATION_FAILED',
                 message: `Validation failed from ${rinfo.address}:${rinfo.port}.`,
                 error
             });
-            this.reply(JSON.stringify({ success: false, error: `Validation failed. ${this.stringifyError(error)}` }), rinfo);
+            this.reply(`error: Validation failed. ${this.stringifyError(error)}`, rinfo);
             return;
         }
 
@@ -171,11 +171,16 @@ export class UdpListenerService implements OnInit, OnDestroy {
             });
 
             const response = await this.deviceCommandService.execute(commandRequest);
-            this.reply(JSON.stringify(Serializer.serialize(response, CommandResponseModel)), rinfo);
+
+            if (response.operation === DeviceCommandOperation.Action) {
+                this.reply('', rinfo);
+            } else {
+                this.reply(String(response.value ?? ''), rinfo);
+            }
         } catch (error) {
             const message = this.stringifyError(error);
             $log.error({ event: 'UDP_COMMAND_FAILED', message, deviceId: request.deviceId, command: request.command });
-            this.reply(JSON.stringify({ success: false, error: message }), rinfo);
+            this.reply(`error: ${message}`, rinfo);
         }
     }
 

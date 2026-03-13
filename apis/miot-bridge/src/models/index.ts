@@ -1,3 +1,4 @@
+export * from './CommandValueResponse.js';
 export * from './config/ConfigModel.js';
 export * from './Device.js';
 export * from './NotificationPayload.js';
@@ -5,10 +6,8 @@ export * from './config/HttpConfig.js';
 export * from './DeviceCache.js';
 export * from './DeviceCommandOperation.enum.js';
 export * from './config/MqttConfig.js';
-export * from './DeviceCommandOperation.enum.js';
 export * from './config/PollingConfig.js';
 export * from './PropertyChangeEvent.js';
-export * from './UdpCommandRequestModel.js';
 export * from './config/UdpConfig.js';
 export * from './simplified-miot-spec/index.js';
 export * from './DeviceCommandRequest.js';

@@ -13,7 +13,7 @@ export interface HandshakeResult {
 export interface GetPropertiesResult {
     siid: number;
     piid: number;
-    value?: unknown;
+    value?: string | number;
     code: number;
 }
 
@@ -21,13 +21,13 @@ interface MiotPropertyResult {
     did: string;
     siid: number;
     piid: number;
-    value?: unknown;
+    value?: string | number;
     code: number;
 }
 
 interface MiotResponse {
     id: number;
-    result?: unknown;
+    result?: string | number | unknown;
     error?: { code: number; message: string };
 }
 
@@ -105,7 +105,7 @@ export class MiotDeviceClient {
     /**
      * Reads a single property value from the device.
      */
-    async getProperty(address: string, token: string, deviceId: number, stamp: number, siid: number, piid: number): Promise<unknown> {
+    async getProperty(address: string, token: string, deviceId: number, stamp: number, siid: number, piid: number): Promise<string | number | undefined> {
         const did = String(deviceId);
         const response = await this.sendCommand(address, token, deviceId, stamp, {
             method: 'get_properties',
@@ -164,7 +164,7 @@ export class MiotDeviceClient {
     /**
      * Writes a property value to the device.
      */
-    async setProperty(address: string, token: string, deviceId: number, stamp: number, siid: number, piid: number, value: unknown): Promise<void> {
+    async setProperty(address: string, token: string, deviceId: number, stamp: number, siid: number, piid: number, value: string | number): Promise<void> {
         const did = String(deviceId);
         const response = await this.sendCommand(address, token, deviceId, stamp, {
             method: 'set_properties',

@@ -27,8 +27,8 @@ export class CommandResponseModel {
 
     @Description(`Property value returned by a ${DeviceCommandOperation.GetProperty} operation.`)
     @Optional()
-    @Any()
-    public value?: unknown;
+    @Any(String, Number)
+    public value?: string | number;
 
     @Description('Error message when success is false.')
     @Optional()

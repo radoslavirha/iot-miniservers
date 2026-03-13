@@ -5,6 +5,7 @@ import { Configuration } from '@tsed/di';
 import '@tsed/mongoose';
 import * as rest from './controllers/index.js';
 import { ObjectUtils } from '@radoslavirha/utils';
+import { CommandResponseFilter } from './filters/CommandResponseFilter.js';
 import './providers/index.js';
 import './services/UdpListenerService.js';
 import './services/MqttListenerService.js';
@@ -13,7 +14,10 @@ import './services/MqttListenerService.js';
     ...getServerDefaultConfig(),
     mount: {
         '/': [SwaggerController, ...ObjectUtils.values(rest)]
-    }
+    },
+    responseFilters: [
+        CommandResponseFilter
+    ]
 })
 export class Server extends BaseServer {
 

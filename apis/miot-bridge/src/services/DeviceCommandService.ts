@@ -123,7 +123,7 @@ export class DeviceCommandService {
             command: request.command,
             operation: request.operation,
             success: true,
-            value
+            value: value
         });
     }
 
@@ -230,7 +230,7 @@ export class DeviceCommandService {
         device: DeviceCache,
         stamp: number,
         resolved: ResolvedCommand
-    ): Promise<unknown> {
+    ): Promise<string | number | undefined> {
         const { address, token, deviceId } = device;
 
         switch (resolved.operation) {
@@ -240,12 +240,12 @@ export class DeviceCommandService {
                     resolved.property.siid, resolved.property.piid
                 );
             case DeviceCommandOperation.SetProperty:
-                return this.miotDeviceClient.setProperty(
+                return void this.miotDeviceClient.setProperty(
                     address, token, deviceId, stamp,
-                    resolved.property.siid, resolved.property.piid, request.value
+                    resolved.property.siid, resolved.property.piid, request.value as string | number
                 );
             case DeviceCommandOperation.Action:
-                return this.miotDeviceClient.callAction(
+                return void this.miotDeviceClient.callAction(
                     address, token, deviceId, stamp,
                     resolved.action.siid, resolved.action.aiid, request.value
                 );

@@ -5,16 +5,16 @@ import { CommonUtils } from '@radoslavirha/utils';
 export type MqttTopics = {
     readonly command: string;
     readonly response: string;
-    readonly notifications: string;
 };
 
 /**
  * Centralises MQTT topic construction.
  *
- * Returns the three topics used by the miot-bridge protocol:
- *  - `command`       — inbound device commands
- *  - `response`      — outbound command responses
- *  - `notifications` — outbound property-change events
+ * Returns the two base topics used by the miot-bridge protocol:
+ *  - `command`  — inbound device commands
+ *  - `response` — outbound command responses
+ *
+ * Notification topics are per-device and built via {@link getNotificationsTopic}.
  *
  * The optional `mqtt.topicPrefix` config value is prepended to every topic.
  * Trailing slashes in the prefix are stripped automatically.
@@ -27,9 +27,16 @@ export class MqttTopicService {
     public get(): MqttTopics {
         return {
             command: this.build('miot-bridge/command'),
-            response: this.build('miot-bridge/response'),
-            notifications: this.build('miot-bridge/notifications')
+            response: this.build('miot-bridge/response')
         };
+    }
+
+    /**
+     * Returns the notification topic for a specific Xiaomi device.
+     * Format: `[prefix/]miot-bridge/notifications/device/{miotDeviceId}`
+     */
+    public getNotificationsTopic(miotDeviceId: number): string {
+        return this.build(`miot-bridge/notifications/device/${miotDeviceId}`);
     }
 
     private build(path: string): string {

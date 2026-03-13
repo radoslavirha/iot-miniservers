@@ -1,4 +1,4 @@
-import { AdditionalProperties, Description, Enum, Example, Optional, Property, Required } from '@tsed/schema';
+import { AdditionalProperties, AnyOf, Description, Enum, Example, Optional, Property, Required } from '@tsed/schema';
 import { DeviceCommandOperation } from '../models/DeviceCommandOperation.enum.js';
 
 @Description('Command request model shared by HTTP and MQTT transports.')
@@ -22,6 +22,6 @@ export class CommandRequestModel {
 
     @Description(`Value for ${DeviceCommandOperation.SetProperty} operations or arguments for ${DeviceCommandOperation.Action} operations (e.g. [1, 2, 3]).`)
     @Optional()
-    @Property(Number)
-    public value?: number;
+    @AnyOf()
+    public value?: string | number | string[] | number[];
 }

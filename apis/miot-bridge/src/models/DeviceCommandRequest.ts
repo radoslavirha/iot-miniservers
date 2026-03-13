@@ -12,5 +12,5 @@ export class DeviceCommandRequest {
     /** Operation type: GET_PROPERTY, SET_PROPERTY, or ACTION. */
     public operation: DeviceCommandOperation;
     /** Value for SET_PROPERTY operations or arguments for ACTION operations (e.g. room IDs for clean:rooms). */
-    public value?: unknown;
+    public value?: string | number | string[] | number[];
 }

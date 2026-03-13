@@ -1,13 +1,13 @@
 import { Inject, Injectable, Scope, ProviderScope, OnInit } from '@tsed/di';
 import { $log } from '@tsed/logger';
 import { CommonUtils } from '@radoslavirha/utils';
-import { JSONSchemaValidator, Serializer } from '@radoslavirha/tsed-common';
+import { JSONSchemaValidator } from '@radoslavirha/tsed-common';
 import type { MqttClient } from 'mqtt';
+import { DeviceCommandOperation } from '../models/DeviceCommandOperation.enum.js';
 import { MqttClientProvider } from '../providers/MqttClientProvider.js';
 import { MqttTopicService } from './MqttTopicService.js';
 import { DeviceCommandService } from './DeviceCommandService.js';
 import { CommandRequestModel } from '../models/CommandRequestModel.js';
-import { CommandResponseModel } from '../models/CommandResponseModel.js';
 import { DeviceCommandRequest } from '../models/DeviceCommandRequest.js';
 
 /**
@@ -47,7 +47,6 @@ export class MqttListenerService implements OnInit {
             } else {
                 $log.info({ event: 'MQTT_SUBSCRIBED', topic: topics.command });
                 $log.info({ event: 'MQTT_RESPONSE_TOPIC', topic: topics.response });
-                $log.info({ event: 'MQTT_NOTIFICATION_TOPIC', topic: topics.notifications });
             }
         });
 
@@ -82,7 +81,7 @@ export class MqttListenerService implements OnInit {
             parsed = JSON.parse(payload.toString('utf8'));
         } catch {
             $log.warn({ event: 'MQTT_INVALID_JSON', message: 'Received non-JSON MQTT payload.' });
-            return JSON.stringify({ success: false, error: 'Invalid JSON.' });
+            return 'error: Invalid JSON.';
         }
 
         let request: CommandRequestModel;
@@ -91,7 +90,7 @@ export class MqttListenerService implements OnInit {
             request = JSONSchemaValidator.validate(CommandRequestModel, parsed);
         } catch (error) {
             $log.warn({ event: 'MQTT_VALIDATION_FAILED', message: 'MQTT payload validation failed.', error });
-            return JSON.stringify({ success: false, error: `Validation failed. ${this.stringifyError(error)}` });
+            return `error: Validation failed. ${this.stringifyError(error)}`;
         }
 
         try {
@@ -103,11 +102,16 @@ export class MqttListenerService implements OnInit {
             });
 
             const response = await this.deviceCommandService.execute(commandRequest);
-            return JSON.stringify(Serializer.serialize(response, CommandResponseModel));
+
+            if (response.operation === DeviceCommandOperation.Action) {
+                return '';
+            }
+
+            return String(response.value ?? '');
         } catch (error) {
             const message = this.stringifyError(error);
             $log.error({ event: 'MQTT_COMMAND_FAILED', message, deviceId: request.deviceId, command: request.command });
-            return JSON.stringify({ success: false, error: message });
+            return `error: ${message}`;
         }
     }
 

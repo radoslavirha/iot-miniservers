@@ -54,8 +54,9 @@ export class NotificationDispatchService {
     }
 
     private sendMqtt(payload: NotificationPayload): void {
-        const topic = this.mqttTopicService.get().notifications;
-        this.mqttClient!.publish(topic, JSON.stringify(payload), { qos: 1 }, (err) => {
+        const topic = this.mqttTopicService.getNotificationsTopic(payload.deviceId);
+        const message = `${payload.property}=${String(payload.value ?? '')}`;
+        this.mqttClient!.publish(topic, message, { qos: 1 }, (err) => {
             if (CommonUtils.notNil(err)) {
                 $log.warn({
                     event: 'NOTIFICATION_MQTT_ERROR',
@@ -115,7 +116,8 @@ export class NotificationDispatchService {
             }
 
             const socket = createSocket('udp4');
-            const buffer = Buffer.from(JSON.stringify(payload), 'utf8');
+            const message = `deviceId=${payload.deviceId}\n${payload.property}=${String(payload.value ?? '')}`;
+            const buffer = Buffer.from(message, 'utf8');
             socket.send(buffer, port, host, (error) => {
                 socket.close();
                 if (CommonUtils.notNil(error)) {
