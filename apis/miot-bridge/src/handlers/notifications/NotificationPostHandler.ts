@@ -4,6 +4,7 @@ import { CommonUtils } from '@radoslavirha/utils';
 import { DeviceStorageService } from '../../services/DeviceStorageService.js';
 import { DevicePropertyPollerService } from '../../services/DevicePropertyPollerService.js';
 import { NotificationStorageService } from '../../services/NotificationStorageService.js';
+import { ModelPropertyOverrideService } from '../../services/ModelPropertyOverrideService.js';
 import { SimplifiedMiotSpecV2Mapper } from '../../mappers/SimplifiedMiotSpecV2Mapper.js';
 import { NotificationMapper } from '../../mappers/NotificationMapper.js';
 import { NotificationRequest } from '../../models/notifications/NotificationRequest.js';
@@ -18,6 +19,7 @@ export class NotificationPostHandler {
         private readonly deviceStorageService: DeviceStorageService,
         private readonly notificationStorageService: NotificationStorageService,
         private readonly devicePropertyPollerService: DevicePropertyPollerService,
+        private readonly modelPropertyOverrideService: ModelPropertyOverrideService,
         private readonly simplifiedMiotSpecMapper: SimplifiedMiotSpecV2Mapper,
         private readonly notificationMapper: NotificationMapper
     ) {}
@@ -28,7 +30,8 @@ export class NotificationPostHandler {
             throw new NotFound(`Device ${deviceId} not found.`);
         }
 
-        const spec = await this.simplifiedMiotSpecMapper.map(device.rawSpec);
+        const overrides = await this.modelPropertyOverrideService.getByModel(device.model);
+        const spec = await this.simplifiedMiotSpecMapper.map(device.rawSpec, overrides);
 
         for (const propertyKey of request.properties) {
             const prop = spec.properties.get(propertyKey);
