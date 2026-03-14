@@ -14,6 +14,7 @@ import { MiotAction } from '../models/simplified-miot-spec/MiotAction.js';
 import { CommandResponseModel } from '../models/CommandResponseModel.js';
 import { MiotDeviceClient, type GetPropertiesResult } from './MiotDeviceClient.js';
 import { NotificationDispatchService } from './NotificationDispatchService.js';
+import { ModelPropertyOverrideService } from './ModelPropertyOverrideService.js';
 
 /** Per-key result returned by {@link DeviceCommandService.getProperties}. */
 export type KeyedPropertyResult = GetPropertiesResult & { key: string };
@@ -48,7 +49,8 @@ export class DeviceCommandService {
         private readonly deviceStorageService: DeviceStorageService,
         private readonly simplifiedMiotSpecMapper: SimplifiedMiotSpecV2Mapper,
         private readonly miotDeviceClient: MiotDeviceClient,
-        private readonly notificationDispatch: NotificationDispatchService
+        private readonly notificationDispatch: NotificationDispatchService,
+        private readonly modelPropertyOverrideService: ModelPropertyOverrideService
     ) {}
 
     /**
@@ -62,7 +64,8 @@ export class DeviceCommandService {
             throw new NotFound(`Device ${storageId} not found.`);
         }
 
-        const spec = await this.simplifiedMiotSpecMapper.map(device.rawSpec);
+        const overrides = await this.modelPropertyOverrideService.getByModel(device.model);
+        const spec = await this.simplifiedMiotSpecMapper.map(device.rawSpec, overrides);
         const props: Array<{ key: string; siid: number; piid: number }> = [];
         for (const key of keys) {
             const property = spec.properties.get(key);
@@ -126,7 +129,8 @@ export class DeviceCommandService {
             throw new NotFound(`Device ${request.deviceId} not found in cache. Register the device first.`);
         }
 
-        const spec = await this.simplifiedMiotSpecMapper.map(device.rawSpec);
+        const overrides = await this.modelPropertyOverrideService.getByModel(device.model);
+        const spec = await this.simplifiedMiotSpecMapper.map(device.rawSpec, overrides);
         const resolved = this.resolveCommand(request, device.deviceId, spec);
 
         const value = await this.runWithStamp(

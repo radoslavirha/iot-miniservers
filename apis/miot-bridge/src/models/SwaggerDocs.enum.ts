@@ -1,4 +1,4 @@
 export enum SwaggerDocs {
-    DEVICES = 'Devices',
+    API = 'api',
     COMMANDS = 'Commands'
 }

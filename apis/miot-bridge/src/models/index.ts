@@ -17,6 +17,7 @@ export * from './notifications/index.js';
 export * from './CommandRequestModel.js';
 export * from './RawCommandRequest.js';
 export * from './RawCommandRequestModel.js';
+export * from './model-property-override/index.js';
 export * from './DeviceDiscoverRequest.js';
 export * from './DeviceDiscoverResponse.js';
 export * from './DeviceGetResponse.js';

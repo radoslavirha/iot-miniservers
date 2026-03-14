@@ -20,7 +20,7 @@ import { DeviceNotificationsController } from './DeviceNotificationsController.j
 @Description('Endpoints for miot device discovery, registration and management.')
 @Controller({ path: '/devices', children: [DeviceNotificationsController] })
 @Scope(ProviderScope.SINGLETON)
-@Docs(SwaggerDocs.DEVICES)
+@Docs(SwaggerDocs.API)
 export class DevicesController {
     constructor(
         private readonly discoveryHandler: DeviceDiscoveryHandler,

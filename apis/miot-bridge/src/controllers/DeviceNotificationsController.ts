@@ -13,7 +13,7 @@ import { NotificationRequest } from '../models/notifications/NotificationRequest
 @Description('Endpoints for managing device property notification subscriptions.')
 @Controller('/:deviceId/notifications')
 @Scope(ProviderScope.SINGLETON)
-@Docs(SwaggerDocs.DEVICES)
+@Docs(SwaggerDocs.API)
 export class DeviceNotificationsController {
     constructor(
         private readonly notificationPostHandler: NotificationPostHandler,

@@ -2,6 +2,7 @@ import { Injectable, Scope, ProviderScope } from '@tsed/di';
 import { CommonUtils, MappingUtils } from '@radoslavirha/utils';
 import { MiotSpecV2, MiotSpecV2PropertyAccess } from '../models/miot-spec-v2/index.js';
 import { MiotAction, MiotProperty, MiotPropertyValue, PropertyAccess, SimplifiedMiotSpec } from '../models/simplified-miot-spec/index.js';
+import type { ModelPropertyOverride } from '../models/model-property-override/ModelPropertyOverride.js';
 
 /**
  * Maps a raw MiotSpec (global layer) into a SimplifiedMiotSpec (global layer).
@@ -10,7 +11,7 @@ import { MiotAction, MiotProperty, MiotPropertyValue, PropertyAccess, Simplified
 @Injectable()
 @Scope(ProviderScope.SINGLETON)
 export class SimplifiedMiotSpecV2Mapper extends MappingUtils {
-    async map(data: MiotSpecV2): Promise<SimplifiedMiotSpec> {
+    async map(data: MiotSpecV2, overrides: ModelPropertyOverride[] = []): Promise<SimplifiedMiotSpec> {
         const properties = new Map<string, MiotProperty>();
         const actions = new Map<string, MiotAction>();
 
@@ -53,6 +54,22 @@ export class SimplifiedMiotSpecV2Mapper extends MappingUtils {
                 }));
             });
         });
+
+        for (const override of overrides) {
+            const svc = data.services.find(s => s.iid === override.siid);
+            if (CommonUtils.isNil(svc)) {
+                continue;
+            }
+            const serviceKey = svc.type.split(':')[3];
+            properties.set(`${serviceKey}:${override.key}`, CommonUtils.buildModelStrict(MiotProperty, {
+                siid: override.siid,
+                piid: override.piid,
+                access: override.access,
+                values: override.values.map(v =>
+                    CommonUtils.buildModelStrict(MiotPropertyValue, { value: v.value, description: v.description })
+                )
+            }));
+        }
 
         return CommonUtils.buildModelStrict(SimplifiedMiotSpec, {
             name: data.description,
