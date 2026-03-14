@@ -1,5 +1,11 @@
 # miot-bridge
 
+## 0.12.0
+
+### Minor Changes
+
+- [`b65fc72`](https://github.com/radoslavirha/iot-miniservers/commit/b65fc72770dbe0e9f93851e94dd957bdf8905489) Thanks [@radoslavirha](https://github.com/radoslavirha)! - Fix overrides in notification registry
+
 ## 0.11.0
 
 ### Minor Changes
