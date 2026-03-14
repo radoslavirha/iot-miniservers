@@ -1,5 +1,11 @@
 # miot-bridge
 
+## 0.11.0
+
+### Minor Changes
+
+- [`41bcfce`](https://github.com/radoslavirha/iot-miniservers/commit/41bcfce9673d235e7c7fc4ed9dc20df7def594fd) Thanks [@radoslavirha](https://github.com/radoslavirha)! - Property overrides
+
 ## 0.10.0
 
 ### Minor Changes
