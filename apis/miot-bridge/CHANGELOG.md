@@ -1,5 +1,11 @@
 # miot-bridge
 
+## 0.12.1
+
+### Patch Changes
+
+- [`17b91f8`](https://github.com/radoslavirha/iot-miniservers/commit/17b91f8c6bc21dedf1ff14aec452e0bc5db6cda2) Thanks [@radoslavirha](https://github.com/radoslavirha)! - Fix unhandled rejection
+
 ## 0.12.0
 
 ### Minor Changes
