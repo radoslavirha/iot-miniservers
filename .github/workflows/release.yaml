@@ -35,10 +35,31 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Set APIs matrix
         id: set-apis-matrix
-        uses: nickofthyme/object-remap@v3
-        with:
-          include.*.name: ${{ toJSON(fromJSON(steps.changesets.outputs.publishedPackages).*.name) }}
-          include.*.version: ${{ toJSON(fromJSON(steps.changesets.outputs.publishedPackages).*.version) }}
+        shell: bash
+        run: |
+          packages='${{ steps.changesets.outputs.publishedPackages }}'
+          if [ -z "$packages" ] || [ "$packages" = "null" ] || [ "$packages" = "[]" ]; then
+            echo "json={}" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          include="[]"
+          for pkg_json in apis/*/package.json; do
+            dir=$(dirname "$pkg_json")
+            target=$(basename "$dir")
+            if [ ! -f "${dir}/deploy.json" ]; then
+              continue
+            fi
+            pkg_name=$(jq -r '.name' "$pkg_json")
+            version=$(echo "$packages" | jq -r --arg n "$pkg_name" '.[] | select(.name == $n) | .version')
+            if [ -n "$version" ]; then
+              include=$(echo "$include" | jq --arg t "$target" --arg v "$version" '. + [{"name": $t, "version": $v}]')
+            fi
+          done
+          if [ "$include" = "[]" ]; then
+            echo "json={}" >> "$GITHUB_OUTPUT"
+          else
+            echo "json={\"include\":$include}" >> "$GITHUB_OUTPUT"
+          fi
   docs:
     name: Build Readme
     needs: release
