@@ -6,7 +6,7 @@ export * from './DeviceMongoService.js';
 export * from './DeviceNotificationMongoService.js';
 export * from './DevicePropertyPollerService.js';
 export * from './DeviceStorageService.js';
-export * from './MiotDeviceClient.js';
+export * from './MiotDeviceRegistry.js';
 export * from './ModelPropertyOverrideLocalStorageService.js';
 export * from './ModelPropertyOverrideMongoService.js';
 export * from './ModelPropertyOverrideService.js';

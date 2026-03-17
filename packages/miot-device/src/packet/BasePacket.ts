@@ -17,13 +17,10 @@
 
 import { CommonUtils } from '@radoslavirha/utils';
 import { createHash } from 'crypto';
-
-export const HEADER_SIZE = 32;
-export const MAGIC = 0x2131;
+import { HEADER_SIZE, MAGIC } from '../Constants.js';
 
 export class BasePacket {
     protected readonly header: Buffer;
-
     protected readonly token: Buffer | null = null;
     protected readonly tokenKey: Buffer | null = null;
     protected readonly tokenIV: Buffer | null = null;
@@ -47,7 +44,9 @@ export class BasePacket {
             }
 
             // Key = MD5(Token)
-            this.tokenKey = createHash('md5').update(this.token).digest();
+            this.tokenKey = createHash('md5')
+                .update(this.token)
+                .digest();
             // IV  = MD5(Key + Token)
             this.tokenIV = createHash('md5')
                 .update(this.tokenKey)

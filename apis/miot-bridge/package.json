@@ -18,9 +18,10 @@
   },
   "dependencies": {
     "@radoslavirha/config-typescript": "catalog:",
+    "@radoslavirha/miot-device": "workspace:*",
     "@radoslavirha/tsed-common": "catalog:",
     "@radoslavirha/tsed-configuration": "catalog:",
-    "@radoslavirha/tsed-mongoose": "^4.0.1",
+    "@radoslavirha/tsed-mongoose": "^4.0.3",
     "@radoslavirha/tsed-platform": "catalog:",
     "@radoslavirha/tsed-swagger": "catalog:",
     "@radoslavirha/utils": "catalog:",
@@ -57,7 +58,7 @@
     "dotenv": "catalog:",
     "express": "catalog:",
     "method-override": "catalog:",
-    "mongoose": "^9.3.0",
+    "mongoose": "^9.3.1",
     "mqtt": "^5.15.0",
     "typescript": "catalog:",
     "zod": "catalog:"

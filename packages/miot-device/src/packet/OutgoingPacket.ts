@@ -16,8 +16,9 @@
  */
 
 import { createCipheriv, createHash } from 'crypto';
-import { BasePacket, HEADER_SIZE } from './BasePacket.js';
+import { BasePacket } from './BasePacket.js';
 import { CommonUtils } from '@radoslavirha/utils';
+import { HEADER_SIZE } from '../Constants.js';
 
 export interface OutgoingPacketConfig {
     /** Device token: 32-char hex string or 16-byte Buffer. Required for command packets. */
@@ -79,19 +80,6 @@ export class OutgoingPacket extends BasePacket {
         // Hello packet: magic + length 0x0020 + 0xFF fill
         this.header.writeUInt16BE(HEADER_SIZE, 2);
         return Buffer.from(this.header);
-    }
-
-    /**
-     * Serialize the packet as a Loxone-compatible `\xNN` hex-escape string.
-     *
-     * Loxone virtual UDP outputs use `\x` notation for binary data
-     * (e.g. `\x21\x31\x00\x20…`). Paste the result directly into
-     * the "Instrukce při zapnutí" field of a Virtual UDP Output Command.
-     */
-    get toLoxone(): string {
-        return [...this.raw]
-            .map(b => `\\x${b.toString(16).padStart(2, '0')}`)
-            .join('');
     }
 
     private buildCommandPacket(): Buffer {

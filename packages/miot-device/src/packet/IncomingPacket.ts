@@ -14,8 +14,9 @@
  */
 
 import { createDecipheriv, createHash } from 'crypto';
-import { BasePacket, HEADER_SIZE, MAGIC } from './BasePacket.js';
+import { BasePacket } from './BasePacket.js';
 import { CommonUtils } from '@radoslavirha/utils';
+import { HEADER_SIZE, MAGIC } from '../Constants.js';
 
 export interface HelloInfo {
     /** Device ID to use in subsequent OutgoingPacket commands. */
@@ -51,8 +52,6 @@ export class IncomingPacket extends BasePacket {
         const text = this.data.toString('utf8').replace(/\0+$/, '');
         return JSON.parse(text);
     }
-
-    // ─── Static ──────────────────────────────────────────────
 
     /**
      * Parse a hello response packet from the device.

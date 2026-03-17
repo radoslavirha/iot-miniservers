@@ -4,7 +4,6 @@ import { CommonUtils } from '@radoslavirha/utils';
 import { DeviceCommandOperation } from '../models/DeviceCommandOperation.enum.js';
 import { DeviceCommandRequest } from '../models/DeviceCommandRequest.js';
 import { RawCommandRequest } from '../models/RawCommandRequest.js';
-import { DeviceCache } from '../models/DeviceCache.js';
 import { DeviceStorageService } from './DeviceStorageService.js';
 import { SimplifiedMiotSpecV2Mapper } from '../mappers/SimplifiedMiotSpecV2Mapper.js';
 import { type SimplifiedMiotSpec } from '../models/simplified-miot-spec/SimplifiedMiotSpec.js';
@@ -12,9 +11,10 @@ import { PropertyAccess } from '../models/simplified-miot-spec/PropertyAccess.en
 import { MiotProperty } from '../models/simplified-miot-spec/MiotProperty.js';
 import { MiotAction } from '../models/simplified-miot-spec/MiotAction.js';
 import { CommandResponseModel } from '../models/CommandResponseModel.js';
-import { MiotDeviceClient, type GetPropertiesResult } from './MiotDeviceClient.js';
 import { NotificationDispatchService } from './NotificationDispatchService.js';
 import { ModelPropertyOverrideService } from './ModelPropertyOverrideService.js';
+import { MiotDeviceRegistry } from './MiotDeviceRegistry.js';
+import type { GetPropertiesResult } from '@radoslavirha/miot-device';
 
 /** Per-key result returned by {@link DeviceCommandService.getProperties}. */
 export type KeyedPropertyResult = GetPropertiesResult & { key: string };
@@ -28,28 +28,10 @@ type ResolvedCommand =
     | { operation: DeviceCommandOperation.SetProperty; property: MiotProperty }
     | { operation: DeviceCommandOperation.Action; action: MiotAction };
 
-/** Normalized parameters passed to the low-level MIoT operation executor. */
-interface MiotCommandParams {
-    operation: DeviceCommandOperation;
-    siid: number;
-    piid?: number;
-    aiid?: number;
-    value?: unknown;
-}
-
 /**
- * Maximum age (ms) of a cached stamp before it is considered stale.
- * Xiaomi devices silently drop commands with stale stamps, causing a 10-second
- * timeout on the first dispatch attempt. Proactively handshaking when the stamp
- * is known to be old avoids this penalty entirely.
- */
-const STAMP_MAX_AGE_MS = 30_000;
-
-/**
- * Executes a transport-agnostic command against a registered device.
- * Validates the requested operation against the device's MIoT spec.
- * On failure, performs a fresh handshake to recover the current stamp and retries once.
- * Updates the cached stamp after each successful call.
+ * Validates and dispatches MIoT commands against registered devices.
+ * Transport, stamp management, and retry logic are delegated entirely to
+ * {@link MiotDeviceRegistry} / {@link MiotDevice}.
  */
 @Service()
 @Scope(ProviderScope.SINGLETON)
@@ -57,14 +39,13 @@ export class DeviceCommandService {
     constructor(
         private readonly deviceStorageService: DeviceStorageService,
         private readonly simplifiedMiotSpecMapper: SimplifiedMiotSpecV2Mapper,
-        private readonly miotDeviceClient: MiotDeviceClient,
         private readonly notificationDispatch: NotificationDispatchService,
-        private readonly modelPropertyOverrideService: ModelPropertyOverrideService
+        private readonly modelPropertyOverrideService: ModelPropertyOverrideService,
+        private readonly registry: MiotDeviceRegistry
     ) {}
 
     /**
      * Bulk-reads a set of spec property keys for a device identified by its storage ID.
-     * Uses the same stamp-refresh + retry logic as {@link execute}.
      * Unresolvable keys are silently omitted from the result.
      */
     async getProperties(storageId: string, keys: string[]): Promise<GetPropertiesResponse> {
@@ -82,11 +63,8 @@ export class DeviceCommandService {
         }
         if (!props.length) return { miotDeviceId: device.deviceId, results: [] };
 
-        const coords = props.map(p => ({ siid: p.siid, piid: p.piid }));
-        const rawResults = await this.runWithStamp(device, async (stamp) => {
-            const { results } = await this.miotDeviceClient.getProperties(device.address, device.token, device.deviceId, stamp, coords);
-            return results;
-        });
+        const miotDevice = this.registry.getOrCreate(device);
+        const rawResults = await miotDevice.getProperties(props.map(p => ({ siid: p.siid, piid: p.piid })));
 
         const results = props.map(p => {
             const r = rawResults.find(x => x.siid === p.siid && x.piid === p.piid);
@@ -98,7 +76,6 @@ export class DeviceCommandService {
 
     /**
      * Executes a raw IID command against a registered device, bypassing spec lookup.
-     * Validates that the required iids are present for the operation type.
      */
     async executeRaw(request: RawCommandRequest): Promise<CommandResponseModel> {
         const device = await this.deviceStorageService.getByDeviceId(request.deviceId);
@@ -117,8 +94,22 @@ export class DeviceCommandService {
             throw new BadRequest(`aiid is required for ${DeviceCommandOperation.Action} operations.`);
         }
 
-        const params: MiotCommandParams = { operation: request.operation, siid: request.siid, piid: request.piid, aiid: request.aiid, value: request.value };
-        const value = await this.runWithStamp(device, stamp => this.executeCommand(device, stamp, params));
+        const miotDevice = this.registry.getOrCreate(device);
+        let value: string | number | undefined;
+
+        switch (request.operation) {
+            case DeviceCommandOperation.GetProperty:
+                value = await miotDevice.getProperty(request.siid, request.piid!);
+                break;
+            case DeviceCommandOperation.SetProperty:
+                await miotDevice.setProperty(request.siid, request.piid!, request.value as string | number);
+                break;
+            case DeviceCommandOperation.Action:
+                await miotDevice.callAction(request.siid, request.aiid!, request.value);
+                break;
+            default:
+                throw new BadRequest(`Unsupported operation: ${request.operation as string}.`);
+        }
 
         return CommonUtils.buildModelStrict(CommandResponseModel, {
             deviceId: request.deviceId,
@@ -139,27 +130,35 @@ export class DeviceCommandService {
         const spec = await this.simplifiedMiotSpecMapper.map(device.rawSpec, overrides);
         const resolved = this.resolveCommand(request, device.deviceId, spec);
 
-        const params = this.resolveCommandParams(request, resolved);
-        const value = await this.runWithStamp(device, stamp => this.executeCommand(device, stamp, params));
+        const miotDevice = this.registry.getOrCreate(device);
+        let value: string | number | undefined;
 
-        if (resolved.operation === DeviceCommandOperation.GetProperty) {
-            this.notificationDispatch.receive({
-                deviceId: device.id,
-                miotDeviceId: device.deviceId,
-                property: request.command,
-                oldValue: undefined,
-                newValue: value,
-                timestamp: Date.now()
-            });
-        } else if (resolved.operation === DeviceCommandOperation.SetProperty) {
-            this.notificationDispatch.receive({
-                deviceId: device.id,
-                miotDeviceId: device.deviceId,
-                property: request.command,
-                oldValue: undefined, // We don't have the old value here, but it could be fetched if needed
-                newValue: request.value,
-                timestamp: Date.now()
-            });
+        switch (resolved.operation) {
+            case DeviceCommandOperation.GetProperty:
+                value = await miotDevice.getProperty(resolved.property.siid, resolved.property.piid);
+                this.notificationDispatch.receive({
+                    deviceId: device.id,
+                    miotDeviceId: device.deviceId,
+                    property: request.command,
+                    oldValue: undefined,
+                    newValue: value,
+                    timestamp: Date.now()
+                });
+                break;
+            case DeviceCommandOperation.SetProperty:
+                await miotDevice.setProperty(resolved.property.siid, resolved.property.piid, request.value as string | number);
+                this.notificationDispatch.receive({
+                    deviceId: device.id,
+                    miotDeviceId: device.deviceId,
+                    property: request.command,
+                    oldValue: undefined,
+                    newValue: request.value,
+                    timestamp: Date.now()
+                });
+                break;
+            case DeviceCommandOperation.Action:
+                await miotDevice.callAction(resolved.action.siid, resolved.action.aiid, request.value);
+                break;
         }
 
         return CommonUtils.buildModelStrict(CommandResponseModel, {
@@ -167,55 +166,8 @@ export class DeviceCommandService {
             command: request.command,
             operation: request.operation,
             success: true,
-            value: value
+            value
         });
-    }
-
-    /**
-     * Runs `fn` with stamp-refresh retry, then persists the updated stamp.
-     * Single source of truth for the stamp management cycle used by every public method.
-     */
-    private async runWithStamp<T>(device: DeviceCache, fn: (stamp: number) => Promise<T>): Promise<T> {
-        const { result, stamp, stampUpdatedAt } = await this.withStampRefresh(device, fn);
-        await this.deviceStorageService.update(
-            CommonUtils.buildModelStrict(DeviceCache, { ...device, stamp, stampUpdatedAt })
-        );
-        return result;
-    }
-
-    /**
-     * Generic stamp-refresh wrapper.
-     * If the cached stamp is older than {@link STAMP_MAX_AGE_MS}, performs a proactive
-     * handshake first. For fresh stamps: try with cached stamp, on failure handshake once
-     * and retry. Throws with context if the retry also fails.
-     */
-    private async withStampRefresh<T>(
-        device: DeviceCache,
-        fn: (stamp: number) => Promise<T>
-    ): Promise<{ result: T; stamp: number; stampUpdatedAt: number }> {
-        const stampAge = Date.now() - (device.stampUpdatedAt ?? 0);
-
-        if (stampAge > STAMP_MAX_AGE_MS) {
-            const { stamp: freshStamp } = await this.miotDeviceClient.handshake(device.address);
-            const stamp = freshStamp + 1;
-            return { result: await fn(stamp), stamp, stampUpdatedAt: Date.now() };
-        }
-
-        try {
-            const stamp = device.stamp + 1;
-            return { result: await fn(stamp), stamp, stampUpdatedAt: Date.now() };
-        } catch {
-            // Stamp turned stale mid-session — handshake and retry once
-        }
-
-        const { stamp: freshStamp } = await this.miotDeviceClient.handshake(device.address);
-        const stamp = freshStamp + 1;
-        try {
-            return { result: await fn(stamp), stamp, stampUpdatedAt: Date.now() };
-        } catch (retryError) {
-            const reason = retryError instanceof Error ? retryError.message : String(retryError);
-            throw new Error(`Operation failed after stamp refresh for device ${device.deviceId}: ${reason}`);
-        }
     }
 
     /**
@@ -266,34 +218,6 @@ export class DeviceCommandService {
                 `Property '${command}' value ${JSON.stringify(value)} is not allowed. ` +
                 `Allowed values: ${allowed}`
             );
-        }
-    }
-
-    private resolveCommandParams(request: DeviceCommandRequest, resolved: ResolvedCommand): MiotCommandParams {
-        switch (resolved.operation) {
-            case DeviceCommandOperation.GetProperty:
-                return { operation: resolved.operation, siid: resolved.property.siid, piid: resolved.property.piid };
-            case DeviceCommandOperation.SetProperty:
-                return { operation: resolved.operation, siid: resolved.property.siid, piid: resolved.property.piid, value: request.value };
-            case DeviceCommandOperation.Action:
-                return { operation: resolved.operation, siid: resolved.action.siid, aiid: resolved.action.aiid, value: request.value };
-        }
-    }
-
-    private async executeCommand(device: DeviceCache, stamp: number, params: MiotCommandParams): Promise<string | number | undefined> {
-        const { address, token, deviceId } = device;
-
-        switch (params.operation) {
-            case DeviceCommandOperation.GetProperty:
-                return this.miotDeviceClient.getProperty(address, token, deviceId, stamp, params.siid, params.piid!);
-            case DeviceCommandOperation.SetProperty:
-                await this.miotDeviceClient.setProperty(address, token, deviceId, stamp, params.siid, params.piid!, params.value as string | number);
-                return undefined;
-            case DeviceCommandOperation.Action:
-                await this.miotDeviceClient.callAction(address, token, deviceId, stamp, params.siid, params.aiid!, params.value);
-                return undefined;
-            default:
-                throw new BadRequest(`Unsupported operation: ${params.operation as string}.`);
         }
     }
 }

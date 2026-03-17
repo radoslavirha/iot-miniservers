@@ -1,9 +1,9 @@
 import { Service, Scope, ProviderScope } from '@tsed/di';
+import { MiotDevice } from '@radoslavirha/miot-device';
 import { MiotSpecV2 } from '../models/miot-spec-v2/index.js';
 import { MiotSpecV2Endpoint } from '../endpoints/miot-spec-v2/MiotSpecV2Endpoint.js';
 import { MiotSpecV2Mapper } from '../mappers/MiotSpecV2Mapper.js';
 import { SimplifiedMiotSpec } from '../models/simplified-miot-spec/SimplifiedMiotSpec.js';
-import { MiotDeviceClient } from '../services/MiotDeviceClient.js';
 import { SimplifiedMiotSpecV2Mapper } from '../mappers/SimplifiedMiotSpecV2Mapper.js';
 import { ModelPropertyOverrideService } from '../services/ModelPropertyOverrideService.js';
 
@@ -33,7 +33,6 @@ export interface DeviceDiscoveryResult {
 @Scope(ProviderScope.SINGLETON)
 export class DeviceDiscoveryService {
     constructor(
-        private readonly miotDeviceClient: MiotDeviceClient,
         private readonly miotSpecEndpoint: MiotSpecV2Endpoint,
         private readonly miotSpecMapper: MiotSpecV2Mapper,
         private readonly simplifiedMiotSpecMapper: SimplifiedMiotSpecV2Mapper,
@@ -41,7 +40,7 @@ export class DeviceDiscoveryService {
     ) {}
 
     async discover(request: DeviceAddressInput): Promise<DeviceDiscoveryResult> {
-        const { deviceId, stamp } = await this.miotDeviceClient.handshake(request.address);
+        const { deviceId, stamp } = await new MiotDevice({ address: request.address, token: request.token }).discover();
         const rawDto = await this.miotSpecEndpoint.fetchRaw(request.model);
         const rawSpec = await this.miotSpecMapper.mapDTOToModel(rawDto);
         const overrides = await this.modelPropertyOverrideService.getByModel(request.model);

@@ -54,8 +54,6 @@ export class DevicePropertyPollerService extends EventEmitter implements OnInit,
         super();
     }
 
-    // ─── Public subscription management (called by notification handlers) ────
-
     /**
      * Registers one or more property subscriptions for a device.
      * Called by `NotificationPostHandler` after persisting to storage.
@@ -92,8 +90,6 @@ export class DevicePropertyPollerService extends EventEmitter implements OnInit,
             if (key.startsWith(`${deviceId}:`)) this._lastValues.delete(key);
         }
     }
-
-    // ─── Lifecycle ───────────────────────────────────────────
 
     /**
      * Hydrates the in-memory subscription cache from storage, then starts the
