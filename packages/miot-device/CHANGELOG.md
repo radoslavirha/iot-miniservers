@@ -1,5 +1,11 @@
 # @radoslavirha/miot-device
 
+## 0.1.4
+
+### Patch Changes
+
+- [`e585962`](https://github.com/radoslavirha/iot-miniservers/commit/e58596279df17e882007d2dbdb7967e7ae9b9fe5) Thanks [@radoslavirha](https://github.com/radoslavirha)! - CI bugs
+
 ## 0.1.3
 
 ### Patch Changes
