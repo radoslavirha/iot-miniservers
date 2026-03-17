@@ -26,10 +26,14 @@ runs:
         scope: '@radoslavirha'
     - name: Install ${{ inputs.TARGET_API }} dependencies
       if: "${{ inputs.TARGET_API != '' }}"
-      run: pnpm install --frozen-lockfile --filter "./apis/${{ inputs.TARGET_API }}"
+      run: pnpm install --frozen-lockfile --filter "./apis/${{ inputs.TARGET_API }}" --filter "./packages/**"
       shell: bash
       env:
         NODE_AUTH_TOKEN: ${{ inputs.NODE_AUTH_TOKEN }}
+    - name: Build workspace packages
+      if: "${{ inputs.TARGET_API != '' }}"
+      run: pnpm --filter './packages/**' run build
+      shell: bash
     - name: Install dependencies
       if: "${{ inputs.TARGET_API == '' }}"
       run: pnpm install --frozen-lockfile

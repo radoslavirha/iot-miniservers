@@ -13,6 +13,7 @@ WORKDIR /usr/src/app
 COPY . .
 RUN --mount=type=secret,id=npmrc,target=/root/.npmrc \
     pnpm install --frozen-lockfile
+RUN pnpm --filter './packages/**' run build
 
 # ─── interactive-map-feeder ────────────────────────────────────────────────────
 FROM deps AS build-interactive-map-feeder
