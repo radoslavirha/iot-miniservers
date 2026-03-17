@@ -52,7 +52,7 @@ jobs:
             pkg_name=$(jq -r '.name' "$pkg_json")
             version=$(echo "$packages" | jq -r --arg n "$pkg_name" '.[] | select(.name == $n) | .version')
             if [ -n "$version" ]; then
-              include=$(echo "$include" | jq --arg t "$target" --arg v "$version" '. + [{"name": $t, "version": $v}]')
+              include=$(echo "$include" | jq -c --arg t "$target" --arg v "$version" '. + [{"name": $t, "version": $v}]')
             fi
           done
           if [ "$include" = "[]" ]; then
