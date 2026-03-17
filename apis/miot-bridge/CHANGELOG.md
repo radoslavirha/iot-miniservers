@@ -1,5 +1,14 @@
 # miot-bridge
 
+## 0.12.4
+
+### Patch Changes
+
+- [`94f9770`](https://github.com/radoslavirha/iot-miniservers/commit/94f9770ac9a3de6e6decbc121c3b247d18b9dd57) Thanks [@radoslavirha](https://github.com/radoslavirha)! - CI bugs
+
+- Updated dependencies [[`94f9770`](https://github.com/radoslavirha/iot-miniservers/commit/94f9770ac9a3de6e6decbc121c3b247d18b9dd57)]:
+  - @radoslavirha/miot-device@0.1.3
+
 ## 0.12.3
 
 ### Patch Changes
