@@ -1,6 +1,4 @@
 ---
 # Key must match subdirectory in apis/
 interactive-map-feeder: apis/interactive-map-feeder/**
-miot-bridge:
-  - apis/miot-bridge/**
-  - packages/miot-device/**
+miot-bridge: apis/miot-bridge/**

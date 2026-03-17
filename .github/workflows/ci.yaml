@@ -9,21 +9,27 @@ on:
 jobs:
 
   changes:
-    name: Check API changes
+    name: Check changes
     runs-on: ubuntu-latest
     # Required permissions
     permissions:
       pull-requests: read
     outputs:
-      apis: ${{ steps.filter.outputs.changes }}
+      apis: ${{ steps.filter-apis.outputs.changes }}
+      packages: ${{ steps.filter-packages.outputs.changes }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-      - name: 📂 Detect changed files
+      - name: 📂 Detect changed APIs
         uses: dorny/paths-filter@v3
-        id: filter
+        id: filter-apis
         with:
-          filters: .github/paths-filter.yaml
+          filters: .github/paths-filter-apis.yaml
+      - name: 📂 Detect changed packages
+        uses: dorny/paths-filter@v3
+        id: filter-packages
+        with:
+          filters: .github/paths-filter-packages.yaml
 
   # lint-yaml:
   #   name: YAML lint
@@ -104,3 +110,57 @@ jobs:
         uses: hadolint/hadolint-action@v3.1.0
         with:
           dockerfile: ./Dockerfile
+
+  lint-package-code:
+    name: Code lint => ${{ matrix.package }}
+    needs: changes
+    runs-on: ubuntu-latest
+    if: ${{ needs.changes.outputs.packages != '[]' }}
+    strategy:
+      matrix:
+        package: ${{ fromJSON(needs.changes.outputs.packages) }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Prepare repository
+        uses: ./.github/actions/prepare
+        with:
+          NODE_AUTH_TOKEN: ${{ secrets.TOOLKIT_HUB_PACKAGES }}
+      - name: Run lint
+        run: pnpm --filter ./packages/${{ matrix.package }} lint
+
+  build-package-code:
+    name: Code build => ${{ matrix.package }}
+    needs: changes
+    runs-on: ubuntu-latest
+    if: ${{ needs.changes.outputs.packages != '[]' }}
+    strategy:
+      matrix:
+        package: ${{ fromJSON(needs.changes.outputs.packages) }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Prepare repository
+        uses: ./.github/actions/prepare
+        with:
+          NODE_AUTH_TOKEN: ${{ secrets.TOOLKIT_HUB_PACKAGES }}
+      - name: Run build
+        run: pnpm --filter ./packages/${{ matrix.package }} build
+
+  test-package-code:
+    name: Code test => ${{ matrix.package }}
+    needs: changes
+    runs-on: ubuntu-latest
+    if: ${{ needs.changes.outputs.packages != '[]' }}
+    strategy:
+      matrix:
+        package: ${{ fromJSON(needs.changes.outputs.packages) }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Prepare repository
+        uses: ./.github/actions/prepare
+        with:
+          NODE_AUTH_TOKEN: ${{ secrets.TOOLKIT_HUB_PACKAGES }}
+      - name: Run tests
+        run: pnpm --filter ./packages/${{ matrix.package }} test
