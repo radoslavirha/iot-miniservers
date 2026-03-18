@@ -28,11 +28,6 @@ export interface MiotDeviceOptions {
      */
     deviceId?: number;
     /**
-     * Maximum age (ms) of the cached stamp before proactively re-handshaking.
-     * @default 30_000
-     */
-    stampMaxAgeMs?: number;
-    /**
      * Optional external stamp store for multi-node deployments.
      * When provided, the store is consulted on every command and updated after
      * every successful stamp refresh.

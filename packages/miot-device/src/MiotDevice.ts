@@ -1,16 +1,12 @@
 import { MiotTransport } from './MiotTransport.js';
 import type { DiscoverResult, GetPropertiesResult, MiotDeviceOptions, StampState } from './types.js';
 
-/** Default stamp max-age in milliseconds. */
-const DEFAULT_STAMP_MAX_AGE_MS = 30_000;
-
 /**
  * Stateful MIoT device client.
  *
  * Each instance represents a single physical device. The instance owns the
- * stamp lifecycle: it caches the last-used stamp in memory and proactively
- * re-handshakes when the stamp is stale, with a single retry on command
- * failure for transient staleness.
+ * stamp lifecycle: it caches the last-used stamp in memory and reactively
+ * re-handshakes on command failure.
  *
  * ### Typical single-node usage
  * ```ts
@@ -126,10 +122,9 @@ export class MiotDevice {
     /**
      * Runs `fn` with automatic stamp-refresh retry.
      *
-     * - If no stamp state exists (never connected) or it is older than
-     *   `stampMaxAgeMs`, a proactive handshake is performed first.
-     * - Otherwise the cached stamp is tried; on failure a handshake is
-     *   done once and the call is retried.
+     * If no stamp state exists, a fresh handshake is performed first.
+     * Otherwise the cached stamp is tried; on failure the stamp state is
+     * cleared, a handshake is performed, and the call is retried once.
      *
      * `fn` must return `{ result, finalStamp? }`. When `finalStamp` is
      * provided (multi-chunk operations), it is used as the persisted stamp
@@ -139,7 +134,6 @@ export class MiotDevice {
         fn: (stamp: number, deviceId: number) => Promise<{ result: T; finalStamp?: number }>
     ): Promise<T> {
         const deviceId = this.requireDeviceId();
-        const maxAge = this.options.stampMaxAgeMs ?? DEFAULT_STAMP_MAX_AGE_MS;
 
         // Load stamp from external store if available (multi-node support)
         if (this.options.stampStore && !this._stampState) {
@@ -149,9 +143,7 @@ export class MiotDevice {
             }
         }
 
-        const stampAge = Date.now() - (this._stampState?.updatedAt ?? 0);
-
-        if (stampAge > maxAge || !this._stampState) {
+        if (!this._stampState) {
             return this.runWithFreshStamp(deviceId, fn);
         }
 
@@ -161,7 +153,8 @@ export class MiotDevice {
             await this.updateStamp(finalStamp ?? stamp);
             return result;
         } catch (_err) {
-            // Stamp turned stale mid-session — handshake once and retry
+            // Command failed — clear stamp state and retry with fresh handshake
+            this._stampState = undefined;
             const reason = _err instanceof Error ? _err.message : String(_err);
             console.warn(`[MiotDevice] Command failed (device ${deviceId}), retrying with fresh stamp: ${reason}`);
         }

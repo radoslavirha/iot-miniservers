@@ -148,18 +148,6 @@ describe('MiotDevice', () => {
             expect(mockGetProperty).toHaveBeenCalledWith(DEVICE_ID, STAMP + 1, 2, 1);
         });
 
-        it('refreshes stamp if state is stale (age > stampMaxAgeMs)', async () => {
-            mockGetProperty.mockResolvedValue(1);
-
-            const device = new MiotDevice({ address: '1.2.3.4', token: TOKEN, deviceId: DEVICE_ID, stampMaxAgeMs: 0 });
-            // Set stamp with old updatedAt
-            device.setStampState({ stamp: STAMP, updatedAt: 0 });
-
-            await device.getProperty(2, 1);
-            // A fresh handshake was done, so transport.handshake should have been called
-            expect(mockHandshake).toHaveBeenCalled();
-        });
-
         it('retries with fresh stamp on failure', async () => {
             // First call fails, second (after handshake) succeeds
             mockGetProperty
@@ -285,15 +273,6 @@ describe('MiotDevice', () => {
             expect(device.getStampState()).toEqual(state);
         });
 
-        it('handles stampState with undefined updatedAt (covers ?? 0 fallback)', async () => {
-            mockGetProperty.mockResolvedValue(42);
-            const device = new MiotDevice({ address: '1.2.3.4', token: TOKEN, deviceId: DEVICE_ID });
-            // Provide stale stampState with updatedAt missing → _stampState?.updatedAt ?? 0 = 0
-            // stampAge = Date.now() - 0 = large → runWithFreshStamp via handshake
-            device.setStampState({ stamp: STAMP, updatedAt: undefined as unknown as number });
-            await device.getProperty(2, 1);
-            expect(mockHandshake).toHaveBeenCalledOnce();
-        });
     });
 
     // -----------------------------------------------------------------------
@@ -348,14 +327,13 @@ describe('MiotDevice', () => {
             };
             mockGetProperty.mockResolvedValue(5);
 
+            // no local stamp, store returns null → fresh handshake → store.setStamp called
             const device = new MiotDevice({
                 address: '1.2.3.4',
                 token: TOKEN,
                 deviceId: DEVICE_ID,
-                stampStore: store,
-                stampMaxAgeMs: 0 // force handshake
+                stampStore: store
             });
-            device.setStampState({ stamp: STAMP, updatedAt: 0 });
 
             await device.getProperty(2, 1);
 
