@@ -1,5 +1,11 @@
 # interactive-map-feeder
 
+## 0.5.0
+
+### Minor Changes
+
+- [`5c4f307`](https://github.com/radoslavirha/iot-miniservers/commit/5c4f30794812819a3350341cc7e0d8fcfb533edb) Thanks [@radoslavirha](https://github.com/radoslavirha)! - Implement logger
+
 ## 0.4.4
 
 ### Patch Changes

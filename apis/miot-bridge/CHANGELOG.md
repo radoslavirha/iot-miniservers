@@ -1,5 +1,16 @@
 # miot-bridge
 
+## 0.14.0
+
+### Minor Changes
+
+- [`5c4f307`](https://github.com/radoslavirha/iot-miniservers/commit/5c4f30794812819a3350341cc7e0d8fcfb533edb) Thanks [@radoslavirha](https://github.com/radoslavirha)! - Implement logger
+
+### Patch Changes
+
+- Updated dependencies [[`5c4f307`](https://github.com/radoslavirha/iot-miniservers/commit/5c4f30794812819a3350341cc7e0d8fcfb533edb)]:
+  - @radoslavirha/miot-device@0.3.0
+
 ## 0.13.0
 
 ### Minor Changes
