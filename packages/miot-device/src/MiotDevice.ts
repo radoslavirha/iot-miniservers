@@ -1,5 +1,6 @@
 import { MiotTransport } from './MiotTransport.js';
-import type { DiscoverResult, GetPropertiesResult, MiotDeviceOptions, StampState } from './types.js';
+import { CONSOLE_LOGGER } from './consoleLogger.js';
+import type { DiscoverResult, GetPropertiesResult, ILogger, MiotDeviceOptions, StampState } from './types.js';
 
 /**
  * Stateful MIoT device client.
@@ -23,13 +24,15 @@ import type { DiscoverResult, GetPropertiesResult, MiotDeviceOptions, StampState
 export class MiotDevice {
     private readonly transport: MiotTransport;
     private readonly options: MiotDeviceOptions;
+    private readonly logger: ILogger;
     private _deviceId: number | undefined;
     private _stampState: StampState | undefined;
 
     constructor(options: MiotDeviceOptions) {
         this.options = options;
         this._deviceId = options.deviceId;
-        this.transport = new MiotTransport(options.address, options.token, options.port);
+        this.logger = options.logger ?? CONSOLE_LOGGER;
+        this.transport = new MiotTransport(options.address, options.token, options.port, this.logger);
     }
 
     /**
@@ -42,10 +45,12 @@ export class MiotDevice {
      * ready to send commands — no separate `connect()` call is needed.
      */
     async discover(): Promise<DiscoverResult> {
+        this.logger.debug(`Discovering device`, { address: this.options.address });
         const result = await this.transport.handshake();
         this._deviceId = result.deviceId;
         this._stampState = { stamp: result.stamp, updatedAt: Date.now() };
         await this.persistStamp(this._stampState);
+        this.logger.debug(`Device discovered`, { deviceId: result.deviceId, stamp: result.stamp });
         return result;
     }
 
@@ -149,6 +154,7 @@ export class MiotDevice {
 
         try {
             const stamp = this._stampState.stamp + 1;
+            this.logger.debug(`Sending command with cached stamp`, { stamp, deviceId });
             const { result, finalStamp } = await fn(stamp, deviceId);
             await this.updateStamp(finalStamp ?? stamp);
             return result;
@@ -156,7 +162,7 @@ export class MiotDevice {
             // Command failed — clear stamp state and retry with fresh handshake
             this._stampState = undefined;
             const reason = _err instanceof Error ? _err.message : String(_err);
-            console.warn(`[MiotDevice] Command failed (device ${deviceId}), retrying with fresh stamp: ${reason}`);
+            this.logger.warn(`Sending command failed`, { deviceId, reason, retryingWithFreshStamp: true });
         }
 
         return this.runWithFreshStamp(deviceId, fn);
@@ -166,6 +172,7 @@ export class MiotDevice {
         deviceId: number,
         fn: (stamp: number, deviceId: number) => Promise<{ result: T; finalStamp?: number }>
     ): Promise<T> {
+        this.logger.debug(`Performing fresh handshake`, { deviceId });
         const { stamp: freshStamp } = await this.transport.handshake();
         const stamp = freshStamp + 1;
         try {
@@ -174,6 +181,7 @@ export class MiotDevice {
             return result;
         } catch (retryError) {
             const reason = retryError instanceof Error ? retryError.message : String(retryError);
+            this.logger.error(`Operation failed after stamp refresh`, { deviceId, reason });
             throw new Error(`Operation failed after stamp refresh for device ${deviceId}: ${reason}`);
         }
     }

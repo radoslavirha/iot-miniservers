@@ -1,10 +1,10 @@
-import { $log } from '@tsed/logger';
 import { Platform, ServerConfiguration } from '@radoslavirha/tsed-platform';
 import { SwaggerConfig, SwaggerDocumentConfig, SwaggerProvider } from '@radoslavirha/tsed-swagger';
 import { CommonUtils } from '@radoslavirha/utils';
 import { Server } from './Server.js';
 import { injector } from '@tsed/di';
 import { ConfigService } from './global/services/ConfigService.js';
+import { Logger } from '@radoslavirha/tsed-logger';
 
 const SIG_EVENTS = [
     'beforeExit',
@@ -21,6 +21,8 @@ const SIG_EVENTS = [
     'SIGUSR2',
     'SIGTERM'
 ];
+
+const logger = injector().get<Logger>(Logger);
 
 try {
     const config = injector().get<ConfigService>(ConfigService);
@@ -53,11 +55,15 @@ try {
 
     ['uncaughtException', 'unhandledRejection'].forEach((evt) =>
         process.on(evt, async (error) => {
-            $log.error({ event: 'SERVER_' + evt.toUpperCase(), message: error.message, stack: error.stack });
+            logger.error(error.message, {
+                event: 'SERVER_' + evt.toUpperCase(),
+                stack: error.stack
+            });
             await platform.stop();
         })
     );
 } catch (error) {
-    $log.error({ event: 'SERVER_BOOTSTRAP_ERROR', message: (error as Error).message, stack: (error as Error).stack });
+    logger.error('Bootstrap failed.', { error: error });
+    process.exit(1);
 }
 

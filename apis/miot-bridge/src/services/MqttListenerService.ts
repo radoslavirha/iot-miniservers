@@ -1,5 +1,4 @@
 import { Inject, Injectable, Scope, ProviderScope, OnInit } from '@tsed/di';
-import { $log } from '@tsed/logger';
 import { CommonUtils } from '@radoslavirha/utils';
 import { JSONSchemaValidator } from '@radoslavirha/tsed-common';
 import type { MqttClient } from 'mqtt';
@@ -9,6 +8,7 @@ import { MqttTopicService } from './MqttTopicService.js';
 import { DeviceCommandService } from './DeviceCommandService.js';
 import { CommandRequestModel } from '../models/CommandRequestModel.js';
 import { DeviceCommandRequest } from '../models/DeviceCommandRequest.js';
+import { BaseLogger, Logger } from '@radoslavirha/tsed-logger';
 
 /**
  * Subscribes to inbound MQTT command messages and handles them directly.
@@ -23,11 +23,15 @@ import { DeviceCommandRequest } from '../models/DeviceCommandRequest.js';
 @Injectable()
 @Scope(ProviderScope.SINGLETON)
 export class MqttListenerService implements OnInit {
+    private readonly logger: BaseLogger;
     constructor(
         @Inject(MqttClientProvider) private readonly mqttClient: MqttClient | null,
         private readonly mqttTopicService: MqttTopicService,
-        private readonly deviceCommandService: DeviceCommandService
-    ) {}
+        private readonly deviceCommandService: DeviceCommandService,
+        logger: Logger
+    ) {
+        this.logger = logger.child('MQTT_LISTENER');
+    }
 
     public $onInit(): void {
         this.start();
@@ -35,7 +39,7 @@ export class MqttListenerService implements OnInit {
 
     private start(): void {
         if (CommonUtils.isNil(this.mqttClient)) {
-            $log.info({ event: 'MQTT_LISTENER_DISABLED', message: 'MQTT client not available — skipping command subscription.' });
+            this.logger.info('MQTT client not available — skipping command subscription.');
             return;
         }
 
@@ -43,10 +47,10 @@ export class MqttListenerService implements OnInit {
 
         this.mqttClient.subscribe(topics.command, { qos: 1 }, (err) => {
             if (CommonUtils.notNil(err)) {
-                $log.error({ event: 'MQTT_SUBSCRIBE_ERROR', topic: topics.command, message: err.message });
+                this.logger.error(`Failed to subscribe to MQTT topic ${topics.command}: ${err.message}`);
             } else {
-                $log.info({ event: 'MQTT_SUBSCRIBED', topic: topics.command });
-                $log.info({ event: 'MQTT_RESPONSE_TOPIC', topic: topics.response });
+                this.logger.info(`Subscribed to MQTT topic ${topics.command}`);
+                this.logger.info(`MQTT response topic: ${topics.response}`);
             }
         });
 
@@ -61,9 +65,9 @@ export class MqttListenerService implements OnInit {
                 }
                 this.mqttClient!.publish(topics.response, result, { qos: 1 }, (err) => {
                     if (CommonUtils.notNil(err)) {
-                        $log.error({ event: 'MQTT_RESPONSE_PUBLISH_ERROR', topic: topics.response, message: err.message });
+                        this.logger.error(`Failed to publish MQTT response to topic ${topics.response}: ${err.message}`);
                     } else {
-                        $log.debug({ event: 'MQTT_RESPONSE_PUBLISHED', topic: topics.response });
+                        this.logger.debug(`MQTT response published to topic ${topics.response}`);
                     }
                 });
             });
@@ -80,7 +84,7 @@ export class MqttListenerService implements OnInit {
         try {
             parsed = JSON.parse(payload.toString('utf8'));
         } catch {
-            $log.warn({ event: 'MQTT_INVALID_JSON', message: 'Received non-JSON MQTT payload.' });
+            this.logger.warn('Received non-JSON MQTT payload.');
             return 'error: Invalid JSON.';
         }
 
@@ -89,7 +93,7 @@ export class MqttListenerService implements OnInit {
         try {
             request = JSONSchemaValidator.validate(CommandRequestModel, parsed);
         } catch (error) {
-            $log.warn({ event: 'MQTT_VALIDATION_FAILED', message: 'MQTT payload validation failed.', error });
+            this.logger.warn('MQTT payload validation failed.', { error });
             return `error: Validation failed. ${this.stringifyError(error)}`;
         }
 
@@ -110,7 +114,7 @@ export class MqttListenerService implements OnInit {
             return String(response.value ?? '');
         } catch (error) {
             const message = this.stringifyError(error);
-            $log.error({ event: 'MQTT_COMMAND_FAILED', message, deviceId: request.deviceId, command: request.command });
+            this.logger.error(`MQTT command failed for device ${request.deviceId}, command ${request.command}: ${message}`);
             return `error: ${message}`;
         }
     }

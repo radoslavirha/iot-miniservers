@@ -2,6 +2,7 @@ import { Injectable, Scope, ProviderScope } from '@tsed/di';
 import { MiotDevice } from '@radoslavirha/miot-device';
 import type { DeviceCache } from '../models/DeviceCache.js';
 import { CommonUtils } from '@radoslavirha/utils';
+import { Logger } from '@radoslavirha/tsed-logger';
 
 /**
  * Maintains a pool of {@link MiotDevice} instances, one per registered device.
@@ -16,6 +17,8 @@ import { CommonUtils } from '@radoslavirha/utils';
 @Scope(ProviderScope.SINGLETON)
 export class MiotDeviceRegistry {
     private readonly _registry = new Map<number, MiotDevice>();
+
+    constructor(private readonly logger: Logger) {}
 
     /**
      * Returns the existing `MiotDevice` instance for the device, creating and
@@ -33,7 +36,8 @@ export class MiotDeviceRegistry {
         const instance = new MiotDevice({
             address: device.address,
             token: device.token,
-            deviceId: device.deviceId
+            deviceId: device.deviceId,
+            logger: this.logger.child('MIOT_DEVICE')
         });
 
         // Seed the stamp from whatever was last persisted in the device record.

@@ -1,7 +1,8 @@
 import { createSocket } from 'dgram';
 import { CommonUtils } from '@radoslavirha/utils';
+import { CONSOLE_LOGGER } from './consoleLogger.js';
 import { IncomingPacket, OutgoingPacket } from './packet/index.js';
-import type { DiscoverResult, GetPropertiesResult } from './types.js';
+import type { DiscoverResult, GetPropertiesResult, ILogger } from './types.js';
 
 interface MiotPropertyResult {
     did: string;
@@ -35,7 +36,8 @@ export class MiotTransport {
     constructor(
         private readonly address: string,
         private readonly token: string,
-        port?: number
+        port?: number,
+        private readonly logger: ILogger = CONSOLE_LOGGER
     ) {
         this.port = port ?? MIOT_PORT;
     }
@@ -52,10 +54,14 @@ export class MiotTransport {
             let settled = false;
 
             const done = (err?: Error): void => {
-                if (settled) return;
+                if (settled) {
+                    return;
+                }
                 settled = true;
                 socket.close();
-                if (err) reject(err);
+                if (err) {
+                    reject(err);
+                }
             };
 
             const timer = setTimeout(() => {
@@ -64,7 +70,9 @@ export class MiotTransport {
 
             socket.on('message', (msg) => {
                 clearTimeout(timer);
-                if (settled) return;
+                if (settled) {
+                    return;
+                }
                 settled = true;
                 socket.close();
                 try {
@@ -94,6 +102,7 @@ export class MiotTransport {
      */
     async getProperty(deviceId: number, stamp: number, siid: number, piid: number): Promise<string | number | undefined> {
         const did = String(deviceId);
+        this.logger.debug(`get_properties`, { deviceId, siid, piid, stamp });
         const response = await this.sendCommand(deviceId, stamp, {
             method: 'get_properties',
             params: [{ did, siid, piid }]
@@ -102,6 +111,7 @@ export class MiotTransport {
         const results = response.result as MiotPropertyResult[];
         const item = results?.[0];
         if (CommonUtils.isNil(item) || item.code !== 0) {
+            this.logger.error(`get_properties failed`, { deviceId, siid, piid, code: item?.code ?? 'unknown' });
             throw new Error(`get_properties failed: code ${item?.code ?? 'unknown'}`);
         }
         return item.value;
@@ -151,6 +161,7 @@ export class MiotTransport {
      */
     async setProperty(deviceId: number, stamp: number, siid: number, piid: number, value: string | number): Promise<void> {
         const did = String(deviceId);
+        this.logger.debug(`set_properties`, { deviceId, siid, piid, value, stamp });
         const response = await this.sendCommand(deviceId, stamp, {
             method: 'set_properties',
             params: [{ did, siid, piid, value }]
@@ -159,6 +170,7 @@ export class MiotTransport {
         const results = response.result as MiotPropertyResult[];
         const item = results?.[0];
         if (CommonUtils.isNil(item) || item.code !== 0) {
+            this.logger.error(`set_properties failed`, { deviceId, siid, piid, code: item?.code ?? 'unknown' });
             throw new Error(`set_properties failed: code ${item?.code ?? 'unknown'}`);
         }
     }
@@ -179,6 +191,7 @@ export class MiotTransport {
             inArgs = [args];
         }
 
+        this.logger.debug(`action`, { deviceId, siid, aiid, stamp });
         await this.sendCommand(deviceId, stamp, {
             method: 'action',
             params: { did, siid, aiid, in: inArgs }
@@ -186,6 +199,7 @@ export class MiotTransport {
     }
 
     private async sendCommand(deviceId: number, stamp: number, payload: Record<string, unknown>): Promise<MiotResponse> {
+        this.logger.debug(`Sending command`, { deviceId, method: payload['method'], stamp });
         const raw = new OutgoingPacket({ token: this.token, deviceId, stamp, payload }).raw;
 
         return new Promise<MiotResponse>((resolve, reject) => {
@@ -193,10 +207,14 @@ export class MiotTransport {
             let settled = false;
 
             const done = (err?: Error): void => {
-                if (settled) return;
+                if (settled) {
+                    return;
+                }
                 settled = true;
                 socket.close();
-                if (err) reject(err);
+                if (err) {
+                    reject(err);
+                }
             };
 
             const timer = setTimeout(() => {
@@ -205,20 +223,25 @@ export class MiotTransport {
 
             socket.on('message', (msg) => {
                 clearTimeout(timer);
-                if (settled) return;
+                if (settled) {
+                    return;
+                }
                 settled = true;
                 socket.close();
                 try {
                     const packet = new IncomingPacket(msg, this.token);
                     const json = packet.json as unknown as MiotResponse | null;
                     if (CommonUtils.isNil(json)) {
+                        this.logger.error(`Empty response from device`, { address: this.address });
                         reject(new Error('Empty response from device'));
                         return;
                     }
                     if (CommonUtils.notNil(json.error)) {
+                        this.logger.error(`Device error`, { address: this.address, code: json.error.code, message: json.error.message });
                         reject(new Error(`Device error ${json.error.code}: ${json.error.message}`));
                         return;
                     }
+                    this.logger.debug(`Command response received`, { deviceId, id: json.id });
                     resolve(json);
                 } catch (err) {
                     reject(err);

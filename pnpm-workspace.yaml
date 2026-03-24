@@ -3,17 +3,18 @@ packages:
   - packages/*
 
 catalog:
-  '@radoslavirha/config-eslint': ^0.3.4
-  '@radoslavirha/config-typescript': ^0.3.4
-  '@radoslavirha/config-vitest': ^0.3.5
-  '@radoslavirha/tsed-common': ^0.4.9
-  '@radoslavirha/tsed-configuration': ^0.5.7
-  '@radoslavirha/tsed-platform': ^0.3.10
-  '@radoslavirha/tsed-swagger': ^4.0.7
-  '@radoslavirha/utils': ^0.7.2
+  '@radoslavirha/config-eslint': ^0.3.8
+  '@radoslavirha/config-typescript': ^0.3.7
+  '@radoslavirha/config-vitest': ^0.3.8
+  '@radoslavirha/tsed-common': ^0.4.12
+  '@radoslavirha/tsed-configuration': ^0.6.2
+  '@radoslavirha/tsed-logger': ^0.3.3
+  '@radoslavirha/tsed-platform': ^1.0.3
+  '@radoslavirha/tsed-swagger': ^5.0.3
+  '@radoslavirha/utils': ^0.7.5
   '@swc-node/register': ^1.11.1
   '@swc/cli': ^0.8.0
-  '@swc/core': ^1.15.18
+  '@swc/core': ^1.15.21
   '@swc/helpers': ^0.5.19
   '@types/compression': ^1.8.1
   '@types/cookie-parser': ^1.4.10
@@ -23,7 +24,7 @@ catalog:
   '@types/multer': ^2.1.0
   '@types/node': ^25.5.0
   '@types/supertest': ^7.2.0
-  '@vitest/coverage-v8': ^4.1.0
+  '@vitest/coverage-v8': ^4.1.1
   axios: ^1.13.6
   body-parser: ^2.2.2
   compression: ^1.8.1
@@ -31,39 +32,38 @@ catalog:
   cors: ^2.8.6
   cross-env: ^10.1.0
   dotenv: ^17.3.1
-  eslint: ^10.0.3
+  eslint: ^10.1.0
   express: ^5.2.1
   method-override: ^3.0.0
   nodemon: ^3.1.14
   supertest: ^7.2.2
   tslib: ^2.8.1
-  typescript: ^5.9.3
-  typescript-eslint: ^8.57.1
-  vitest: ^4.1.0
+  typescript: ^6.0.2
+  typescript-eslint: ^8.57.2
+  vitest: ^4.1.1
   zod: 4.3.6
 
 catalogs:
   tsed:
-    '@tsed/ajv': ^8.25.2
-    '@tsed/core': ^8.25.2
-    '@tsed/di': ^8.25.2
-    '@tsed/engines': ^8.25.2
-    '@tsed/exceptions': ^8.25.2
-    '@tsed/json-mapper': ^8.25.2
-    '@tsed/logger': ^8.0.4
-    '@tsed/mongoose': ^8.25.2
-    '@tsed/openspec': ^8.25.2
-    '@tsed/platform-cache': ^8.25.2
-    '@tsed/platform-exceptions': ^8.25.2
-    '@tsed/platform-express': ^8.25.2
-    '@tsed/platform-http': ^8.25.2
-    '@tsed/platform-log-request': ^8.25.2
-    '@tsed/platform-middlewares': ^8.25.2
-    '@tsed/platform-params': ^8.25.2
-    '@tsed/platform-response-filter': ^8.25.2
-    '@tsed/platform-views': ^8.25.2
-    '@tsed/schema': ^8.25.2
-    '@tsed/swagger': ^8.25.2
+    '@tsed/ajv': ^8.25.4
+    '@tsed/core': ^8.25.4
+    '@tsed/di': ^8.25.4
+    '@tsed/engines': ^8.25.4
+    '@tsed/exceptions': ^8.25.4
+    '@tsed/json-mapper': ^8.25.4
+    '@tsed/mongoose': ^8.25.4
+    '@tsed/openspec': ^8.25.4
+    '@tsed/platform-cache': ^8.25.4
+    '@tsed/platform-exceptions': ^8.25.4
+    '@tsed/platform-express': ^8.25.4
+    '@tsed/platform-http': ^8.25.4
+    '@tsed/platform-log-request': ^8.25.4
+    '@tsed/platform-middlewares': ^8.25.4
+    '@tsed/platform-params': ^8.25.4
+    '@tsed/platform-response-filter': ^8.25.4
+    '@tsed/platform-views': ^8.25.4
+    '@tsed/schema': ^8.25.4
+    '@tsed/swagger': ^8.25.4
     ajv: ^8.18.0
 
 injectWorkspacePackages: true

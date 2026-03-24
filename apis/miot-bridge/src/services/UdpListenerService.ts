@@ -1,6 +1,5 @@
 import { createSocket, type RemoteInfo, type Socket } from 'dgram';
 import { Injectable, Scope, ProviderScope, OnDestroy, OnInit } from '@tsed/di';
-import { $log } from '@tsed/logger';
 import { CommonUtils, ObjectUtils } from '@radoslavirha/utils';
 import { JSONSchemaValidator } from '@radoslavirha/tsed-common';
 import { ConfigService } from './ConfigService.js';
@@ -8,6 +7,7 @@ import { DeviceCommandService } from './DeviceCommandService.js';
 import { CommandRequestModel } from '../models/CommandRequestModel.js';
 import { DeviceCommandOperation } from '../models/DeviceCommandOperation.enum.js';
 import { DeviceCommandRequest } from '../models/DeviceCommandRequest.js';
+import { BaseLogger, Logger } from '@radoslavirha/tsed-logger';
 
 /** Maximum number of consecutive socket restarts before giving up. */
 const MAX_RESTART_ATTEMPTS = 5;
@@ -28,11 +28,15 @@ export class UdpListenerService implements OnInit, OnDestroy {
     private socket: Socket | null = null;
     private restartAttempts = 0;
     private stopped = false;
+    private readonly logger: BaseLogger;
 
     constructor(
         private readonly configService: ConfigService,
-        private readonly deviceCommandService: DeviceCommandService
-    ) {}
+        private readonly deviceCommandService: DeviceCommandService,
+        logger: Logger
+    ) {
+        this.logger = logger.child('UDP_LISTENER');
+    }
 
     /**
      * Bind a UDP4 socket on the configured port and start accepting messages.
@@ -57,7 +61,7 @@ export class UdpListenerService implements OnInit, OnDestroy {
     private stop(): void {
         this.stopped = true;
         this.closeSocket();
-        $log.info({ event: 'UDP_LISTENER_STOPPED', message: 'UDP listener stopped.' });
+        this.logger.info('UDP listener stopped.');
     }
 
     private createSocket(port: number): void {
@@ -65,21 +69,20 @@ export class UdpListenerService implements OnInit, OnDestroy {
 
         this.socket.on('message', (msg: Buffer, rinfo: RemoteInfo) => {
             this.handleMessage(msg, rinfo).catch((err: unknown) => {
-                $log.error({
-                    event: 'UDP_MESSAGE_UNHANDLED',
-                    message: err instanceof Error ? err.message : String(err)
+                this.logger.error('UDP_MESSAGE_UNHANDLED', {
+                    error: err instanceof Error ? err.message : String(err)
                 });
             });
         });
 
         this.socket.on('error', (err: Error) => {
-            $log.error({ event: 'UDP_SOCKET_ERROR', message: err.message, stack: err.stack });
+            this.logger.error('UDP_SOCKET_ERROR', { message: err.message, stack: err.stack });
             this.restartSocket(port);
         });
 
         this.socket.bind(port, () => {
             this.restartAttempts = 0;
-            $log.info({ event: 'UDP_LISTENER_STARTED', message: `UDP listener started on port ${port}.` });
+            this.logger.info('UDP_LISTENER_STARTED', { message: `UDP listener started on port ${port}.` });
         });
     }
 
@@ -105,16 +108,14 @@ export class UdpListenerService implements OnInit, OnDestroy {
         this.restartAttempts++;
 
         if (this.restartAttempts > MAX_RESTART_ATTEMPTS) {
-            $log.error({
-                event: 'UDP_RESTART_EXHAUSTED',
+            this.logger.error('UDP_RESTART_EXHAUSTED', {
                 message: `Exceeded ${MAX_RESTART_ATTEMPTS} restart attempts — UDP listener will not recover.`
             });
             return;
         }
 
         const delay = RESTART_DELAY_MS * this.restartAttempts;
-        $log.warn({
-            event: 'UDP_RESTARTING',
+        this.logger.warn('UDP_RESTARTING', {
             message: `Recreating UDP socket in ${delay}ms (attempt ${this.restartAttempts}/${MAX_RESTART_ATTEMPTS}).`
         });
         setTimeout(() => this.createSocket(port), delay);
@@ -127,8 +128,7 @@ export class UdpListenerService implements OnInit, OnDestroy {
 
         this.socket.send(data, rinfo.port, rinfo.address, (err) => {
             if (CommonUtils.notNil(err)) {
-                $log.warn({
-                    event: 'UDP_REPLY_FAILED',
+                this.logger.warn('UDP_REPLY_FAILED', {
                     message: `Failed to send UDP response to ${rinfo.address}:${rinfo.port} — ${err.message}`
                 });
             }
@@ -138,12 +138,12 @@ export class UdpListenerService implements OnInit, OnDestroy {
     private async handleMessage(msg: Buffer, rinfo: RemoteInfo): Promise<void> {
         let payload: unknown;
 
-        $log.info({ event: 'UDP_MESSAGE_RECEIVED', message: `Received UDP message from ${rinfo.address}:${rinfo.port}. Payload: ${msg.toString('utf8')}` });
+        this.logger.info(`Received UDP message from ${rinfo.address}:${rinfo.port}. Payload: ${msg.toString('utf8')}`);
 
         try {
             payload = JSON.parse(msg.toString('utf8'));
         } catch {
-            $log.warn({ event: 'UDP_INVALID_JSON', message: `Invalid JSON from ${rinfo.address}:${rinfo.port}.` });
+            this.logger.warn(`Invalid JSON from ${rinfo.address}:${rinfo.port}.`);
             this.reply('error: Invalid JSON.', rinfo);
             return;
         }
@@ -153,9 +153,7 @@ export class UdpListenerService implements OnInit, OnDestroy {
         try {
             request = JSONSchemaValidator.validate(CommandRequestModel, payload);
         } catch (error) {
-            $log.warn({
-                event: 'UDP_VALIDATION_FAILED',
-                message: `Validation failed from ${rinfo.address}:${rinfo.port}.`,
+            this.logger.warn(`Validation failed from ${rinfo.address}:${rinfo.port}.`, {
                 error
             });
             this.reply(`error: Validation failed. ${this.stringifyError(error)}`, rinfo);
@@ -179,7 +177,7 @@ export class UdpListenerService implements OnInit, OnDestroy {
             }
         } catch (error) {
             const message = this.stringifyError(error);
-            $log.error({ event: 'UDP_COMMAND_FAILED', message, deviceId: request.deviceId, command: request.command });
+            this.logger.error('UDP_COMMAND_FAILED', { message, deviceId: request.deviceId, command: request.command });
             this.reply(`error: ${message}`, rinfo);
         }
     }

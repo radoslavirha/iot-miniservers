@@ -20,11 +20,7 @@ import './services/MqttListenerService.js';
     ]
 })
 export class Server extends BaseServer {
-
     $beforeRoutesInit(): void {
         this.registerMiddlewares();
-    }
-
-    async $onReady(): Promise<void> {
     }
 }

@@ -1,8 +1,8 @@
 import { injectable, inject } from '@tsed/di';
-import { $log } from '@tsed/logger';
 import { connect, type MqttClient } from 'mqtt';
 import { ConfigService } from '../services/ConfigService.js';
 import { CommonUtils, ObjectUtils } from '@radoslavirha/utils';
+import { Logger } from '@radoslavirha/tsed-logger';
 
 const RECONNECT_PERIOD_MS = 5_000;
 const MAX_STARTUP_ERRORS = 5;
@@ -27,10 +27,11 @@ const MAX_STARTUP_ERRORS = 5;
 export const MqttClientProvider = injectable(Symbol.for('MqttClient'))
     .asyncFactory(async () => {
         const configService = inject<ConfigService>(ConfigService);
+        const logger = inject<Logger>(Logger).child('MQTT_PROVIDER');
         const mqttConfig = configService.config.mqtt;
 
         if (!ObjectUtils.isEnabled(mqttConfig)) {
-            $log.info({ event: 'MQTT_CLIENT_DISABLED', message: 'MQTT is disabled — skipping broker connection.' });
+            logger.info('MQTT is disabled — skipping broker connection.');
             return null;
         }
 
@@ -47,19 +48,18 @@ export const MqttClientProvider = injectable(Symbol.for('MqttClient'))
 
             client.once('connect', () => {
                 connected = true;
-                $log.info({ event: 'MQTT_CLIENT_CONNECTED', url: mqttConfig.url, clientId: mqttConfig.clientId });
+                logger.info('MQTT client connected.', { url: mqttConfig.url, clientId: mqttConfig.clientId });
                 resolve(client);
             });
 
             client.on('error', (err: Error) => {
                 if (connected) {
-                    $log.error({ event: 'MQTT_CLIENT_ERROR', url: mqttConfig.url, message: err.message });
+                    logger.error('MQTT client error.', { url: mqttConfig.url, message: err.message });
                     return;
                 }
 
                 startupErrorCount++;
-                $log.error({
-                    event: 'MQTT_CLIENT_CONNECT_ERROR',
+                logger.error('MQTT client connect error.', {
                     url: mqttConfig.url,
                     message: err.message,
                     attempt: startupErrorCount,
@@ -67,28 +67,29 @@ export const MqttClientProvider = injectable(Symbol.for('MqttClient'))
                 });
 
                 if (startupErrorCount >= MAX_STARTUP_ERRORS) {
-                    $log.error({ event: 'MQTT_CLIENT_CONNECT_FAILED', url: mqttConfig.url, message: `Failed to connect after ${MAX_STARTUP_ERRORS} attempts.` });
+                    logger.error('MQTT client connect failed.', { url: mqttConfig.url, message: `Failed to connect after ${MAX_STARTUP_ERRORS} attempts.` });
                     client.end(true);
                     reject(new Error(`MQTT connection failed after ${MAX_STARTUP_ERRORS} attempts: ${err.message}`));
                 }
             });
 
             client.on('disconnect', () => {
-                $log.warn({ event: 'MQTT_CLIENT_DISCONNECTED', url: mqttConfig.url });
+                logger.warn('MQTT client disconnected.', { url: mqttConfig.url });
             });
 
             client.on('reconnect', () => {
-                $log.info({ event: 'MQTT_CLIENT_RECONNECTING', url: mqttConfig.url });
+                logger.info('MQTT client reconnecting.', { url: mqttConfig.url });
             });
         });
     })
     .hooks({
         async $onDestroy(client: MqttClient | null): Promise<void> {
+            const logger = inject<Logger>(Logger).child('MqttClientProvider');
             if (CommonUtils.isNil(client)) {
                 return;
             }
             await client.endAsync();
-            $log.info({ event: 'MQTT_CLIENT_STOPPED', message: 'MQTT client disconnected.' });
+            logger.info('MQTT client disconnected.');
         }
     })
     .token();

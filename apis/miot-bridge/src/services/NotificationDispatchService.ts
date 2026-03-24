@@ -1,6 +1,5 @@
 import { createSocket } from 'dgram';
 import { Inject, Service, Scope, ProviderScope } from '@tsed/di';
-import { $log } from '@tsed/logger';
 import { CommonUtils, ObjectUtils } from '@radoslavirha/utils';
 import type { MqttClient } from 'mqtt';
 import type { PropertyChangeEvent } from '../models/PropertyChangeEvent.js';
@@ -8,6 +7,7 @@ import { NotificationPayload } from '../models/NotificationPayload.js';
 import { MqttClientProvider } from '../providers/MqttClientProvider.js';
 import { ConfigService } from './ConfigService.js';
 import { MqttTopicService } from './MqttTopicService.js';
+import { BaseLogger, Logger } from '@radoslavirha/tsed-logger';
 
 /**
  * Central hub for all inbound property-value observations, regardless of transport.
@@ -21,11 +21,16 @@ import { MqttTopicService } from './MqttTopicService.js';
 @Service()
 @Scope(ProviderScope.SINGLETON)
 export class NotificationDispatchService {
+    private readonly logger: BaseLogger;
+
     constructor(
         private readonly configService: ConfigService,
         @Inject(MqttClientProvider) private readonly mqttClient: MqttClient | null,
-        private readonly mqttTopicService: MqttTopicService
-    ) {}
+        private readonly mqttTopicService: MqttTopicService,
+        logger: Logger
+    ) {
+        this.logger = logger.child('NOTIFICATION_DISPATCH');
+    }
 
     /**
      * Receives a property-value observation and forwards it to all enabled
@@ -58,16 +63,14 @@ export class NotificationDispatchService {
         const message = `${payload.property}=${String(payload.value ?? '')}`;
         this.mqttClient!.publish(topic, message, { qos: 1 }, (err) => {
             if (CommonUtils.notNil(err)) {
-                $log.warn({
-                    event: 'NOTIFICATION_MQTT_ERROR',
+                this.logger.warn('NOTIFICATION_MQTT_ERROR',{
                     topic,
                     deviceId: payload.deviceId,
                     property: payload.property,
                     message: err.message
                 });
             } else {
-                $log.debug({
-                    event: 'NOTIFICATION_MQTT_SENT',
+                this.logger.debug('NOTIFICATION_MQTT_SENT',{
                     topic,
                     deviceId: payload.deviceId,
                     property: payload.property
@@ -83,16 +86,14 @@ export class NotificationDispatchService {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
             });
-            $log.debug({
-                event: 'NOTIFICATION_HTTP_SENT',
+            this.logger.debug('NOTIFICATION_HTTP_SENT',{
                 address,
                 deviceId: payload.deviceId,
                 property: payload.property,
                 status: response.status
             });
         } catch (error) {
-            $log.warn({
-                event: 'NOTIFICATION_HTTP_ERROR',
+            this.logger.warn('NOTIFICATION_HTTP_ERROR',{
                 address,
                 deviceId: payload.deviceId,
                 property: payload.property,
@@ -105,13 +106,13 @@ export class NotificationDispatchService {
         return new Promise(resolve => {
             const colonIndex = address.lastIndexOf(':');
             if (colonIndex === -1) {
-                $log.warn({ event: 'NOTIFICATION_UDP_ERROR', address, message: 'Invalid UDP address format. Expected host:port.' });
+                this.logger.warn('Invalid UDP address format. Expected host:port.', { address });
                 return resolve();
             }
             const host = address.slice(0, colonIndex);
             const port = parseInt(address.slice(colonIndex + 1), 10);
             if (CommonUtils.isNil(host) || isNaN(port)) {
-                $log.warn({ event: 'NOTIFICATION_UDP_ERROR', address, message: 'Invalid UDP address format. Expected host:port.' });
+                this.logger.warn('Invalid UDP address format. Expected host:port.', { address });
                 return resolve();
             }
 
@@ -121,16 +122,14 @@ export class NotificationDispatchService {
             socket.send(buffer, port, host, (error) => {
                 socket.close();
                 if (CommonUtils.notNil(error)) {
-                    $log.warn({
-                        event: 'NOTIFICATION_UDP_ERROR',
+                    this.logger.warn('NOTIFICATION_UDP_ERROR', {
                         address,
                         deviceId: payload.deviceId,
                         property: payload.property,
                         message: error.message
                     });
                 } else {
-                    $log.debug({
-                        event: 'NOTIFICATION_UDP_SENT',
+                    this.logger.debug('NOTIFICATION_UDP_SENT', {
                         address,
                         deviceId: payload.deviceId,
                         property: payload.property

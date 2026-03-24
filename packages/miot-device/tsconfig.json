@@ -1,6 +1,7 @@
 {
   "extends": "@radoslavirha/config-typescript/tsconfig.json",
   "compilerOptions": {
-    "composite": false
+    "composite": false,
+    "types": ["node"]
   }
 }

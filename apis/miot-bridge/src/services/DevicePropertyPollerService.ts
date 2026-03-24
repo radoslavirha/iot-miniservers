@@ -1,12 +1,12 @@
 import { EventEmitter } from 'events';
 import { Service, Scope, ProviderScope, OnDestroy, OnInit } from '@tsed/di';
-import { $log } from '@tsed/logger';
 import type { PropertyChangeEvent } from '../models/PropertyChangeEvent.js';
 import { ConfigService } from './ConfigService.js';
 import { NotificationStorageService } from './NotificationStorageService.js';
 import { DeviceCommandService } from './DeviceCommandService.js';
 import { NotificationDispatchService } from './NotificationDispatchService.js';
 import { CommonUtils, ObjectUtils } from '@radoslavirha/utils';
+import { BaseLogger, Logger } from '@radoslavirha/tsed-logger';
 
 /**
  * Event name emitted on every detected property change (or every cycle when dispatchOnChange = false).
@@ -45,13 +45,17 @@ export class DevicePropertyPollerService extends EventEmitter implements OnInit,
     /** Remaining skip-cycles per deviceId before the device is retried. */
     private readonly _skipCycles = new Map<string, number>();
 
+    private readonly logger: BaseLogger;
+
     constructor(
         private readonly configService: ConfigService,
         private readonly notificationStorageService: NotificationStorageService,
         private readonly deviceCommandService: DeviceCommandService,
-        private readonly notificationDispatch: NotificationDispatchService
+        private readonly notificationDispatch: NotificationDispatchService,
+        logger: Logger
     ) {
         super();
+        this.logger = logger.child('DEVICE_POLL');
     }
 
     /**
@@ -98,7 +102,7 @@ export class DevicePropertyPollerService extends EventEmitter implements OnInit,
     private async start(): Promise<void> {
         const config = this.configService.config.polling;
         if (!ObjectUtils.isEnabled(config)) {
-            $log.info({ event: 'POLLER_DISABLED', message: 'Device property polling is disabled.' });
+            this.logger.info('Device property polling is disabled.');
             return;
         }
 
@@ -108,9 +112,9 @@ export class DevicePropertyPollerService extends EventEmitter implements OnInit,
             set.add(n.property);
             this._subscriptions.set(n.deviceId, set);
         }
-        $log.info({ event: 'POLLER_HYDRATED', message: `Loaded ${all.length} subscription(s) across ${this._subscriptions.size} device(s).` });
+        this.logger.info(`Loaded ${all.length} subscription(s) across ${this._subscriptions.size} device(s).`);
 
-        $log.info({ event: 'POLLER_START', message: `Device property polling started. Interval: ${config.intervalMs}ms.` });
+        this.logger.info(`Device property polling started. Interval: ${config.intervalMs}ms.`);
         this.scheduleNext(config.intervalMs);
     }
 
@@ -119,7 +123,7 @@ export class DevicePropertyPollerService extends EventEmitter implements OnInit,
         if (CommonUtils.notNil(this._timer)) {
             clearTimeout(this._timer);
             this._timer = undefined;
-            $log.info({ event: 'POLLER_STOP', message: 'Device property polling stopped.' });
+            this.logger.info('Device property polling stopped.');
         }
     }
 
@@ -149,7 +153,7 @@ export class DevicePropertyPollerService extends EventEmitter implements OnInit,
         const skipRemaining = this._skipCycles.get(deviceId) ?? 0;
         if (skipRemaining > 0) {
             this._skipCycles.set(deviceId, skipRemaining - 1);
-            $log.debug({ event: 'POLLER_SKIP', deviceId, message: `Skipping device ${deviceId} (${skipRemaining} cycles remaining).` });
+            this.logger.debug(`Skipping device ${deviceId} (${skipRemaining} cycles remaining).`);
             return;
         }
 
@@ -157,7 +161,7 @@ export class DevicePropertyPollerService extends EventEmitter implements OnInit,
             const { miotDeviceId, results } = await this.deviceCommandService.getProperties(deviceId, properties);
 
             if (!ObjectUtils.isEnabled(this.configService.config.polling)) {
-                $log.info({ event: 'POLLER_DISABLED', message: 'Device property polling is disabled. Skipping tick.' });
+                this.logger.info('Device property polling is disabled. Skipping tick.');
                 return;
             }
             const config = this.configService.config.polling;
@@ -187,7 +191,7 @@ export class DevicePropertyPollerService extends EventEmitter implements OnInit,
 
             // Clear error counter on success; log recovery if previously failing
             if (this._errorCounts.has(deviceId)) {
-                $log.info({ event: 'POLLER_RECOVERED', deviceId, message: `Device ${deviceId} recovered after consecutive errors.` });
+                this.logger.info(`Device ${deviceId} recovered after consecutive errors.`);
                 this._errorCounts.delete(deviceId);
             }
         } catch (error) {
@@ -198,15 +202,11 @@ export class DevicePropertyPollerService extends EventEmitter implements OnInit,
             this._errorCounts.set(deviceId, count);
 
             if (count >= maxErrors) {
-                $log.warn({
-                    event: 'POLLER_BACKOFF',
-                    deviceId,
-                    message: `Device ${deviceId} failed ${maxErrors} times in a row (last: ${message}). Pausing for ${skipCycles} cycles.`
-                });
+                this.logger.warn(`Device ${deviceId} failed ${maxErrors} times in a row (last: ${message}). Pausing for ${skipCycles} cycles.`, { deviceId });
                 this._errorCounts.delete(deviceId);
                 this._skipCycles.set(deviceId, skipCycles);
             } else {
-                $log.warn({ event: 'POLLER_ERROR', deviceId, message: `(${count}/${maxErrors}) ${message}` });
+                this.logger.warn(`Device ${deviceId} encountered an error (${count}/${maxErrors}): ${message}`, { deviceId });
             }
         }
     }

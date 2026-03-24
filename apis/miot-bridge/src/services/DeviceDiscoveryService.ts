@@ -6,6 +6,7 @@ import { MiotSpecV2Mapper } from '../mappers/MiotSpecV2Mapper.js';
 import { SimplifiedMiotSpec } from '../models/simplified-miot-spec/SimplifiedMiotSpec.js';
 import { SimplifiedMiotSpecV2Mapper } from '../mappers/SimplifiedMiotSpecV2Mapper.js';
 import { ModelPropertyOverrideService } from '../services/ModelPropertyOverrideService.js';
+import { Logger } from '@radoslavirha/tsed-logger';
 
 /** Minimal device address info accepted by discover(). Both DeviceDiscoverRequest and DeviceRequest satisfy this. */
 export interface DeviceAddressInput {
@@ -36,11 +37,16 @@ export class DeviceDiscoveryService {
         private readonly miotSpecEndpoint: MiotSpecV2Endpoint,
         private readonly miotSpecMapper: MiotSpecV2Mapper,
         private readonly simplifiedMiotSpecMapper: SimplifiedMiotSpecV2Mapper,
-        private readonly modelPropertyOverrideService: ModelPropertyOverrideService
+        private readonly modelPropertyOverrideService: ModelPropertyOverrideService,
+        private readonly logger: Logger
     ) {}
 
     async discover(request: DeviceAddressInput): Promise<DeviceDiscoveryResult> {
-        const { deviceId, stamp } = await new MiotDevice({ address: request.address, token: request.token }).discover();
+        const { deviceId, stamp } = await new MiotDevice({
+            address: request.address,
+            token: request.token,
+            logger: this.logger.child('MIOT_DISCOVERY')
+        }).discover();
         const rawDto = await this.miotSpecEndpoint.fetchRaw(request.model);
         const rawSpec = await this.miotSpecMapper.mapDTOToModel(rawDto);
         const overrides = await this.modelPropertyOverrideService.getByModel(request.model);

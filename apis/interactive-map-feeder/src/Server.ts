@@ -2,6 +2,7 @@ import { SwaggerController } from '@radoslavirha/tsed-swagger';
 import { getServerDefaultConfig } from '@radoslavirha/tsed-configuration';
 import { BaseServer } from '@radoslavirha/tsed-platform';
 import { Configuration } from '@tsed/di';
+import './global/providers/index.js';
 import * as restV1 from './v1/controllers/index.js';
 import { ObjectUtils } from '@radoslavirha/utils';
 

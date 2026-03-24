@@ -1,3 +1,16 @@
+/**
+ * OTEL-compliant logger interface.
+ * Compatible with child loggers from `@radoslavirha/tsed-logger`.
+ */
+export interface ILogger {
+    trace(message: string, ...args: unknown[]): void;
+    debug(message: string, ...args: unknown[]): void;
+    info(message: string, ...args: unknown[]): void;
+    warn(message: string, ...args: unknown[]): void;
+    error(message: string, ...args: unknown[]): void;
+    fatal(message: string, ...args: unknown[]): void;
+}
+
 /** Stamp state stored per device instance. */
 export interface StampState {
     /** Last stamp sent to the device. */
@@ -38,6 +51,10 @@ export interface MiotDeviceOptions {
      * @default 54321
      */
     port?: number;
+    /**
+     * Optional logger. Defaults to a no-op logger.
+     */
+    logger?: ILogger;
 }
 
 /** Result returned by {@link MiotDevice.discover}. */

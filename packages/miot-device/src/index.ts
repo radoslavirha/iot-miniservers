@@ -1,2 +1,3 @@
 export { MiotDevice } from './MiotDevice.js';
-export type { DiscoverResult, GetPropertiesResult, IStampStore, MiotDeviceOptions, StampState } from './types.js';
+export { CONSOLE_LOGGER } from './consoleLogger.js';
+export type { DiscoverResult, GetPropertiesResult, ILogger, IStampStore, MiotDeviceOptions, StampState } from './types.js';
