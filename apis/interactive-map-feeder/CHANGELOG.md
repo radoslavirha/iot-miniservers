@@ -1,5 +1,11 @@
 # interactive-map-feeder
 
+## 0.6.0
+
+### Minor Changes
+
+- [`025b7db`](https://github.com/radoslavirha/iot-miniservers/commit/025b7db8f242024cc17c0406b63ef9c344159860) Thanks [@radoslavirha](https://github.com/radoslavirha)! - OTEL
+
 ## 0.5.0
 
 ### Minor Changes
