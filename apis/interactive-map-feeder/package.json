@@ -1,9 +1,9 @@
 {
   "name": "interactive-map-feeder",
   "version": "0.5.0",
+  "private": true,
   "description": "Data Feeder for LaskaKit interactive map of Czech republic",
   "type": "module",
-  "private": true,
   "scripts": {
     "build": "tsc --noEmit && swc src --out-dir dist -s --strip-leading-paths",
     "cleanup:all": "pnpm run cleanup:artifacts && pnpm run cleanup:modules",
@@ -12,14 +12,30 @@
     "lint": "eslint .",
     "lint:fix": "eslint --fix .",
     "start": "nodemon src/index.ts",
-    "start:prod": "cross-env NODE_ENV=production node --import @swc-node/register/esm-register dist/index.js",
+    "start:prod": "node --import @swc-node/register/esm-register --import /home/app/dist/otel/instrument.js dist/index.js",
     "test": "vitest run",
     "test:watch": "vitest"
   },
   "dependencies": {
+    "@opentelemetry/api": "catalog:",
+    "@opentelemetry/exporter-logs-otlp-http": "catalog:",
+    "@opentelemetry/exporter-metrics-otlp-http": "catalog:",
+    "@opentelemetry/exporter-trace-otlp-http": "catalog:",
+    "@opentelemetry/host-metrics": "catalog:",
+    "@opentelemetry/instrumentation-express": "catalog:",
+    "@opentelemetry/instrumentation-http": "catalog:",
+    "@opentelemetry/instrumentation-winston": "catalog:",
+    "@opentelemetry/resources": "catalog:",
+    "@opentelemetry/sdk-logs": "catalog:",
+    "@opentelemetry/sdk-metrics": "catalog:",
+    "@opentelemetry/sdk-node": "catalog:",
+    "@opentelemetry/sdk-trace-node": "catalog:",
+    "@opentelemetry/semantic-conventions": "catalog:",
+    "@opentelemetry/winston-transport": "catalog:",
     "@radoslavirha/config-typescript": "catalog:",
     "@radoslavirha/tsed-common": "catalog:",
     "@radoslavirha/tsed-configuration": "catalog:",
+    "@radoslavirha/tsed-logger": "catalog:",
     "@radoslavirha/tsed-platform": "catalog:",
     "@radoslavirha/tsed-swagger": "catalog:",
     "@radoslavirha/utils": "catalog:",
@@ -38,7 +54,6 @@
     "@tsed/platform-express": "catalog:tsed",
     "@tsed/platform-http": "catalog:tsed",
     "@tsed/platform-log-request": "catalog:tsed",
-    "@radoslavirha/tsed-logger": "catalog:",
     "@tsed/platform-middlewares": "catalog:tsed",
     "@tsed/platform-params": "catalog:tsed",
     "@tsed/platform-response-filter": "catalog:tsed",
@@ -80,14 +95,14 @@
     "typescript-eslint": "catalog:",
     "vitest": "catalog:"
   },
+  "engines": {
+    "node": ">= 24",
+    "pnpm": ">= 10"
+  },
   "tsed": {
     "convention": "conv_default",
     "architecture": "arc_default",
     "packageManager": "pnpm",
     "runtime": "node"
-  },
-  "engines": {
-    "node": ">= 24",
-    "pnpm": ">= 10"
   }
 }

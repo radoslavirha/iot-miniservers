@@ -3,19 +3,35 @@ packages:
   - packages/*
 
 catalog:
-  '@radoslavirha/config-eslint': ^0.3.8
-  '@radoslavirha/config-typescript': ^0.3.7
-  '@radoslavirha/config-vitest': ^0.3.8
-  '@radoslavirha/tsed-common': ^0.4.12
-  '@radoslavirha/tsed-configuration': ^0.6.2
-  '@radoslavirha/tsed-logger': ^0.3.3
-  '@radoslavirha/tsed-platform': ^1.0.3
-  '@radoslavirha/tsed-swagger': ^5.0.3
-  '@radoslavirha/utils': ^0.7.5
+  '@opentelemetry/api': ^1.9.1
+  '@opentelemetry/exporter-logs-otlp-http': ^0.214.0
+  '@opentelemetry/exporter-metrics-otlp-http': ^0.214.0
+  '@opentelemetry/exporter-trace-otlp-http': ^0.214.0
+  '@opentelemetry/host-metrics': ^0.38.3
+  '@opentelemetry/instrumentation-express': ^0.62.0
+  '@opentelemetry/instrumentation-http': ^0.214.0
+  '@opentelemetry/instrumentation-mongoose': ^0.60.0
+  '@opentelemetry/instrumentation-winston': ^0.58.0
+  '@opentelemetry/winston-transport': ^0.24.0
+  '@opentelemetry/resources': ^2.6.1
+  '@opentelemetry/sdk-logs': ^0.214.0
+  '@opentelemetry/sdk-metrics': ^2.6.1
+  '@opentelemetry/sdk-node': ^0.214.0
+  '@opentelemetry/sdk-trace-node': ^2.6.1
+  '@opentelemetry/semantic-conventions': ^1.40.0
+  '@radoslavirha/config-eslint': ^0.3.9
+  '@radoslavirha/config-typescript': ^0.3.8
+  '@radoslavirha/config-vitest': ^0.3.9
+  '@radoslavirha/tsed-common': ^0.4.13
+  '@radoslavirha/tsed-configuration': ^0.6.3
+  '@radoslavirha/tsed-logger': ^0.3.4
+  '@radoslavirha/tsed-platform': ^1.0.4
+  '@radoslavirha/tsed-swagger': ^5.0.4
+  '@radoslavirha/utils': ^0.7.6
   '@swc-node/register': ^1.11.1
   '@swc/cli': ^0.8.0
   '@swc/core': ^1.15.21
-  '@swc/helpers': ^0.5.19
+  '@swc/helpers': ^0.5.20
   '@types/compression': ^1.8.1
   '@types/cookie-parser': ^1.4.10
   '@types/cors': ^2.8.19
@@ -24,7 +40,7 @@ catalog:
   '@types/multer': ^2.1.0
   '@types/node': ^25.5.0
   '@types/supertest': ^7.2.0
-  '@vitest/coverage-v8': ^4.1.1
+  '@vitest/coverage-v8': ^4.1.2
   axios: ^1.13.6
   body-parser: ^2.2.2
   compression: ^1.8.1
@@ -40,7 +56,7 @@ catalog:
   tslib: ^2.8.1
   typescript: ^6.0.2
   typescript-eslint: ^8.57.2
-  vitest: ^4.1.1
+  vitest: ^4.1.2
   zod: 4.3.6
 
 catalogs:

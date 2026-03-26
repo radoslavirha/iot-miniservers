@@ -1,9 +1,9 @@
 {
   "name": "miot-bridge",
   "version": "0.14.0",
+  "private": true,
   "description": "Bridge between Loxone/other controllers and Xiaomi devices via miot protocol",
   "type": "module",
-  "private": true,
   "scripts": {
     "build": "tsc --noEmit && swc src --out-dir dist -s --strip-leading-paths",
     "cleanup:all": "pnpm run cleanup:artifacts && pnpm run cleanup:modules",
@@ -12,17 +12,33 @@
     "lint": "eslint .",
     "lint:fix": "eslint --fix .",
     "start": "nodemon src/index.ts",
-    "start:prod": "cross-env NODE_ENV=production node --import @swc-node/register/esm-register dist/index.js",
+    "start:prod": "node --import @swc-node/register/esm-register --import /home/app/dist/otel/instrument.js dist/index.js",
     "test": "vitest run",
     "test:watch": "vitest"
   },
   "dependencies": {
+    "@opentelemetry/api": "catalog:",
+    "@opentelemetry/exporter-logs-otlp-http": "catalog:",
+    "@opentelemetry/exporter-metrics-otlp-http": "catalog:",
+    "@opentelemetry/exporter-trace-otlp-http": "catalog:",
+    "@opentelemetry/host-metrics": "catalog:",
+    "@opentelemetry/instrumentation-express": "catalog:",
+    "@opentelemetry/instrumentation-http": "catalog:",
+    "@opentelemetry/instrumentation-mongoose": "catalog:",
+    "@opentelemetry/instrumentation-winston": "catalog:",
+    "@opentelemetry/resources": "catalog:",
+    "@opentelemetry/sdk-logs": "catalog:",
+    "@opentelemetry/sdk-metrics": "catalog:",
+    "@opentelemetry/sdk-node": "catalog:",
+    "@opentelemetry/sdk-trace-node": "catalog:",
+    "@opentelemetry/semantic-conventions": "catalog:",
+    "@opentelemetry/winston-transport": "catalog:",
     "@radoslavirha/config-typescript": "catalog:",
     "@radoslavirha/miot-device": "workspace:*",
     "@radoslavirha/tsed-common": "catalog:",
     "@radoslavirha/tsed-configuration": "catalog:",
     "@radoslavirha/tsed-logger": "catalog:",
-    "@radoslavirha/tsed-mongoose": "^4.0.6",
+    "@radoslavirha/tsed-mongoose": "^4.0.7",
     "@radoslavirha/tsed-platform": "catalog:",
     "@radoslavirha/tsed-swagger": "catalog:",
     "@radoslavirha/utils": "catalog:",
@@ -58,7 +74,7 @@
     "dotenv": "catalog:",
     "express": "catalog:",
     "method-override": "catalog:",
-    "mongoose": "^9.3.2",
+    "mongoose": "^9.3.3",
     "mqtt": "^5.15.1",
     "typescript": "catalog:",
     "zod": "catalog:"
@@ -85,14 +101,14 @@
     "typescript-eslint": "catalog:",
     "vitest": "catalog:"
   },
+  "engines": {
+    "node": ">= 24",
+    "pnpm": ">= 10"
+  },
   "tsed": {
     "convention": "conv_default",
     "architecture": "arc_default",
     "packageManager": "pnpm",
     "runtime": "node"
-  },
-  "engines": {
-    "node": ">= 24",
-    "pnpm": ">= 10"
   }
 }
