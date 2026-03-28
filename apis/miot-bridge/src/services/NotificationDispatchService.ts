@@ -60,7 +60,7 @@ export class NotificationDispatchService {
 
     private sendMqtt(payload: NotificationPayload): void {
         const topic = this.mqttTopicService.getNotificationsTopic(payload.deviceId);
-        const message = `${payload.property}=${String(payload.value ?? '')}`;
+        const message = JSON.stringify({ [payload.property]: payload.value ?? null });
         this.mqttClient!.publish(topic, message, { qos: 1 }, (err) => {
             if (CommonUtils.notNil(err)) {
                 this.logger.warn('NOTIFICATION_MQTT_ERROR',{

@@ -33,10 +33,10 @@ export class MqttTopicService {
 
     /**
      * Returns the notification topic for a specific Xiaomi device.
-     * Format: `[prefix/]miot-bridge/notifications/device/{miotDeviceId}`
+     * Format: `[prefix/]miot-bridge/device/{miotDeviceId}/notifications`
      */
     public getNotificationsTopic(miotDeviceId: number): string {
-        return this.build(`miot-bridge/notifications/device/${miotDeviceId}`);
+        return this.build(`miot-bridge/device/${miotDeviceId}/notifications`);
     }
 
     private build(path: string): string {
