@@ -3,20 +3,21 @@ import { CommonUtils } from '@radoslavirha/utils';
 import { JSONSchemaValidator } from '@radoslavirha/tsed-common';
 import type { MqttClient } from 'mqtt';
 import { DeviceCommandOperation } from '../models/DeviceCommandOperation.enum.js';
+import { MqttCommandRequestModel } from '../models/MqttCommandRequestModel.js';
 import { MqttClientProvider } from '../providers/MqttClientProvider.js';
 import { MqttTopicService } from './MqttTopicService.js';
 import { DeviceCommandService } from './DeviceCommandService.js';
-import { CommandRequestModel } from '../models/CommandRequestModel.js';
 import { DeviceCommandRequest } from '../models/DeviceCommandRequest.js';
 import { BaseLogger, Logger } from '@radoslavirha/tsed-logger';
 
 /**
  * Subscribes to inbound MQTT command messages and handles them directly.
  *
- * Topic convention:
- *   - Inbound:  `miot-bridge/command`
- *   - Outbound: `miot-bridge/response`
+ * Topic convention (per-device, REST-like):
+ *   - Inbound:  `[prefix/]miot-bridge/device/{deviceId}/command`
+ *   - Outbound: `[prefix/]miot-bridge/device/{deviceId}/response`
  *
+ * Device ID is extracted from the topic; it must NOT be included in the payload.
  * When `mqtt.enabled` is false the provider resolves to `null` and this
  * service becomes a no-op.
  */
@@ -43,38 +44,39 @@ export class MqttListenerService implements OnInit {
             return;
         }
 
-        const topics = this.mqttTopicService.get();
+        const pattern = this.mqttTopicService.getCommandSubscriptionPattern();
 
-        this.mqttClient.subscribe(topics.command, { qos: 1 }, (err) => {
+        this.mqttClient.subscribe(pattern, { qos: 1 }, (err) => {
             if (CommonUtils.notNil(err)) {
-                this.logger.error(`Failed to subscribe to MQTT topic ${topics.command}: ${err.message}`);
+                this.logger.error(`Failed to subscribe to MQTT topic ${pattern}: ${err.message}`);
             } else {
-                this.logger.info(`Subscribed to MQTT topic ${topics.command}`);
-                this.logger.info(`MQTT response topic: ${topics.response}`);
+                this.logger.info(`Subscribed to MQTT topic ${pattern}`);
             }
         });
 
         this.mqttClient.on('message', (topic: string, payload: Buffer) => {
-            if (topic !== topics.command) {
+            const deviceId = this.mqttTopicService.extractDeviceIdFromCommandTopic(topic);
+            if (CommonUtils.isNil(deviceId)) {
                 return;
             }
 
-            void this.handleMessage(payload).then((result) => {
+            void this.handleMessage(deviceId, payload).then((result) => {
                 if (CommonUtils.isNil(result)) {
                     return;
                 }
-                this.mqttClient!.publish(topics.response, result, { qos: 1 }, (err) => {
+                const responseTopic = this.mqttTopicService.getResponseTopic(deviceId);
+                this.mqttClient!.publish(responseTopic, result, { qos: 1 }, (err) => {
                     if (CommonUtils.notNil(err)) {
-                        this.logger.error(`Failed to publish MQTT response to topic ${topics.response}: ${err.message}`);
+                        this.logger.error(`Failed to publish MQTT response to topic ${responseTopic}: ${err.message}`);
                     } else {
-                        this.logger.debug(`MQTT response published to topic ${topics.response}`);
+                        this.logger.debug(`MQTT response published to topic ${responseTopic}`);
                     }
                 });
             });
         });
     }
 
-    private async handleMessage(payload: Buffer): Promise<string | null> {
+    private async handleMessage(deviceId: number, payload: Buffer): Promise<string | null> {
         if (payload.length === 0) {
             return null;
         }
@@ -88,10 +90,10 @@ export class MqttListenerService implements OnInit {
             return 'error: Invalid JSON.';
         }
 
-        let request: CommandRequestModel;
+        let request: MqttCommandRequestModel;
 
         try {
-            request = JSONSchemaValidator.validate(CommandRequestModel, parsed);
+            request = JSONSchemaValidator.validate(MqttCommandRequestModel, parsed);
         } catch (error) {
             this.logger.warn('MQTT payload validation failed.', { error });
             return `error: Validation failed. ${this.stringifyError(error)}`;
@@ -99,7 +101,7 @@ export class MqttListenerService implements OnInit {
 
         try {
             const commandRequest = CommonUtils.buildModelStrict(DeviceCommandRequest, {
-                deviceId: request.deviceId,
+                deviceId: deviceId,
                 command: request.command,
                 operation: request.operation,
                 value: request.value
@@ -114,7 +116,7 @@ export class MqttListenerService implements OnInit {
             return String(response.value ?? '');
         } catch (error) {
             const message = this.stringifyError(error);
-            this.logger.error(`MQTT command failed for device ${request.deviceId}, command ${request.command}: ${message}`);
+            this.logger.error(`MQTT command failed for device ${deviceId}, command ${request.command}: ${message}`);
             return `error: ${message}`;
         }
     }

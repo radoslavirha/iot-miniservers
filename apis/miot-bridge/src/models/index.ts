@@ -15,6 +15,7 @@ export * from './CommandResponseModel.js';
 export * from './SwaggerDocs.enum.js';
 export * from './notifications/index.js';
 export * from './CommandRequestModel.js';
+export * from './MqttCommandRequestModel.js';
 export * from './RawCommandRequest.js';
 export * from './RawCommandRequestModel.js';
 export * from './model-property-override/index.js';
