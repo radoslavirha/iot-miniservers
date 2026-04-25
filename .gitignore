@@ -12,3 +12,6 @@ apis/**/config/*.json
 .npmrc.docker
 .vscode
 .husky
+
+# APM dependencies
+apm_modules/

@@ -1,0 +1,9 @@
+lockfile_version: '1'
+generated_at: '2026-04-25T05:39:29.561215+00:00'
+dependencies: []
+local_deployed_files:
+- .claude/agents/TEST.md
+- .github/agents/TEST.agent.md
+local_deployed_file_hashes:
+  .claude/agents/TEST.md: sha256:6e2afe03a803d1861c92dbc6569ffee208ea8a270d42d839f40bdf033b3b8546
+  .github/agents/TEST.agent.md: sha256:6e2afe03a803d1861c92dbc6569ffee208ea8a270d42d839f40bdf033b3b8546
