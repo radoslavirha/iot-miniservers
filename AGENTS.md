@@ -144,3 +144,7 @@ apis/<api-name>/
 - Uses `@changesets/cli` for versioning
 - Create a changeset: `pnpm changeset`
 - Follows [Semantic Versioning](http://semver.org/)
+
+## Deploy
+
+Follow [deployment guide](./docs/Deployment.md)
