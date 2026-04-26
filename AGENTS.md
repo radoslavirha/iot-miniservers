@@ -19,7 +19,6 @@ This is a **pnpm monorepo** containing small independent Node.js APIs built with
 All `@radoslavirha/*` packages are hosted on **GitHub Packages** (`npm.pkg.github.com`), not the public npm registry. The root `.npmrc` configures this scope.
 
 - `NODE_AUTH_TOKEN` must be set in the environment before running `pnpm install`, it's in `.env`
-- `shared-workspace-lockfile=false` is intentional — required for per-API Docker builds
 
 Always use [toolkit-hub](https://github.com/radoslavirha/toolkit-hub) where possible and avoid creating own logic if already exist in toolkit-hub. All `@radoslavirha/*` libraries are provided there.
 
