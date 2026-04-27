@@ -1,10 +1,10 @@
 {
   "sandbox": {
-    "file": "helm-values/iot/sandbox/interactive-map-feeder.yaml",
+    "file": "gitops/helm-values/apps/interactive-map-feeder-api/sandbox.yaml",
     "yamlPath": ".apps.interactive-map-feeder-api.image.tag"
   },
   "production": {
-    "file": "helm-values/iot/production/interactive-map-feeder.yaml",
+    "file": "gitops/helm-values/apps/interactive-map-feeder-api/production.yaml",
     "yamlPath": ".apps.interactive-map-feeder-api.image.tag"
   }
 }
