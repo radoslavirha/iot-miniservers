@@ -1,6 +1,6 @@
 {
     "server": {
-        "httpPort": 4011
+        "httpPort": 4002
     },
     "redirect": {
         "baseURL": "http://localhost:4011"
