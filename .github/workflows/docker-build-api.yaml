@@ -8,7 +8,7 @@ on:
       TARGET:
         description: API subfolder inside apis/ folder
         required: true
-        default: interactive-map-feeder
+        default: interactive-map-feeder-api
         type: string
       PUBLISH:
         description: Whether to build and publish to Docker Hub or just build the image
@@ -20,7 +20,7 @@ on:
       TARGET:
         description: API subfolder inside apis/ folder
         required: true
-        default: interactive-map-feeder
+        default: interactive-map-feeder-api
         type: string
       PUBLISH:
         description: Whether to build and publish to Docker Hub or just build the image
