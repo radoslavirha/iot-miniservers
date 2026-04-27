@@ -1,5 +1,0 @@
----
-# Key must match subdirectory in apis/
-interactive-map-feeder-api: apis/interactive-map-feeder-api/**
-miot-bridge-api: apis/miot-bridge-api/**
-qr-manager-api: apis/qr-manager-api/**

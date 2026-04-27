@@ -1,0 +1,7 @@
+---
+# Key is the full app path relative to repo root.
+# dorny/paths-filter outputs these paths verbatim in the 'changes' JSON array.
+apis/interactive-map-feeder-api: apis/interactive-map-feeder-api/**
+apis/miot-bridge-api: apis/miot-bridge-api/**
+apis/qr-manager-api: apis/qr-manager-api/**
+ui/qr-manager-ui: ui/qr-manager-ui/**

@@ -17,35 +17,33 @@ jobs:
     permissions:
       pull-requests: read
     outputs:
-      apis: ${{ steps.filter-apis.outputs.changes }}
+      apps: ${{ steps.filter-apps.outputs.changes }}
       packages: ${{ steps.filter-packages.outputs.changes }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-      - name: 📂 Detect changed APIs
+      - name: 📂 Detect changed apps
         uses: dorny/paths-filter@v3
-        id: filter-apis
+        id: filter-apps
         with:
-          filters: .github/paths-filter-apis.yaml
+          filters: .github/paths-filter-apps.yaml
       - name: 📂 Detect changed packages
         uses: dorny/paths-filter@v3
         id: filter-packages
         with:
           filters: .github/paths-filter-packages.yaml
 
-  build-api-images:
-    name: Build ${{ matrix.name }} docker images
+  build-app-images:
+    name: Build ${{ matrix.app }} docker image
     needs: changes
-    if: ${{ needs.changes.outputs.apis != '[]' }}
-    # permissions:
-    #   contents: write
+    if: ${{ needs.changes.outputs.apps != '[]' }}
     strategy:
       matrix:
-        api: ${{ fromJSON(needs.changes.outputs.apis) }}
-    uses: ./.github/workflows/docker-build-api.yaml
+        app: ${{ fromJSON(needs.changes.outputs.apps) }}
+    uses: ./.github/workflows/docker-build-app.yaml
     secrets: inherit
     with:
-      TARGET: ${{ matrix.api }}
+      APP_PATH: ${{ matrix.app }}
       PUBLISH: false
 
   build-package-code:

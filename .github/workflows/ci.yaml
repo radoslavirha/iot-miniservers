@@ -15,16 +15,16 @@ jobs:
     permissions:
       pull-requests: read
     outputs:
-      apis: ${{ steps.filter-apis.outputs.changes }}
+      apps: ${{ steps.filter-apps.outputs.changes }}
       packages: ${{ steps.filter-packages.outputs.changes }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-      - name: 📂 Detect changed APIs
+      - name: 📂 Detect changed apps
         uses: dorny/paths-filter@v3
-        id: filter-apis
+        id: filter-apps
         with:
-          filters: .github/paths-filter-apis.yaml
+          filters: .github/paths-filter-apps.yaml
       - name: 📂 Detect changed packages
         uses: dorny/paths-filter@v3
         id: filter-packages
@@ -42,62 +42,62 @@ jobs:
   #       with:
   #         strict: true
 
-  lint-api-code:
-    name: Code lint => ${{ matrix.api }}
+  lint-app-code:
+    name: Code lint => ${{ matrix.app }}
     needs: changes
     runs-on: ubuntu-latest
-    if: ${{ needs.changes.outputs.apis != '[]' }}
+    if: ${{ needs.changes.outputs.apps != '[]' }}
     strategy:
       matrix:
-        api: ${{ fromJSON(needs.changes.outputs.apis) }}
+        app: ${{ fromJSON(needs.changes.outputs.apps) }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
       - name: Prepare repository
         uses: ./.github/actions/prepare
         with:
-          TARGET_API: ${{ matrix.api }}
+          TARGET_APP: ${{ matrix.app }}
           NODE_AUTH_TOKEN: ${{ secrets.TOOLKIT_HUB_PACKAGES }}
       - name: Run lint
-        run: pnpm --filter ./apis/${{ matrix.api }} lint
+        run: pnpm --filter ./${{ matrix.app }} lint
 
-  build-api-code:
-    name: Code build => ${{ matrix.api }}
+  build-app-code:
+    name: Code build => ${{ matrix.app }}
     needs: changes
     runs-on: ubuntu-latest
-    if: ${{ needs.changes.outputs.apis != '[]' }}
+    if: ${{ needs.changes.outputs.apps != '[]' }}
     strategy:
       matrix:
-        api: ${{ fromJSON(needs.changes.outputs.apis) }}
+        app: ${{ fromJSON(needs.changes.outputs.apps) }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
       - name: Prepare repository
         uses: ./.github/actions/prepare
         with:
-          TARGET_API: ${{ matrix.api }}
+          TARGET_APP: ${{ matrix.app }}
           NODE_AUTH_TOKEN: ${{ secrets.TOOLKIT_HUB_PACKAGES }}
       - name: Run build
-        run: pnpm --filter ./apis/${{ matrix.api }} build
+        run: pnpm --filter ./${{ matrix.app }} build
 
-  test-api-code:
-    name: Code test => ${{ matrix.api }}
+  test-app-code:
+    name: Code test => ${{ matrix.app }}
     needs: changes
     runs-on: ubuntu-latest
-    if: ${{ needs.changes.outputs.apis != '[]' }}
+    if: ${{ needs.changes.outputs.apps != '[]' }}
     strategy:
       matrix:
-        api: ${{ fromJSON(needs.changes.outputs.apis) }}
+        app: ${{ fromJSON(needs.changes.outputs.apps) }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
       - name: Prepare repository
         uses: ./.github/actions/prepare
         with:
-          TARGET_API: ${{ matrix.api }}
+          TARGET_APP: ${{ matrix.app }}
           NODE_AUTH_TOKEN: ${{ secrets.TOOLKIT_HUB_PACKAGES }}
       - name: Run tests
-        run: pnpm --filter ./apis/${{ matrix.api }} test
+        run: pnpm --filter ./${{ matrix.app }} test
 
   lint-dockerfile:
     name: Dockerfile lint

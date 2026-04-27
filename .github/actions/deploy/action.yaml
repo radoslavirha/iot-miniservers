@@ -34,16 +34,16 @@ runs:
         PACKAGES: ${{ inputs.packages }}
       run: |
         echo "$PACKAGES" | jq -c '.[]' | while read pkg; do
-          NAME=$(echo "$pkg" | jq -r '.name')
+          APP_PATH=$(echo "$pkg" | jq -r '.path')
           VERSION=$(echo "$pkg" | jq -r '.version')
-          DEPLOY_CONFIG="apis/$NAME/deploy.json"
+          DEPLOY_CONFIG="${APP_PATH}/deploy.json"
           if [ ! -f "$DEPLOY_CONFIG" ]; then
-            echo "No deploy.json for $NAME, skipping"
+            echo "No deploy.json for ${APP_PATH}, skipping"
             continue
           fi
           FILE=$(jq -r ".$ENV.file" "$DEPLOY_CONFIG")
           YAML_PATH=$(jq -r ".$ENV.yamlPath" "$DEPLOY_CONFIG")
-          echo "Updating $NAME to $VERSION in home-server/$FILE at $YAML_PATH"
+          echo "Updating ${APP_PATH} to ${VERSION} in home-server/${FILE} at ${YAML_PATH}"
           yq e "$YAML_PATH = \"$VERSION\"" -i "home-server/$FILE"
         done
     - name: Commit and push

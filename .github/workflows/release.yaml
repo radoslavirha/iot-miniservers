@@ -43,17 +43,20 @@ jobs:
             exit 0
           fi
           include="[]"
-          for pkg_json in apis/*/package.json; do
-            dir=$(dirname "$pkg_json")
-            target=$(basename "$dir")
-            if [ ! -f "${dir}/deploy.json" ]; then
-              continue
-            fi
-            pkg_name=$(jq -r '.name' "$pkg_json")
-            version=$(echo "$packages" | jq -r --arg n "$pkg_name" '.[] | select(.name == $n) | .version')
-            if [ -n "$version" ]; then
-              include=$(echo "$include" | jq -c --arg t "$target" --arg v "$version" '. + [{"name": $t, "version": $v}]')
-            fi
+          for app_dir in apis ui; do
+            for pkg_json in "${app_dir}"/*/package.json; do
+              [ -f "$pkg_json" ] || continue
+              dir=$(dirname "$pkg_json")
+              target=$(basename "$dir")
+              if [ ! -f "${dir}/deploy.json" ]; then
+                continue
+              fi
+              pkg_name=$(jq -r '.name' "$pkg_json")
+              version=$(echo "$packages" | jq -r --arg n "$pkg_name" '.[] | select(.name == $n) | .version')
+              if [ -n "$version" ]; then
+                include=$(echo "$include" | jq -c --arg p "${app_dir}/${target}" --arg v "$version" '. + [{"path": $p, "version": $v}]')
+              fi
+            done
           done
           if [ "$include" = "[]" ]; then
             echo "json={}" >> "$GITHUB_OUTPUT"
@@ -77,16 +80,16 @@ jobs:
       - name: Build docs
         uses: ./.github/actions/documentation
   build-api-images:
-    name: Publish ${{ matrix.name }} ${{ matrix.version }}
+    name: Publish ${{ matrix.path }} ${{ matrix.version }}
     needs:
       - release
     if: ${{ needs.release.outputs.matrix != '{}' }}
     strategy:
       matrix: ${{ fromJson(needs.release.outputs.matrix) }}
-    uses: ./.github/workflows/docker-build-api.yaml
+    uses: ./.github/workflows/docker-build-app.yaml
     secrets: inherit
     with:
-      TARGET: ${{ matrix.name }}
+      APP_PATH: ${{ matrix.path }}
       PUBLISH: true
 
   deploy-sandbox:

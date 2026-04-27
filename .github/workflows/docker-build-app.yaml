@@ -1,29 +1,27 @@
 ---
-name: Build API Docker images and publish to Docker Hub if requested
+name: Build Docker image and publish to GHCR if requested
 
 # yamllint disable-line rule:truthy
 on:
   workflow_call:
     inputs:
-      TARGET:
-        description: API subfolder inside apis/ folder
+      APP_PATH:
+        description: Full app path relative to repo root (e.g. apis/qr-manager-api or ui/qr-manager-ui)
         required: true
-        default: interactive-map-feeder-api
         type: string
       PUBLISH:
-        description: Whether to build and publish to Docker Hub or just build the image
+        description: Whether to build and publish to GHCR or just build the image
         required: true
         default: false
         type: boolean
   workflow_dispatch:
     inputs:
-      TARGET:
-        description: API subfolder inside apis/ folder
+      APP_PATH:
+        description: Full app path relative to repo root (e.g. apis/qr-manager-api or ui/qr-manager-ui)
         required: true
-        default: interactive-map-feeder-api
         type: string
       PUBLISH:
-        description: Whether to build and publish to Docker Hub or just build the image
+        description: Whether to build and publish to GHCR or just build the image
         required: true
         default: false
         type: boolean
@@ -33,6 +31,7 @@ jobs:
     name: Extract image information
     runs-on: ubuntu-latest
     outputs:
+      target: ${{ steps.information.outputs.target }}
       image: ${{ steps.information.outputs.image }}
       description: ${{ steps.information.outputs.description }}
       version: ${{ steps.information.outputs.version }}
@@ -44,20 +43,26 @@ jobs:
         id: information
         shell: bash
         run: |
-          name=$(yq -r --no-colors eval '.name' "apis/${{ inputs.TARGET }}/package.json")
-          echo "image=radoslavirha/${name}" >> "$GITHUB_OUTPUT"
+          target=$(basename "${{ inputs.APP_PATH }}")
+          echo "target=${target}" >> "$GITHUB_OUTPUT"
 
-          description=$(yq -r --no-colors eval '.description' "apis/${{ inputs.TARGET }}/package.json")
+          name=$(yq -r --no-colors eval '.name' "${{ inputs.APP_PATH }}/package.json")
+          echo "image=ghcr.io/radoslavirha/${name}" >> "$GITHUB_OUTPUT"
+
+          description=$(yq -r --no-colors eval '.description' "${{ inputs.APP_PATH }}/package.json")
           echo "description=${description}" >> "$GITHUB_OUTPUT"
 
-          version=$(yq -r --no-colors eval '.version' "apis/${{ inputs.TARGET }}/package.json")
+          version=$(yq -r --no-colors eval '.version' "${{ inputs.APP_PATH }}/package.json")
           echo "version=${version}" >> "$GITHUB_OUTPUT"
 
           echo "date=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_OUTPUT"
   build:
-    name: Build ${{ inputs.TARGET }} docker image
+    name: Build ${{ inputs.APP_PATH }} docker image
     runs-on: ubuntu-latest
     needs: image-data
+    permissions:
+      contents: read
+      packages: write
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -66,12 +71,13 @@ jobs:
         with:
           org_name: radoslavirha
           auth_token: ${{ secrets.TOOLKIT_HUB_PACKAGES }}
-      - name: Login to DockerHub
+      - name: Login to GHCR
         if: ${{ inputs.PUBLISH == true || inputs.PUBLISH == 'true' }}
         uses: docker/login-action@v3
         with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
       - name: Build
         uses: docker/build-push-action@v6
         with:
@@ -79,7 +85,7 @@ jobs:
           load: true
           context: .
           file: Dockerfile
-          target: ${{ inputs.TARGET }}
+          target: ${{ needs.image-data.outputs.target }}
           tags: |
             ${{ needs.image-data.outputs.image }}:latest
             ${{ needs.image-data.outputs.image }}:${{ needs.image-data.outputs.version }}
@@ -92,8 +98,8 @@ jobs:
             org.opencontainers.image.vendor=Radoslav Irha IoT Miniservers
             org.opencontainers.image.authors=Radoslav Irha <radoslav.irha@gmail.com>
             org.opencontainers.image.licenses=MIT
-            org.opencontainers.image.source=https://github.com/${{ github.repository }}/apis/${{ inputs.TARGET }}
-            org.opencontainers.image.documentation=https://github.com/${{ github.repository }}/blob/main/apis/${{ inputs.TARGET }}README.md
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}/${{ inputs.APP_PATH }}
+            org.opencontainers.image.documentation=https://github.com/${{ github.repository }}/blob/main/${{ inputs.APP_PATH }}/README.md
             org.opencontainers.image.created=${{ needs.image-data.outputs.date }}
             org.opencontainers.image.revision=${{ github.sha }}
             org.opencontainers.image.version=${{ needs.image-data.outputs.version }}
