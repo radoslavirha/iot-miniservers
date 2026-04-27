@@ -6,7 +6,7 @@ import { MqttConfigSchema } from './MqttConfig.js';
 import { PollingConfigSchema } from './PollingConfig.js';
 import { UdpConfigSchema } from './UdpConfig.js';
 import { LoggerOptionsSchema } from '@radoslavirha/tsed-logger';
-import { OtelConfigSchema } from '../../otel/OtelConfig.js';
+import { ConfigSchema as OtelConfigSchema } from '../../otel/OtelConfig.js';
 
 export const ConfigSchema = BaseConfig.extend({
     cachePath: z.string().optional().describe('Path to the JSON device cache file. Relative to CWD.'),

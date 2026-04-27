@@ -31,6 +31,9 @@
         "lint:fix": "eslint --fix .",
         "test": "vitest run"
     },
+    "peerDependencies": {
+        "@opentelemetry/api": "catalog:"
+    },
     "dependencies": {
         "@opentelemetry/api": "catalog:",
         "@opentelemetry/exporter-logs-otlp-http": "catalog:",

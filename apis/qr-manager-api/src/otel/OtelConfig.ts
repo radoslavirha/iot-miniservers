@@ -6,6 +6,4 @@ export const ConfigSchema = BaseConfig.extend({
     otel: OtelConfigSchema.optional()
 });
 
-export { OtelConfigSchema };
-
 export type ConfigModel = z.infer<typeof ConfigSchema>;

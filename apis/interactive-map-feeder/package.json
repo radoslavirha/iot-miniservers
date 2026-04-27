@@ -17,6 +17,7 @@
     "test:watch": "vitest"
   },
   "dependencies": {
+    "@opentelemetry/api": "catalog:",
     "@radoslavirha/otel": "workspace:*",
     "@radoslavirha/config-typescript": "catalog:",
     "@radoslavirha/tsed-common": "catalog:",

@@ -17,6 +17,7 @@
     "test:watch": "vitest"
   },
   "dependencies": {
+    "@opentelemetry/api": "catalog:",
     "@opentelemetry/instrumentation-mongoose": "catalog:",
     "@opentelemetry/winston-transport": "catalog:",
     "@radoslavirha/config-typescript": "catalog:",
