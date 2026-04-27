@@ -15,28 +15,28 @@ RUN --mount=type=secret,id=npmrc,target=/root/.npmrc \
     pnpm install --frozen-lockfile
 RUN pnpm --filter './packages/**' run build
 
-# ─── interactive-map-feeder ────────────────────────────────────────────────────
-FROM deps AS build-interactive-map-feeder
+# ─── interactive-map-feeder-api ────────────────────────────────────────────────────
+FROM deps AS build-interactive-map-feeder-api
 
-RUN pnpm --filter=interactive-map-feeder run build && \
-    pnpm deploy --filter=interactive-map-feeder --prod /prod/interactive-map-feeder
+RUN pnpm --filter=interactive-map-feeder-api run build && \
+    pnpm deploy --filter=interactive-map-feeder-api --prod /prod/interactive-map-feeder-api
 
-FROM base AS interactive-map-feeder
+FROM base AS interactive-map-feeder-api
 
-COPY --from=build-interactive-map-feeder /prod/interactive-map-feeder /home/app
+COPY --from=build-interactive-map-feeder-api /prod/interactive-map-feeder-api /home/app
 WORKDIR /home/app
 ENV NODE_ENV=production
 CMD ["pnpm", "start:prod"]
 
-# ─── miot-bridge ───────────────────────────────────────────────────────────────
-FROM deps AS build-miot-bridge
+# ─── miot-bridge-api ───────────────────────────────────────────────────────────────
+FROM deps AS build-miot-bridge-api
 
-RUN pnpm --filter=miot-bridge run build && \
-    pnpm deploy --filter=miot-bridge --prod /prod/miot-bridge
+RUN pnpm --filter=miot-bridge-api run build && \
+    pnpm deploy --filter=miot-bridge-api --prod /prod/miot-bridge-api
 
-FROM base AS miot-bridge
+FROM base AS miot-bridge-api
 
-COPY --from=build-miot-bridge /prod/miot-bridge /home/app
+COPY --from=build-miot-bridge-api /prod/miot-bridge-api /home/app
 WORKDIR /home/app
 ENV NODE_ENV=production
 CMD ["pnpm", "start:prod"]

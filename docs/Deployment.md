@@ -48,7 +48,7 @@ the ConfigMap template. E.g.:
 
 ---
 
-## Example (filled in for miot-bridge)
+## Example (filled in for miot-bridge-api)
 
 ## App: miot-bridge-api
 
@@ -56,9 +56,9 @@ MQTT-to-MongoDB bridge for Loxone IoT miniserver data ingestion.
 
 ### Homelab deployment metadata
 
-- **Docker Hub image:** `radoslavirha/miot-bridge`
+- **Docker Hub image:** `radoslavirha/miot-bridge-api`
 - **Helm values key:** `apps.miot-bridge-api`
-- **ArgoCD app name:** `miot-bridge-api-iot`
+- **ArgoCD app name:** `miot-bridge-api`
 - **HTTP port:** 4000
 - **UDP port:** 4000
 - **Traefik UDP entrypoints:** `production=udp-miot-prod`, `sandbox=udp-miot-sbx`

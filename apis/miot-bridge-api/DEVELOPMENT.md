@@ -1,10 +1,10 @@
-# miot-bridge — Architecture & Technical Reference
+# miot-bridge-api — Architecture & Technical Reference
 
 This document is for contributors and AI coding agents. For end-user documentation, see [README.md](./README.md) (generated from [.README.hbs](./.README.hbs)).
 
 ## Overview
 
-miot-bridge is a Node.js API (Ts.ED framework) that bridges Loxone and other home-automation controllers to Xiaomi devices via the MIoT binary protocol. It exposes HTTP, UDP, and MQTT command interfaces over a unified payload model and manages device registration, MIoT spec caching, property polling, and notification subscriptions.
+miot-bridge-api is a Node.js API (Ts.ED framework) that bridges Loxone and other home-automation controllers to Xiaomi devices via the MIoT binary protocol. It exposes HTTP, UDP, and MQTT command interfaces over a unified payload model and manages device registration, MIoT spec caching, property polling, and notification subscriptions.
 
 ## Source structure
 

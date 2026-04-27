@@ -45,10 +45,10 @@ If anything is ambiguous or missing from the above sources, ask the user before 
 Read these files from `radoslavirha/homelab` (branch: `main`) to use as structural templates:
 
 1. `gitops/argocd-manifests/apps/apps/MiotBridgeApiIot.yaml` — ApplicationSet structure
-2. `gitops/helm-values/apps/miot-bridge-api-iot/base.yaml` — base values structure
-3. `gitops/helm-values/apps/miot-bridge-api-iot/production.yaml` — production config template pattern
-4. `gitops/helm-values/apps/miot-bridge-api-iot/sandbox.yaml` — sandbox config template pattern
-5. `gitops/k8s-manifests/server2/miot-bridge-api-iot/production/ExternalSecret.mqtt.yaml` — ExternalSecret structure
+2. `gitops/helm-values/apps/miot-bridge-api/base.yaml` — base values structure
+3. `gitops/helm-values/apps/miot-bridge-api/production.yaml` — production config template pattern
+4. `gitops/helm-values/apps/miot-bridge-api/sandbox.yaml` — sandbox config template pattern
+5. `gitops/k8s-manifests/server2/miot-bridge-api/production/ExternalSecret.mqtt.yaml` — ExternalSecret structure
 6. `docs/architecture.md` — technology stack table (to append a new row)
 
 ## Step 4 — Generate all files
@@ -62,7 +62,7 @@ Copy MiotBridgeApiIot.yaml. Substitute:
 - `metadata.name` → `<ARGOCD_APP_NAME>`
 - `template.metadata.name` → `<ARGOCD_APP_NAME>-{{cluster}}-{{env}}`
 - `helm.releaseName` → `<ARGOCD_APP_NAME>`
-- All `miot-bridge-api-iot` references in valueFiles → `<ARGOCD_APP_NAME>`
+- All `miot-bridge-api` references in valueFiles → `<ARGOCD_APP_NAME>`
 - k8s-manifests path → `gitops/k8s-manifests/{{cluster}}/<ARGOCD_APP_NAME>/{{env}}`
 - **If app has no secrets:** remove the third `sources` block (k8s-manifests)
 

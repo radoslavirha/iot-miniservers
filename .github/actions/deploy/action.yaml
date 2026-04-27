@@ -7,7 +7,7 @@ inputs:
     description: Target environment (sandbox or production)
     required: true
   packages:
-    description: 'JSON array of apps, e.g. [{"name":"miot-bridge","version":"0.2.3"}]'
+    description: 'JSON array of apps, e.g. [{"name":"miot-bridge-api","version":"0.2.3"}]'
     required: true
   home_server_pat:
     description: PAT with contents:write on radoslavirha/home-server

@@ -1,5 +1,5 @@
 import { AdditionalProperties, AnyOf, Description, Enum, Example, Optional, Property, Required } from '@tsed/schema';
-import { DeviceCommandOperation } from '../models/DeviceCommandOperation.enum.js';
+import { DeviceCommandOperation } from './DeviceCommandOperation.enum.js';
 
 @Description('Command request model for MQTT transport. Device ID is derived from the topic, not the payload.')
 @AdditionalProperties(false)

@@ -5,7 +5,7 @@ import { MiotSpecV2Endpoint } from '../endpoints/miot-spec-v2/MiotSpecV2Endpoint
 import { MiotSpecV2Mapper } from '../mappers/MiotSpecV2Mapper.js';
 import { SimplifiedMiotSpec } from '../models/simplified-miot-spec/SimplifiedMiotSpec.js';
 import { SimplifiedMiotSpecV2Mapper } from '../mappers/SimplifiedMiotSpecV2Mapper.js';
-import { ModelPropertyOverrideService } from '../services/ModelPropertyOverrideService.js';
+import { ModelPropertyOverrideService } from './ModelPropertyOverrideService.js';
 import { Logger } from '@radoslavirha/tsed-logger';
 
 /** Minimal device address info accepted by discover(). Both DeviceDiscoverRequest and DeviceRequest satisfy this. */

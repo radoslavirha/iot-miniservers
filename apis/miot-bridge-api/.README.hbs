@@ -7,7 +7,7 @@
 
 ## Overview
 
-miot-bridge is an HTTP/UDP/MQTT gateway between [Loxone](https://www.loxone.com/) and other home-automation controllers and Xiaomi devices that speak the [MIoT binary protocol](https://github.com/OpenMiHome/mihome-binary-protocol/blob/master/doc/PROTOCOL.md).
+miot-bridge-api is an HTTP/UDP/MQTT gateway between [Loxone](https://www.loxone.com/) and other home-automation controllers and Xiaomi devices that speak the [MIoT binary protocol](https://github.com/OpenMiHome/mihome-binary-protocol/blob/master/doc/PROTOCOL.md).
 
 - **Register** devices once; the bridge caches the MIoT spec and manages the stamp/handshake lifecycle automatically.
 - **Send commands** (read property, write property, execute action) via HTTP, UDP, or MQTT using a unified payload.
@@ -23,8 +23,8 @@ Create a `config/production.json` (see [Configuration](#configuration)), then:
 
 ```yaml
 services:
-  miot-bridge:
-    image: ghcr.io/radoslavirha/miot-bridge:latest
+  miot-bridge-api:
+    image: ghcr.io/radoslavirha/miot-bridge-api:latest
     ports:
       - "4001:4001"       # HTTP API + Swagger UI
       - "4002:4002/udp"   # UDP command listener (when udp.enabled = true)
@@ -57,7 +57,7 @@ Configuration is loaded from `config/production.json`.
 | `server.httpPort` | number | ✅ | — | HTTP server port. |
 | `cachePath` | string | | `./cache` | Path (relative to CWD) for JSON device and notification cache files. Used when MongoDB is disabled. |
 | `mongodb.enabled` | boolean | | `false` | Enable MongoDB as the device/notification storage backend. |
-| `mongodb.url` | string | when enabled | — | MongoDB connection string, e.g. `mongodb://host:27017/miot-bridge`. |
+| `mongodb.url` | string | when enabled | — | MongoDB connection string, e.g. `mongodb://host:27017/miot-bridge-api`. |
 | `mongodb.connectionOptions.user` | string | | — | MongoDB username. |
 | `mongodb.connectionOptions.pass` | string | | — | MongoDB password. |
 | `udp.enabled` | boolean | | `false` | Enable UDP command listener. |
@@ -76,7 +76,7 @@ Configuration is loaded from `config/production.json`.
 | `mqtt.clientId` | string | | auto | MQTT client identifier. |
 | `mqtt.username` | string | when enabled | — | Broker username (EMQX: API Key). |
 | `mqtt.password` | string | when enabled | — | Broker password (EMQX: Secret Key). |
-| `mqtt.topicPrefix` | string | | — | Optional prefix prepended to all topics, e.g. `home/office` → `home/office/miot-bridge/command`. |
+| `mqtt.topicPrefix` | string | | — | Optional prefix prepended to all topics, e.g. `home/office` → `home/office/miot-bridge-api/command`. |
 | `mqtt.notifications.enabled` | boolean | | `false` | Send property-change notifications via MQTT. |
 
 ### Example: HTTP-only with file cache
@@ -106,15 +106,15 @@ Configuration is loaded from `config/production.json`.
   "server": { "httpPort": 4001 },
   "mongodb": {
     "enabled": true,
-    "url": "mongodb://mongo:27017/miot-bridge",
-    "connectionOptions": { "user": "miot-bridge", "pass": "secret" }
+    "url": "mongodb://mongo:27017/miot-bridge-api",
+    "connectionOptions": { "user": "miot-bridge-api", "pass": "secret" }
   },
   "udp": { "enabled": true, "port": 4002 },
   "polling": { "enabled": true, "intervalMs": 15000, "dispatchOnChange": true },
   "mqtt": {
     "enabled": true,
     "url": "mqtt://mosquitto:1883",
-    "username": "miot-bridge",
+    "username": "miot-bridge-api",
     "password": "secret",
     "notifications": { "enabled": true }
   }
@@ -128,7 +128,7 @@ Swagger UI is served at `http://<host>:<httpPort>/`.
 All responses use `application/json`. All request bodies must be `Content-Type: application/json`.
 
 > **Device IDs**: Two different IDs appear in this API.
-> - **App UUID** (`deviceId` path parameter) — a UUID assigned by miot-bridge when a device is registered. Used in device management and notification endpoints.
+> - **App UUID** (`deviceId` path parameter) — a UUID assigned by miot-bridge-api when a device is registered. Used in device management and notification endpoints.
 > - **Hardware ID** (`deviceId` in the command body) — the numeric MIoT device ID returned from the handshake (e.g. `XXX`). Used in the command endpoint only.
 
 ### Devices
@@ -303,11 +303,11 @@ When `mqtt.enabled = true`, the bridge connects to the configured broker and sub
 
 | Topic | Direction | Description |
 |---|---|---|
-| `miot-bridge/command` | inbound | Publish a command from your controller. |
-| `miot-bridge/response` | outbound | Bridge publishes the command response. |
-| `miot-bridge/notifications` | outbound | Bridge publishes property-change events (when `mqtt.notifications.enabled = true`). |
+| `miot-bridge-api/command` | inbound | Publish a command from your controller. |
+| `miot-bridge-api/response` | outbound | Bridge publishes the command response. |
+| `miot-bridge-api/notifications` | outbound | Bridge publishes property-change events (when `mqtt.notifications.enabled = true`). |
 
-With `mqtt.topicPrefix = "home/office"` all topics become `home/office/miot-bridge/command`, etc.
+With `mqtt.topicPrefix = "home/office"` all topics become `home/office/miot-bridge-api/command`, etc.
 
 ### Command payload
 
