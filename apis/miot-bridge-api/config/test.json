@@ -2,5 +2,6 @@
     "server": {
         "httpPort": 4001
     },
-    "cachePath": "./cache"
+    "cachePath": "./cache",
+    "logger": {}
 }

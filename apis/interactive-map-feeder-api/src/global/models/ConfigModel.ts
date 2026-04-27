@@ -4,7 +4,7 @@ import { ConfigSchema as OtelConfigSchema } from '../../otel/OtelConfig.js';
 import z from 'zod';
 
 export const ConfigSchema = BaseConfig.extend({
-    logger: LoggerOptionsSchema,
+    logger: LoggerOptionsSchema.optional(),
     otel: OtelConfigSchema.optional().describe('OpenTelemetry configuration.')
 });
 export type ConfigModel = z.infer<typeof ConfigSchema>;

@@ -8,7 +8,7 @@ import { RedirectConfigSchema } from './RedirectConfig.js';
 export const ConfigSchema = BaseConfig.extend({
     mongodb: MongoConfigSchema.describe('MongoDB configuration. The QR Manager always persists records to MongoDB.'),
     redirect: RedirectConfigSchema.describe('Public redirect configuration.'),
-    logger: LoggerOptionsSchema,
+    logger: LoggerOptionsSchema.optional(),
     otel: OtelConfigSchema.optional().describe('OpenTelemetry configuration.')
 });
 

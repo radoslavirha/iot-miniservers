@@ -15,7 +15,7 @@ export const ConfigSchema = BaseConfig.extend({
     polling: PollingConfigSchema.optional().describe('Device property polling configuration. When polling.enabled is true, subscribed properties are polled at the configured interval.'),
     http: HttpConfigSchema.optional().describe('HTTP notification configuration.'),
     mqtt: MqttConfigSchema.optional().describe('MQTT client configuration. Connection is shared by the inbound command subscriber and outbound notification publisher.'),
-    logger: LoggerOptionsSchema,
+    logger: LoggerOptionsSchema.optional(),
     otel: OtelConfigSchema.optional().describe('OpenTelemetry configuration.')
 });
 
