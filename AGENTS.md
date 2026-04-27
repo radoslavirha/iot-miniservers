@@ -24,32 +24,44 @@ Always use [toolkit-hub](https://github.com/radoslavirha/toolkit-hub) where poss
 
 ## Monorepo Structure
 
-```
+```text
 apis/<api-name>/
   src/
-    global/
-      endpoints/          # External API/data source wrappers, not HTTP controllers.
-        <API group>/
-          dto/            # DTO models for endpoints.
-          *Endpoint.ts    # Endpoint service which accepts/returns only DTOs. SINGLETON scoped when possible.
-      mappers/            # Global mapper services for mapping Ts.ED schema models and DTOs. Never use services, global endpoints/stores. SINGLETON scoped when possible.
-      models/             # App-level models (e.g. ConfigModel). Models can be organised to folders.
-      services/           # App-level services (e.g. ConfigService). SINGLETON scoped when possible.
-      storage/
-        <storage group>/  # E.g. mongo, other databases,...
-          dto/            # DTO models for storage repositories.
-          *Repository.ts  # Repository service which accepts/returns only DTOs. SINGLETON scoped when possible.
-      ModelGroups.ts      # Groups used in `@Groups()` decorator from Ts.ED. Groups should be defined on Controller endpoints (request/response models) and in Models. If `@Groups()` is used in child model, parent model should use `@ForwardGroups()` decorator on property which uses child model.
-      ...                 # There still may be something API specific.
-    v1/
-      controllers/        # Ts.ED controllers. Every endpoint has own handler. SINGLETON scoped when possible.
-      handlers/           # Business logic handlers. Handler can use Services/Mappers. Should avoid using global endpoints/stores if possible. SINGLETON scoped when possible.
-      mappers/            # Mapper services for mapping Ts.ED schema models and DTOs. Never use services, global endpoints/stores. SINGLETON scoped when possible.
-      models/             # Application version specific models, request/response models, etc. Models can be organised to folders.
-      services/           # Services with business logic. Use mappers, other services, endpoints, stores. (SINGLETON scoped when possible)
-      ...                 # There still may be something API specific.
+    controllers/          # Ts.ED HTTP controllers — one file per resource. SINGLETON scoped when possible.
+    endpoints/            # External API/data source wrappers (not HTTP controllers).
+      <API group>/
+        dto/              # DTO models for endpoints.
+        *Endpoint.ts      # Endpoint service that accepts/returns only DTOs. SINGLETON scoped when possible.
+    handlers/             # Per-endpoint business logic. Orchestrate services/mappers. SINGLETON scoped when possible.
+    mappers/              # Bi-directional mapper services (DTO ↔ model). Never use services or endpoints. SINGLETON scoped when possible.
+    models/               # Ts.ED schema models, enums, request/response types. Use sub-folders to group (`config/`, etc.).
+    services/             # Reusable, stateless business logic. Includes ConfigService, storage facades, etc. SINGLETON scoped when possible.
+    storage/
+      <storage group>/    # Per backend + entity (e.g. `qr-mongo/`, `device-local-storage/`).
+        dto/              # DTO models for storage repositories.
+        *Repository.ts    # Repository service that accepts/returns only DTOs. SINGLETON scoped when possible.
+    otel/                 # OpenTelemetry bootstrap (`instrument.ts`) + per-API OTel config.
+    ModelGroups.ts        # Groups used in `@Groups()` decorator. Groups belong on Controller endpoints (request/response models) and Models. If `@Groups()` is used in a child model, the parent model must use `@ForwardGroups()` on that property.
     Server.ts
     index.ts
+```
+
+There is no `v1/` folder and no API version prefix in routes — all controllers mount at `/`. Versioning is handled at the package level via Changesets, not inside route paths.
+
+```text
+ui/<ui-name>/
+  src/
+    api/                  # Typed REST clients consumed by pages/components.
+    components/           # Presentational React components.
+    pages/                # Route components — orchestrate api/ clients and components/.
+    runtime/              # Runtime config bootstrap (loaded from `public/config.json`, replaced by ConfigMap in k8s).
+    App.tsx               # Root component with router definitions.
+    main.tsx              # Awaits runtime config, mounts <App />.
+    styles.css
+  public/
+    config.json           # Dev defaults; production replaced by mounted ConfigMap.
+  index.html              # Bootstrap script that fetches /config.json before any JS.
+  nginx.conf              # Production nginx config — SPA fallback + no-cache for /config.json.
 ```
 
 ## Coding Conventions
@@ -57,8 +69,7 @@ apis/<api-name>/
 ### General
 
 - Always use **ESM** imports with explicit `.js` extensions (e.g. `import { Foo } from './Foo.js'`)
-- Files from `src/global` can't import from `src/{v1, v2,...}`.
-- Avoid constructing DTOs and calling endpoints/repositories from handler. Delegate DTO construction to services.
+- Avoid constructing DTOs and calling endpoints/repositories from handlers. Delegate DTO construction to services.
 - Use `@radoslavirha/*` packages from [toolkit-hub](https://github.com/radoslavirha/toolkit-hub)
 - always use class member visibility modifiers
 
@@ -119,15 +130,36 @@ apis/<api-name>/
    | `vitest.config.ts` | Usually identical across all APIs |
    | `config/localhost.json` | Set `server.httpPort` |
    | `config/test.json` | Set `server.httpPort` |
-   | `src/global/models/ConfigModel.ts` | Extends `BaseConfig`; add API-specific config fields here |
-   | `src/global/models/index.ts` | Barrel export |
-   | `src/global/services/ConfigService.ts` | Standard `ConfigProvider<ConfigModel>` — identical across APIs |
-   | `src/Server.ts` | Mount `SwaggerController` at `/` |
+   | `src/models/config/ConfigModel.ts` | Extends `BaseConfig`; add API-specific config fields here |
+   | `src/services/ConfigService.ts` | Standard `ConfigProvider<ConfigModel>` — identical across APIs |
+   | `src/Server.ts` | Mount `SwaggerController` at `/` plus controllers from `controllers/index.ts` |
    | `src/index.ts` | Bootstrap entrypoint — identical across APIs |
+   | `src/otel/instrument.ts` | OTel SDK preload (loaded via `node --import` in `start:prod`) |
 
 2. New workspace members are auto-discovered via `apis/*` glob in `pnpm-workspace.yaml` — no changes needed there.
 3. Run `pnpm install` from the repo root (requires `NODE_AUTH_TOKEN` in env).
 4. Add a `.README.hbs` template (README is generated via `docs.js`).
+5. Add a `Dockerfile` stage in the root `Dockerfile` following the `qr-manager-api` pattern (deps → build → final image with `pnpm start:prod`).
+
+## Adding a New UI
+
+1. Create `ui/<ui-name>/` with at minimum:
+
+   | File | Notes |
+   | --- | --- |
+   | `package.json` | React + Vite. Keep React/router versions consistent across UIs. |
+   | `tsconfig.json` | `module: ESNext`, `jsx: react-jsx`. |
+   | `vite.config.ts` | `base` reads from `process.env.VITE_BASE_PATH` for proxy mounts. |
+   | `vitest.config.ts` | jsdom environment, coverage thresholds. |
+   | `eslint.config.mjs` | Re-exports `@radoslavirha/config-eslint`. |
+   | `index.html` | Inline script that fetches `/config.json` BEFORE the bundle and exposes the promise as `window.__APP_CONFIG_PROMISE__`. |
+   | `public/config.json` | Dev defaults. In Kubernetes this file is replaced by a mounted ConfigMap. |
+   | `nginx.conf` | SPA fallback to `index.html`; serve `/config.json` with `Cache-Control: no-store`. |
+   | `src/runtime/RuntimeConfig.ts` | `loadRuntimeConfig()` + Zod-equivalent runtime validation. |
+   | `src/main.tsx` | Awaits `loadRuntimeConfig()` then renders `<App />`. |
+
+2. New workspaces are auto-discovered via `ui/*` glob in `pnpm-workspace.yaml`.
+3. Add a `Dockerfile` stage in the root `Dockerfile` following the `qr-manager-ui` pattern (build with Vite → copy `dist/` into nginx image).
 
 ## Server configuration
 

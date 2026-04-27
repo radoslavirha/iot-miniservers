@@ -1,3 +1,4 @@
 ---
 # Key must match subdirectory in packages/
 miot-device: packages/miot-device/**
+otel: packages/otel/**

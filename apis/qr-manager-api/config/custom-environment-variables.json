@@ -1,0 +1,12 @@
+{
+    "mongodb": {
+        "url": "MONGODB_URL",
+        "connectionOptions": {
+            "user": "MONGODB_USER",
+            "pass": "MONGODB_PASS"
+        }
+    },
+    "redirect": {
+        "baseURL": "QR_REDIRECT_BASE_URL"
+    }
+}

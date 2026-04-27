@@ -1,0 +1,12 @@
+{
+    "server": {
+        "httpPort": 4011
+    },
+    "redirect": {
+        "baseURL": "http://localhost:4011"
+    },
+    "mongodb": {
+        "enabled": false
+    },
+    "logger": {}
+}

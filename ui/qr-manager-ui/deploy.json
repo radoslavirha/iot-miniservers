@@ -1,0 +1,10 @@
+{
+  "sandbox": {
+    "file": "gitops/helm-values/apps/qr-manager-ui/sandbox.yaml",
+    "yamlPath": ".apps.qr-manager-ui.image.tag"
+  },
+  "production": {
+    "file": "gitops/helm-values/apps/qr-manager-ui/production.yaml",
+    "yamlPath": ".apps.qr-manager-ui.image.tag"
+  }
+}

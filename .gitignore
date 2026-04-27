@@ -15,3 +15,10 @@ apis/**/config/*.json
 
 # APM dependencies
 apm_modules/
+
+# tsc emit leftovers in UI source (build is delegated to vite, tsc only type-checks).
+ui/**/*.d.ts
+!ui/**/src/vite-env.d.ts
+ui/**/*.tsbuildinfo
+ui/**/src/**/*.js
+

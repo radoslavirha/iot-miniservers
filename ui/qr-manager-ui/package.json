@@ -1,0 +1,46 @@
+{
+  "name": "qr-manager-ui",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Admin UI for the QR Manager API. Lists, edits and deactivates QR codes; downloads printable images.",
+  "type": "module",
+  "scripts": {
+    "build": "tsc --noEmit && vite build",
+    "cleanup:all": "pnpm run cleanup:artifacts && pnpm run cleanup:modules",
+    "cleanup:artifacts": "rm -rf coverage dist",
+    "cleanup:modules": "rm -rf node_modules",
+    "dev": "vite",
+    "lint": "eslint .",
+    "lint:fix": "eslint --fix .",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "react-router-dom": "^7.10.1"
+  },
+  "devDependencies": {
+    "@radoslavirha/config-eslint": "catalog:",
+    "@radoslavirha/config-typescript": "catalog:",
+    "@testing-library/jest-dom": "^6.6.3",
+    "@testing-library/react": "^16.3.0",
+    "@testing-library/user-event": "^14.6.1",
+    "@types/node": "catalog:",
+    "@types/react": "^19.2.3",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^5.1.1",
+    "@vitest/coverage-v8": "catalog:",
+    "eslint": "catalog:",
+    "jsdom": "^29.1.0",
+    "typescript": "catalog:",
+    "typescript-eslint": "catalog:",
+    "vite": "^8.0.10",
+    "vitest": "catalog:"
+  },
+  "engines": {
+    "node": ">= 24",
+    "pnpm": ">= 10"
+  }
+}

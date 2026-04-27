@@ -40,3 +40,28 @@ COPY --from=build-miot-bridge /prod/miot-bridge /home/app
 WORKDIR /home/app
 ENV NODE_ENV=production
 CMD ["pnpm", "start:prod"]
+
+# ─── qr-manager-api ────────────────────────────────────────────────────────────
+FROM deps AS build-qr-manager-api
+
+RUN pnpm --filter=qr-manager-api run build && \
+    pnpm deploy --filter=qr-manager-api --prod /prod/qr-manager-api
+
+FROM base AS qr-manager-api
+
+COPY --from=build-qr-manager-api /prod/qr-manager-api /home/app
+WORKDIR /home/app
+ENV NODE_ENV=production
+CMD ["pnpm", "start:prod"]
+
+# ─── qr-manager-ui ─────────────────────────────────────────────────────────────
+FROM deps AS build-qr-manager-ui
+
+RUN pnpm --filter=qr-manager-ui run build
+
+FROM nginx:1.29-alpine AS qr-manager-ui
+
+COPY --from=build-qr-manager-ui /usr/src/app/ui/qr-manager-ui/dist /usr/share/nginx/html
+COPY ui/qr-manager-ui/nginx.conf /etc/nginx/conf.d/default.conf
+EXPOSE 80
+CMD ["nginx", "-g", "daemon off;"]
