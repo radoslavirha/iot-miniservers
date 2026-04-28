@@ -6,6 +6,12 @@ const okJson = (body: unknown) => new Response(JSON.stringify(body), {
     headers: { 'Content-Type': 'application/json' }
 });
 
+const setBase = (href: string) => {
+    const base = document.createElement('base');
+    base.href = href;
+    document.head.appendChild(base);
+};
+
 describe('validateRuntimeConfig', () => {
     it('strips trailing slashes from apiBaseURL', () => {
         const config = validateRuntimeConfig({ apiBaseURL: 'https://api.server.home/qr///' });
@@ -44,16 +50,29 @@ describe('validateRuntimeConfig', () => {
 describe('loadRuntimeConfig', () => {
     afterEach(() => {
         vi.restoreAllMocks();
+        document.querySelectorAll('base').forEach(el => el.remove());
     });
 
-    it('fetches /config.json (absolute path) and validates the response', async () => {
-        const fetchMock = vi.fn().mockResolvedValue(okJson({ apiBaseURL: 'http://localhost:4011/', basePath: '/qr-manager/' }));
+    it('resolves config.json relative to <base href> when present', async () => {
+        setBase('http://apps.server2.home/qr-manager/');
+        const fetchMock = vi.fn().mockResolvedValue(okJson({
+            apiBaseURL: 'http://api.server2.home/iot/qr-manager',
+            basePath: '/qr-manager/'
+        }));
         Object.assign(globalThis, { fetch: fetchMock });
 
         const config = await loadRuntimeConfig();
-        expect(fetchMock).toHaveBeenCalledWith('/config.json', { cache: 'no-store' });
-        expect(config.apiBaseURL).toBe('http://localhost:4011');
+        expect(fetchMock).toHaveBeenCalledWith('http://apps.server2.home/qr-manager/config.json', { cache: 'no-store' });
         expect(config.basePath).toBe('/qr-manager/');
+    });
+
+    it('falls back to origin-relative /config.json when no <base> exists (dev)', async () => {
+        const fetchMock = vi.fn().mockResolvedValue(okJson({ apiBaseURL: 'http://localhost:4011/', basePath: '/' }));
+        Object.assign(globalThis, { fetch: fetchMock });
+
+        const config = await loadRuntimeConfig();
+        expect(fetchMock.mock.calls[0][0]).toMatch(/\/config\.json$/);
+        expect(config.apiBaseURL).toBe('http://localhost:4011');
     });
 
     it('throws a helpful error when the response is HTML (SPA fallback)', async () => {

@@ -62,6 +62,10 @@ RUN pnpm --filter=qr-manager-ui run build
 FROM nginx:1.29-alpine AS qr-manager-ui
 
 COPY --from=build-qr-manager-ui /usr/src/app/ui/qr-manager-ui/dist /usr/share/nginx/html
-COPY ui/qr-manager-ui/nginx.conf /etc/nginx/conf.d/default.conf
+# Template is processed at container start by the nginx image's built-in
+# envsubst entrypoint. Set NGINX_BASE_PATH env var in the deployment
+# (e.g. /qr-manager or /) to configure the sub-path at runtime.
+COPY ui/qr-manager-ui/nginx.conf.template /etc/nginx/templates/default.conf.template
 EXPOSE 80
+ENV NGINX_BASE_PATH=/
 CMD ["nginx", "-g", "daemon off;"]

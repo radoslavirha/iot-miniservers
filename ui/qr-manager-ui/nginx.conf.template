@@ -1,0 +1,44 @@
+# Generated at container start by the nginx image's built-in envsubst pipeline.
+# Source: nginx.conf.template → /etc/nginx/conf.d/default.conf
+#
+# Required env var:
+#   NGINX_BASE_PATH   Sub-path the app is served at, e.g. /qr-manager or /
+#
+# nginx alias strips the NGINX_BASE_PATH prefix before looking up files in
+# /usr/share/nginx/html/, so the image never needs to know the sub-path at
+# build time. <base href="${NGINX_BASE_PATH}/"> is injected into every HTML
+# response so that:
+#   - relative asset paths (./assets/...) resolve to the correct public URL
+#   - JS can derive the config.json URL via new URL('config.json', baseEl.href)
+
+server {
+    listen 80 default_server;
+    server_name _;
+
+    # Inject <base href> so relative asset paths and the config.json fetch
+    # resolve correctly from any sub-path or deep route.
+    sub_filter '<head>' '<head><base href="${NGINX_BASE_PATH}/">';
+    sub_filter_types text/html;
+    sub_filter_once on;
+
+    # config.json is mounted from a Kubernetes ConfigMap. The exact location
+    # block uses the sub-path prefix so the browser can fetch it without knowing
+    # the sub-path in advance (the <base href> tag takes care of that).
+    location = ${NGINX_BASE_PATH}/config.json {
+        root /usr/share/nginx/html;
+        add_header Cache-Control "no-store, no-cache, must-revalidate" always;
+        try_files /config.json =404;
+    }
+
+    # Redirect bare sub-path to sub-path + trailing slash so relative URLs work.
+    location = ${NGINX_BASE_PATH} {
+        return 301 ${NGINX_BASE_PATH}/;
+    }
+
+    # Serve the SPA. nginx alias strips the sub-path prefix before looking up
+    # files in the html root, so /qr-manager/assets/... → /usr/share/.../assets/...
+    location ${NGINX_BASE_PATH}/ {
+        alias /usr/share/nginx/html/;
+        try_files $uri $uri/ index.html;
+    }
+}

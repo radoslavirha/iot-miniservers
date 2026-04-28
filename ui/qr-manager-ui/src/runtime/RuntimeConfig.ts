@@ -3,12 +3,13 @@ export interface RuntimeConfig {
     /**
      * Public sub-path the app is mounted at (e.g. `/qr-manager/`).
      * Passed to <BrowserRouter basename> so <Link to="/admin"> generates the
-     * correct public URL regardless of where Traefik exposes the service.
+     * correct public URL regardless of where the app is served.
      *
-     * Set to "/" when the app has its own host (e.g. qr-ui.home).
-     * Set to "/qr-manager/" when Traefik strips /qr-manager before forwarding.
+     * Set to "/" when the app has its own host.
+     * Set to "/qr-manager/" when served under a path prefix.
      *
-     * Infra rule: nginx always runs at root — Traefik does the prefix strip.
+     * nginx reads NGINX_BASE_PATH, injects <base href>, AND serves static files
+     * under the correct location — all without rebuilding the image.
      *
      * @default "/"
      */
@@ -38,14 +39,26 @@ const stripTrailingSlash = (value: string): string => value.replace(/\/+$/, '');
 const ensureLeadingSlash = (value: string): string => value.startsWith('/') ? value : `/${value}`;
 
 /**
- * Fetches `/config.json` at the nginx root. Always an absolute path so it
- * resolves correctly regardless of which sub-page the browser is currently on.
- * Traefik strips the prefix before reaching nginx, so nginx always serves from
- * `/`. Always served fresh so a Kubernetes ConfigMap rollover is picked up on
- * the next page load.
+ * Resolves config.json relative to the <base href> element injected by nginx at
+ * container start (NGINX_BASE_PATH env var). This is the only reliable runtime
+ * approach: <base href> is set to the correct sub-path before any JS runs, so
+ * `new URL('config.json', baseHref)` gives the right URL regardless of which
+ * route the user is on. Falls back to '/config.json' in dev (Vite dev server,
+ * no nginx, no <base> tag).
  */
+const resolveConfigUrl = (): string => {
+    const baseEl = typeof document !== 'undefined' ? document.querySelector('base') : null;
+    if (baseEl?.href) {
+        // Sub-path deploy: nginx injected <base href="/qr-manager/">
+        return new URL('config.json', baseEl.href).href;
+    }
+    // No <base> tag — dev (Vite) or root deploy. Serve config.json from origin root.
+    const origin = typeof window !== 'undefined' ? window.location.origin : 'http://localhost';
+    return `${origin}/config.json`;
+};
+
 export const loadRuntimeConfig = async (): Promise<RuntimeConfig> => {
-    const url = '/config.json';
+    const url = resolveConfigUrl();
     const response = await fetch(url, { cache: 'no-store' });
     if (!response.ok) {
         throw new Error(`Failed to load runtime config from ${url} (${response.status}).`);
@@ -56,7 +69,7 @@ export const loadRuntimeConfig = async (): Promise<RuntimeConfig> => {
     } catch (cause) {
         throw new Error(
             `Runtime config at ${url} is not valid JSON. Likely an SPA fallback returning HTML — ` +
-            `ensure nginx serves /config.json before the catch-all try_files.`,
+            `ensure nginx serves config.json before the catch-all try_files.`,
             { cause }
         );
     }

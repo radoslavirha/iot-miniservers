@@ -1,11 +1,11 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
-// Always build with base '/'. Sub-path mounting is handled at the infra level:
-// Traefik strips the prefix before forwarding to nginx, which serves at root.
-// The runtime basePath for BrowserRouter comes from config.json (ConfigMap).
+// base './' → relative asset paths in built HTML. nginx injects <base href>
+// from NGINX_BASE_PATH env var at container start, so assets and config.json
+// resolve correctly from any sub-path without rebuilding the image.
 export default defineConfig({
-    base: '/',
+    base: './',
     plugins: [react()],
     server: {
         port: 5173
