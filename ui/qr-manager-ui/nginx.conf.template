@@ -5,40 +5,51 @@
 #   NGINX_BASE_PATH   Sub-path the app is served at, e.g. /qr-manager or /
 #
 # nginx alias strips the NGINX_BASE_PATH prefix before looking up files in
-# /usr/share/nginx/html/, so the image never needs to know the sub-path at
-# build time. <base href="${NGINX_BASE_PATH}/"> is injected into every HTML
-# response so that:
-#   - relative asset paths (./assets/...) resolve to the correct public URL
-#   - JS can derive the config.json URL via new URL('config.json', baseEl.href)
+# /usr/share/nginx/html/. SPA fallback uses a named @spa location because
+# try_files with alias cannot use a relative 'index.html' for deep routes —
+# it only resolves correctly at the location root. '/index.html' absolute path
+# also fails for sub-paths because it doesn't start with the location prefix.
 
 server {
     listen 80 default_server;
     server_name _;
 
-    # Inject <base href> so relative asset paths and the config.json fetch
-    # resolve correctly from any sub-path or deep route.
+    # Disable gzip on HTML so sub_filter can modify the plain bytes.
+    gzip off;
+
+    # Inject <base href> so relative asset paths (./assets/...) and the
+    # config.json fetch (via new URL('config.json', baseEl.href)) resolve
+    # correctly from any sub-path or deep route.
     sub_filter '<head>' '<head><base href="${NGINX_BASE_PATH}/">';
     sub_filter_types text/html;
     sub_filter_once on;
 
-    # config.json is mounted from a Kubernetes ConfigMap. The exact location
-    # block uses the sub-path prefix so the browser can fetch it without knowing
-    # the sub-path in advance (the <base href> tag takes care of that).
+    # config.json is mounted from a Kubernetes ConfigMap. Exact-match location
+    # is evaluated before the SPA catch-all.
     location = ${NGINX_BASE_PATH}/config.json {
         root /usr/share/nginx/html;
         add_header Cache-Control "no-store, no-cache, must-revalidate" always;
         try_files /config.json =404;
     }
 
-    # Redirect bare sub-path to sub-path + trailing slash so relative URLs work.
+    # Redirect bare sub-path (no trailing slash) so the browser sets the base
+    # URL correctly for relative ./assets/ paths.
     location = ${NGINX_BASE_PATH} {
         return 301 ${NGINX_BASE_PATH}/;
     }
 
-    # Serve the SPA. nginx alias strips the sub-path prefix before looking up
-    # files in the html root, so /qr-manager/assets/... → /usr/share/.../assets/...
+    # Serve the SPA. alias strips the sub-path prefix before mapping to the
+    # html root. Falls back to the named @spa location for any path not found
+    # on disk (client-side routes like /qr-manager/admin or /qr-manager/admin/id).
     location ${NGINX_BASE_PATH}/ {
         alias /usr/share/nginx/html/;
-        try_files $uri $uri/ index.html;
+        try_files $uri $uri/ @spa;
+    }
+
+    # Named fallback: serve index.html for any client-side route. root is used
+    # here (not alias) so the absolute /index.html path resolves correctly.
+    location @spa {
+        root /usr/share/nginx/html;
+        try_files /index.html =404;
     }
 }
