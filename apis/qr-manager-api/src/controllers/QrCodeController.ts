@@ -34,7 +34,7 @@ export class QrCodeController {
     ) {}
 
     @Post('/')
-    @Description('Allocates a new short slug and persists the mapping. Returns the created record with computed qrURL and imageURL.')
+    @Description('Allocates a new short slug and persists the mapping. Returns the created record with computed qrURL.')
     @Returns(201, QrCodeResponse)
     public async create(
         @Required() @BodyParams(QrCodeCreateRequest) body: QrCodeCreateRequest

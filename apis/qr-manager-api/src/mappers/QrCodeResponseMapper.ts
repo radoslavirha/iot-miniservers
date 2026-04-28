@@ -5,9 +5,8 @@ import { QrCodeResponse } from '../models/QrCodeResponse.js';
 import { ConfigService } from '../services/ConfigService.js';
 
 /**
- * Builds public QrCodeResponse projections from the QrCode domain model. Adds
- * computed `qrURL` (the URL encoded into the printed QR) and `imageURL` (the URL
- * the admin UI hits to fetch the rendered image).
+ * Builds public QrCodeResponse projections from the QrCode domain model.
+ * Adds computed `qrURL` — the URL encoded into the printed QR image.
  */
 @Injectable()
 @Scope(ProviderScope.SINGLETON)
@@ -24,8 +23,7 @@ export class QrCodeResponseMapper {
             label: model.label,
             type: model.type,
             active: model.active,
-            qrURL: this.composeQrURL(model.slug),
-            imageURL: this.composeImageURL(model.id)
+            qrURL: this.composeQrURL(model.slug)
         });
     }
 
@@ -34,15 +32,6 @@ export class QrCodeResponseMapper {
     }
 
     private composeQrURL(slug: string): string {
-        return `${this.trimSlash(this.configService.config.redirect.baseURL)}/${slug}`;
-    }
-
-    private composeImageURL(id: string): string {
-        const apiBase = this.configService.api.publicURL ?? '';
-        return `${this.trimSlash(apiBase)}/qr-codes/${id}/image`;
-    }
-
-    private trimSlash(value: string): string {
-        return value.replace(/\/+$/, '');
+        return `${this.configService.config.redirect.baseURL.replace(/\/+$/, '')}/${slug}`;
     }
 }

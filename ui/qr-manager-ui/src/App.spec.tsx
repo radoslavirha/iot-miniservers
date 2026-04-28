@@ -12,7 +12,6 @@ const sample: QrCode = {
     type: 'iot-device',
     active: true,
     qrURL: 'https://qr.home/x7k2',
-    imageURL: 'https://api.server.home/qr/qr-codes/id1/image',
     createdAt: '2026-04-01T00:00:00.000Z',
     updatedAt: '2026-04-01T00:00:00.000Z'
 };

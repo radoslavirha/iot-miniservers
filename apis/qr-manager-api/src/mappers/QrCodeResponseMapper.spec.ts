@@ -16,28 +16,24 @@ const sampleModel = (): QrCode => CommonUtils.buildModelStrict(QrCode, {
     active: true
 });
 
-const stubConfig = (baseURL: string, apiPublicURL: string): ConfigService =>
-    ({
-        config: { redirect: { baseURL } },
-        api: { publicURL: apiPublicURL }
-    } as unknown as ConfigService);
+const stubConfig = (baseURL: string): ConfigService =>
+    ({ config: { redirect: { baseURL } } } as unknown as ConfigService);
 
 describe('QrCodeResponseMapper', () => {
-    it('composes qrURL by joining the public base URL with the slug', () => {
-        const mapper = new QrCodeResponseMapper(stubConfig('https://qr.home', 'https://api.server.home/qr'));
+    it('composes qrURL by joining redirect.baseURL with the slug', () => {
+        const mapper = new QrCodeResponseMapper(stubConfig('https://qr.home'));
         const response = mapper.toResponse(sampleModel());
         expect(response.qrURL).toBe('https://qr.home/x7k2');
     });
 
-    it('strips trailing slashes from configured base URLs', () => {
-        const mapper = new QrCodeResponseMapper(stubConfig('https://qr.home///', 'https://api.server.home/qr///'));
+    it('strips trailing slashes from redirect.baseURL', () => {
+        const mapper = new QrCodeResponseMapper(stubConfig('https://qr.home///'));
         const response = mapper.toResponse(sampleModel());
         expect(response.qrURL).toBe('https://qr.home/x7k2');
-        expect(response.imageURL).toBe('https://api.server.home/qr/qr-codes/671b00000000000000000001/image');
     });
 
     it('preserves all domain fields on the response', () => {
-        const mapper = new QrCodeResponseMapper(stubConfig('https://qr.home', 'https://api.server.home/qr'));
+        const mapper = new QrCodeResponseMapper(stubConfig('https://qr.home'));
         const response = mapper.toResponse(sampleModel());
         expect(response.slug).toBe('x7k2');
         expect(response.targetURL).toBe('https://iot-ui.home/devices/shelf-1');
@@ -45,11 +41,5 @@ describe('QrCodeResponseMapper', () => {
         expect(response.type).toBe(QrType.IOT_DEVICE);
         expect(response.active).toBe(true);
         expect(response.id).toBe('671b00000000000000000001');
-    });
-
-    it('falls back to empty base when api.publicURL is not configured', () => {
-        const mapper = new QrCodeResponseMapper(stubConfig('https://qr.home', undefined as unknown as string));
-        const response = mapper.toResponse(sampleModel());
-        expect(response.imageURL).toBe('/qr-codes/671b00000000000000000001/image');
     });
 });

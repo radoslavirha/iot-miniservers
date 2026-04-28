@@ -1,4 +1,5 @@
 import type { QrCode } from '../api/types.js';
+import { useRuntimeConfig } from '../runtime/RuntimeConfigContext.js';
 
 interface Props {
     qrCode: QrCode;
@@ -8,24 +9,29 @@ interface Props {
     downloadSize?: number;
 }
 
-export const QrImage = ({ qrCode, displaySize = 320, downloadSize = 1024 }: Props) => (
-    <figure className="qr-image">
-        <img
-            src={`${qrCode.imageURL}?format=svg`}
-            alt={`QR code for ${qrCode.label}`}
-            width={displaySize}
-            height={displaySize}
-        />
-        <figcaption>
-            <a href={qrCode.qrURL}>{qrCode.qrURL}</a>
-        </figcaption>
-        <div className="qr-image-downloads">
-            <a href={`${qrCode.imageURL}?format=svg`} download={`${qrCode.slug}.svg`}>
-                Download SVG (vector — best for print)
-            </a>
-            <a href={`${qrCode.imageURL}?format=png&size=${downloadSize}`} download={`${qrCode.slug}.png`}>
-                Download PNG ({downloadSize}px)
-            </a>
-        </div>
-    </figure>
-);
+export const QrImage = ({ qrCode, displaySize = 320, downloadSize = 1024 }: Props) => {
+    const { apiBaseURL } = useRuntimeConfig();
+    const imageBase = `${apiBaseURL}/qr-codes/${qrCode.id}/image`;
+
+    return (
+        <figure className="qr-image">
+            <img
+                src={`${imageBase}?format=svg`}
+                alt={`QR code for ${qrCode.label}`}
+                width={displaySize}
+                height={displaySize}
+            />
+            <figcaption>
+                <a href={qrCode.qrURL}>{qrCode.qrURL}</a>
+            </figcaption>
+            <div className="qr-image-downloads">
+                <a href={`${imageBase}?format=svg`} download={`${qrCode.slug}.svg`}>
+                    Download SVG (vector — best for print)
+                </a>
+                <a href={`${imageBase}?format=png&size=${downloadSize}`} download={`${qrCode.slug}.png`}>
+                    Download PNG ({downloadSize}px)
+                </a>
+            </div>
+        </figure>
+    );
+};

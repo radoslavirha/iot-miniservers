@@ -9,7 +9,6 @@ export interface QrCode {
     type: QrType;
     active: boolean;
     qrURL: string;
-    imageURL: string;
     createdAt: string;
     updatedAt: string;
 }
