@@ -1,5 +1,11 @@
 # qr-manager-ui
 
+## 0.4.0
+
+### Minor Changes
+
+- [`c56b2cf`](https://github.com/radoslavirha/iot-miniservers/commit/c56b2cf66db88c2c69cce85d2686a009ca42289f) Thanks [@radoslavirha](https://github.com/radoslavirha)! - Nginx routing trouble
+
 ## 0.3.0
 
 ### Minor Changes
