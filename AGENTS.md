@@ -1,6 +1,6 @@
 # AGENTS.md — AI Agent Instructions
 
-All agentic tools (skill, instruction, agents,..) must be added to `.apm` folder. Never update/add `.github`/`.claude`. Example Structure:
+All agentic tools (skill, instruction, agents,..) must be added to `.apm` folder. Never update/add skills/instructions/agents `.github`/`.claude` (GitHub actions and related files allowed). Example Structure:
 ```
 repository/
 +-- apm.yml // do not modify
