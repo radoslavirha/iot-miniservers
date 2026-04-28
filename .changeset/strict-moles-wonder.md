@@ -1,6 +1,6 @@
 ---
-"interactive-map-feeder": minor
-"miot-bridge": minor
+"interactive-map-feeder-api": minor
+"miot-bridge-api": minor
 ---
 
 OTEL updates

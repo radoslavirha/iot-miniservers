@@ -1,6 +1,6 @@
 import { BaseConfig } from '@radoslavirha/tsed-configuration';
 import { LoggerOptionsSchema } from '@radoslavirha/tsed-logger';
-import { ConfigSchema as OtelConfigSchema } from '../../otel/OtelConfig.js';
+import { OtelConfigSchema } from '@radoslavirha/otel';
 import z from 'zod';
 
 export const ConfigSchema = BaseConfig.extend({

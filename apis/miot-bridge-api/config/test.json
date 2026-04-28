@@ -3,5 +3,8 @@
         "httpPort": 4001
     },
     "cachePath": "./cache",
-    "logger": {}
+    "logger": {},
+    "mqtt": {
+        "enabled": false
+    }
 }

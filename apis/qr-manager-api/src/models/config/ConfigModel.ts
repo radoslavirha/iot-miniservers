@@ -2,7 +2,7 @@ import { BaseConfig } from '@radoslavirha/tsed-configuration';
 import { z } from 'zod';
 import { MongoConfigSchema } from '@radoslavirha/tsed-mongoose';
 import { LoggerOptionsSchema } from '@radoslavirha/tsed-logger';
-import { ConfigSchema as OtelConfigSchema } from '../../otel/OtelConfig.js';
+import { OtelConfigSchema } from '@radoslavirha/otel';
 import { RedirectConfigSchema } from './RedirectConfig.js';
 
 export const ConfigSchema = BaseConfig.extend({
