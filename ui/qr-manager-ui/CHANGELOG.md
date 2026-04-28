@@ -1,5 +1,11 @@
 # qr-manager-ui
 
+## 0.2.2
+
+### Patch Changes
+
+- [`fb8c47d`](https://github.com/radoslavirha/iot-miniservers/commit/fb8c47dff5e38bd92f06295230b0dc1b883c411b) Thanks [@radoslavirha](https://github.com/radoslavirha)! - Fix ingress routing
+
 ## 0.2.1
 
 ### Patch Changes
