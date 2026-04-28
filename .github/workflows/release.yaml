@@ -84,6 +84,9 @@ jobs:
     needs:
       - release
     if: ${{ needs.release.outputs.matrix != '{}' }}
+    permissions:
+      contents: read
+      packages: write
     strategy:
       matrix: ${{ fromJson(needs.release.outputs.matrix) }}
     uses: ./.github/workflows/docker-build-app.yaml
