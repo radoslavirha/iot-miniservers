@@ -1,5 +1,11 @@
 # qr-manager-ui
 
+## 0.4.1
+
+### Patch Changes
+
+- [`1a62d86`](https://github.com/radoslavirha/iot-miniservers/commit/1a62d86c15bd2e8a1feb0fdfb6d458af4c5e71fb) Thanks [@radoslavirha](https://github.com/radoslavirha)! - Image URL fixes
+
 ## 0.4.0
 
 ### Minor Changes
