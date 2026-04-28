@@ -1,6 +1,6 @@
 ---
 name: Deploy to environment
-description: Updates Helm image tags in home-server and pushes a single commit
+description: Updates Helm image tags in homelab and pushes a single commit
 
 inputs:
   environment:
@@ -9,19 +9,19 @@ inputs:
   packages:
     description: 'JSON array of apps, e.g. [{"name":"miot-bridge-api","version":"0.2.3"}]'
     required: true
-  home_server_pat:
-    description: PAT with contents:write on radoslavirha/home-server
+  homelab_pat:
+    description: PAT with contents:write on radoslavirha/homelab
     required: true
 
 runs:
   using: composite
   steps:
-    - name: Checkout home-server
+    - name: Checkout homelab
       uses: actions/checkout@v4
       with:
-        repository: radoslavirha/home-server
-        token: ${{ inputs.home_server_pat }}
-        path: home-server
+        repository: radoslavirha/homelab
+        token: ${{ inputs.homelab_pat }}
+        path: homelab
     - name: Install yq
       shell: bash
       run: |
@@ -43,8 +43,8 @@ runs:
           fi
           FILE=$(jq -r ".$ENV.file" "$DEPLOY_CONFIG")
           YAML_PATH=$(jq -r ".$ENV.yamlPath" "$DEPLOY_CONFIG")
-          echo "Updating ${APP_PATH} to ${VERSION} in home-server/${FILE} at ${YAML_PATH}"
-          yq e "$YAML_PATH = \"$VERSION\"" -i "home-server/$FILE"
+          echo "Updating ${APP_PATH} to ${VERSION} in homelab/${FILE} at ${YAML_PATH}"
+          yq e "$YAML_PATH = \"$VERSION\"" -i "homelab/$FILE"
         done
     - name: Commit and push
       shell: bash
@@ -52,7 +52,7 @@ runs:
         ENV: ${{ inputs.environment }}
         PACKAGES: ${{ inputs.packages }}
       run: |
-        cd home-server
+        cd homelab
         git config user.name "github-actions[bot]"
         git config user.email "github-actions[bot]@users.noreply.github.com"
         APPS=$(echo "$PACKAGES" | jq -r '[.[] | "\(.name)@\(.version)"] | join(", ")')

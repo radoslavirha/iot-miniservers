@@ -113,7 +113,7 @@ jobs:
         with:
           environment: sandbox
           packages: ${{ toJSON(fromJSON(needs.release.outputs.matrix).include) }}
-          home_server_pat: ${{ secrets.HOME_SERVER_PAT }}
+          homelab_pat: ${{ secrets.HOMELAB_PAT }}
 
   deploy-production:
     name: Deploy to Production
@@ -133,4 +133,4 @@ jobs:
         with:
           environment: production
           packages: ${{ toJSON(fromJSON(needs.release.outputs.matrix).include) }}
-          home_server_pat: ${{ secrets.HOME_SERVER_PAT }}
+          homelab_pat: ${{ secrets.HOMELAB_PAT }}

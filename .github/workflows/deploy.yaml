@@ -32,4 +32,4 @@ jobs:
         with:
           environment: ${{ inputs.environment }}
           packages: ${{ inputs.apps }}
-          home_server_pat: ${{ secrets.HOME_SERVER_PAT }}
+          homelab_pat: ${{ secrets.HOMELAB_PAT }}
