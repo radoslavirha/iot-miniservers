@@ -1,16 +1,16 @@
 import type { QrCode } from '../api/types.js';
-import { useRuntimeConfig } from '../runtime/RuntimeConfigContext.js';
 
 interface Props {
     qrCode: QrCode;
+    /** Base URL of the QR Manager API, e.g. http://api.server2.home/iot/qr-manager */
+    apiBaseURL: string;
     /** Display size in CSS pixels. SVG scales freely; default tuned for visualisation. */
     displaySize?: number;
     /** PNG download size in pixels. 1024 = ~26mm at Prusa MK4S 0.4mm nozzle resolution. */
     downloadSize?: number;
 }
 
-export const QrImage = ({ qrCode, displaySize = 320, downloadSize = 1024 }: Props) => {
-    const { apiBaseURL } = useRuntimeConfig();
+export const QrImage = ({ qrCode, apiBaseURL, displaySize = 320, downloadSize = 1024 }: Props) => {
     const imageBase = `${apiBaseURL}/qr-codes/${qrCode.id}/image`;
 
     return (

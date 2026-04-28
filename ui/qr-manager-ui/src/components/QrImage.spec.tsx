@@ -1,14 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { QrImage } from './QrImage.js';
-import { RuntimeConfigProvider } from '../runtime/RuntimeConfigContext.js';
 import type { QrCode } from '../api/types.js';
-import type { RuntimeConfig } from '../runtime/RuntimeConfig.js';
 
 const API_BASE = 'https://api.server.home/qr';
 const IMAGE_BASE = `${API_BASE}/qr-codes/id1/image`;
-
-const config: RuntimeConfig = { apiBaseURL: API_BASE, basePath: '/' };
 
 const sample: QrCode = {
     id: 'id1',
@@ -22,13 +18,9 @@ const sample: QrCode = {
     updatedAt: '2026-04-01T00:00:00.000Z'
 };
 
-const wrap = (ui: React.ReactElement) => (
-    <RuntimeConfigProvider value={config}>{ui}</RuntimeConfigProvider>
-);
-
 describe('<QrImage />', () => {
-    it('constructs image URLs from apiBaseURL — ignores qrCode.imageURL', () => {
-        render(wrap(<QrImage qrCode={sample} />));
+    it('constructs image URLs from apiBaseURL prop', () => {
+        render(<QrImage qrCode={sample} apiBaseURL={API_BASE} />);
         const img = screen.getByRole('img', { name: /Shelf 1/i });
         expect(img).toHaveAttribute('src', `${IMAGE_BASE}?format=svg`);
         expect(img).toHaveAttribute('width', '320');
@@ -43,7 +35,7 @@ describe('<QrImage />', () => {
     });
 
     it('honours custom displaySize and downloadSize props', () => {
-        render(wrap(<QrImage qrCode={sample} displaySize={512} downloadSize={2048} />));
+        render(<QrImage qrCode={sample} apiBaseURL={API_BASE} displaySize={512} downloadSize={2048} />);
         const img = screen.getByRole('img', { name: /Shelf 1/i });
         expect(img).toHaveAttribute('width', '512');
         const png = screen.getByText(/Download PNG/).closest('a');

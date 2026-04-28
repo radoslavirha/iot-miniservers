@@ -96,7 +96,7 @@ export const QrCodeDetailPage = () => {
                     <Link to="/admin">← Back to list</Link>
                 </p>
             </header>
-            <QrImage qrCode={qrCode} />
+            <QrImage qrCode={qrCode} apiBaseURL={config.apiBaseURL} />
             <dl>
                 <dt>Slug</dt><dd>{qrCode.slug}</dd>
                 <dt>Type</dt><dd>{qrCode.type}</dd>
