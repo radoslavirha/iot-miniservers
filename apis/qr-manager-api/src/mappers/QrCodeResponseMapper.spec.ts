@@ -46,4 +46,10 @@ describe('QrCodeResponseMapper', () => {
         expect(response.active).toBe(true);
         expect(response.id).toBe('671b00000000000000000001');
     });
+
+    it('falls back to empty base when api.publicURL is not configured', () => {
+        const mapper = new QrCodeResponseMapper(stubConfig('https://qr.home', undefined as unknown as string));
+        const response = mapper.toResponse(sampleModel());
+        expect(response.imageURL).toBe('/qr-codes/671b00000000000000000001/image');
+    });
 });

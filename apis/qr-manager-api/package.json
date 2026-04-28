@@ -70,6 +70,7 @@
     "@radoslavirha/config-eslint": "catalog:",
     "@radoslavirha/config-vitest": "catalog:",
     "@swc/core": "catalog:",
+    "@tsed/testcontainers-mongo": "catalog:tsed",
     "@types/compression": "catalog:",
     "@types/cookie-parser": "catalog:",
     "@types/cors": "catalog:",

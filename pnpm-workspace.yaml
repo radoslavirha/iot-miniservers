@@ -66,6 +66,7 @@ catalogs:
     '@tsed/ajv': ^8.25.4
     '@tsed/core': ^8.25.4
     '@tsed/di': ^8.25.4
+    '@tsed/testcontainers-mongo': ^8.25.4
     '@tsed/engines': ^8.25.4
     '@tsed/exceptions': ^8.25.4
     '@tsed/json-mapper': ^8.25.4

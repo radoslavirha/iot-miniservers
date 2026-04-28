@@ -139,27 +139,42 @@ Integration test files are **co-located** with the controller or server they tes
 - `DevicesController.integration.spec.ts` next to `DevicesController.ts`
 - `Server.integration.spec.ts` next to `Server.ts`
 
+**Spy on services, not handlers.** This exercises the full controller → handler → service chain, ensuring handlers are also covered:
+
 ```ts
-import { describe, beforeEach, afterEach, expect, it } from 'vitest';
+import { describe, beforeEach, afterEach, expect, it, vi } from 'vitest';
 import { PlatformTest } from '@tsed/platform-http/testing';
 import SuperTest from 'supertest';
 import { Server } from './Server.js';
+import { DeviceService } from '../services/DeviceService.js';
 
 describe('DevicesController (integration)', () => {
     let request: SuperTest.Agent;
+    let deviceService: DeviceService;
 
     beforeEach(PlatformTest.bootstrap(Server));
     beforeEach(() => {
         request = SuperTest(PlatformTest.callback());
+        deviceService = PlatformTest.get<DeviceService>(DeviceService);
     });
     afterEach(PlatformTest.reset);
+    afterEach(vi.restoreAllMocks);
 
     it('GET /devices returns 200', async () => {
+        vi.spyOn(deviceService, 'list').mockResolvedValue([]);
         const response = await request.get('/devices').expect(200);
         expect(response.body).toMatchObject({ items: expect.any(Array) });
     });
+
+    it('GET /devices/:id returns 404 when not found', async () => {
+        vi.spyOn(deviceService, 'getById').mockResolvedValue(undefined);
+        await request.get('/devices/671b00000000000000000001').expect(404);
+    });
 });
 ```
+
+The expected response values (e.g. computed URLs) come from the **real test config** (`config/test.json`).
+Do not assert against hand-crafted expected strings that bypass real mapper logic — let the mapper run for real.
 
 To override a provider (e.g. replace a real MQTT client):
 
@@ -178,8 +193,5 @@ beforeEach(PlatformTest.bootstrap(Server, {
 
 Exclude the following from unit-test coverage (covered by integration tests or not applicable):
 - `src/models/**` — schema-only decorator classes
-- `src/controllers/**` — tested via integration tests
-- `src/handlers/**` — tested via controller integration tests
-- `src/storage/**` — requires live DB (tested with TestContainersMongo)
 - `src/otel/**` — bootstrap code
 - `src/index.ts`, `src/Server.ts`

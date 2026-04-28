@@ -4,15 +4,13 @@ import { defineConfig, mergeConfig } from 'vitest/config';
 export default defineConfig(mergeConfig(defaultConfig, {
     oxc: false,
     test: {
+        globalSetup: [import.meta.resolve('@tsed/testcontainers-mongo/vitest/setup')],
         coverage: {
-            // Models, OTel bootstrap, controllers (decorator wiring), Mongo repository (needs a live DB)
-            // and DTO classes are excluded — covered by integration tests against a real Mongo instance,
-            // not by these unit tests.
             exclude: [
                 'src/models/**',
                 'src/otel/**',
                 'src/controllers/**',
-                'src/storage/**',
+                'src/storage/**/dto/**',
                 'src/index.ts',
                 'src/Server.ts'
             ]

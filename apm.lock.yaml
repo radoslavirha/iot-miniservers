@@ -5,7 +5,9 @@ local_deployed_files:
 - .claude/rules/react-testing.md
 - .claude/rules/tsed-testing.md
 - .claude/skills/onboard-to-homelab
+- .github/instructions/tsed-testing.instructions.md
 - .github/skills/onboard-to-homelab
 local_deployed_file_hashes:
   .claude/rules/react-testing.md: sha256:45a4ab8588aa844636eef05b55e54948497e4394f2cfbc4cacb5ed1544153b68
-  .claude/rules/tsed-testing.md: sha256:fd1bc132c09160093ac8b955049cfeba7d1daff49b1f0d1cd3681ebd2f132b17
+  .claude/rules/tsed-testing.md: sha256:36917ee79d421096a6ac3b99428ae9429e26e08771e80ee8d538ddbb7c48a889
+  .github/instructions/tsed-testing.instructions.md: sha256:4e463eeb75f8e046ac243d4a53f1fc3391e278b18ae224d4f347345859e78807
