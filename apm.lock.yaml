@@ -2,10 +2,10 @@ lockfile_version: '1'
 generated_at: '2026-04-25T05:39:29.561215+00:00'
 dependencies: []
 local_deployed_files:
-- .claude/agents/TEST.md
+- .claude/rules/react-testing.md
+- .claude/rules/tsed-testing.md
 - .claude/skills/onboard-to-homelab
-- .github/agents/TEST.agent.md
 - .github/skills/onboard-to-homelab
 local_deployed_file_hashes:
-  .claude/agents/TEST.md: sha256:6e2afe03a803d1861c92dbc6569ffee208ea8a270d42d839f40bdf033b3b8546
-  .github/agents/TEST.agent.md: sha256:6e2afe03a803d1861c92dbc6569ffee208ea8a270d42d839f40bdf033b3b8546
+  .claude/rules/react-testing.md: sha256:45a4ab8588aa844636eef05b55e54948497e4394f2cfbc4cacb5ed1544153b68
+  .claude/rules/tsed-testing.md: sha256:fd1bc132c09160093ac8b955049cfeba7d1daff49b1f0d1cd3681ebd2f132b17

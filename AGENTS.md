@@ -1,5 +1,18 @@
 # AGENTS.md — AI Agent Instructions
 
+All agentic tools (skill, instruction, agents,..) must be added to `.apm` folder. Never update/add `.github`/`.claude`. Example Structure:
+```
+repository/
++-- apm.yml // do not modify
++-- .apm/
+|   +-- skills/
+|   |   +-- example-skill/
+|   |       +-- SKILL.md
+|   +-- agents/
+|   |   +-- example.agent.md
+|   +-- instructions/
+```
+
 ## Repository Overview
 
 This is a **pnpm monorepo** containing small independent Node.js APIs built with **Ts.ED** framework.
