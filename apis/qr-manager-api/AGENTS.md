@@ -1,7 +1,7 @@
 # Instructions
 
 - Stick to root [AGENTS.md](../../AGENTS.md) instructions.
-- API end-user documentation lives in [.README.hbs](./.README.hbs) (compiled to `README.md` via `docs.js`). Keep it up to date when adding or changing endpoints, config keys, or protocols. Swagger UI is mounted at `/`.
+- API end-user documentation lives in [.README.md](./.README.md). Keep it up to date when adding or changing endpoints, config keys, or protocols. Swagger UI is mounted at `/`.
 - Technical architecture reference lives in [DEVELOPMENT.md](./DEVELOPMENT.md).
 
 ## Source structure

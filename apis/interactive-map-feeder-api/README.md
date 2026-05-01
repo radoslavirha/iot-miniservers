@@ -1,35 +1,34 @@
-# Data Feeder for LaskaKit interactive map of Czech republic
+# interactive-map-feeder-api
 
-[![Release][release-shield]][github-release]
-![Project Stage][project-stage-shield]
-![Project Maintenance][maintenance-shield]
-[![License][license-shield]][license-url]
+Fetches precipitation radar data from ČHMÚ (Czech Hydrometeorological Institute), composites multiple image layers (radar, surface, city markers, borders), and returns per-city RGB LED values for the [LaskaKit Interactive Map of Czech Republic](https://www.laskakit.cz/laskakit-interaktivni-mapa-cr-ws2812b/).
 
-This API is insired by <https://github.com/jakubcizek/pojdmeprogramovatelektroniku/tree/master/SrazkovyRadar>.
+## Consumed By
 
-## Description
+- LaskaKit hardware: polls `GET /data-sources/radar/cities/iot` on its own interval
 
-This API is Node.js server that processes data from the ČHMÚ precipitation radar and sends it to the pre-programmed [LaskaKit](https://www.laskakit.cz/laskakit-interaktivni-mapa-cr-ws2812b/).
+## External Dependencies
 
-## Releases
+| System | Protocol | Purpose |
+|--------|----------|---------|
+| ČHMÚ (`www.chmi.cz`) | HTTPS GET | Surface map, cities overlay, borders overlay, radar PNG |
 
-Releases are based on [Semantic Versioning][semver], and use the format
-of ``MAJOR.MINOR.PATCH``. In a nutshell, the version will be incremented
-based on the following:
+## REST API
 
-- ``MAJOR``: Incompatible or major changes.
-- ``MINOR``: Backwards-compatible new features and enhancements.
-- ``PATCH``: Backwards-compatible bugfixes and package updates.
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/data-sources/list` | Available data sources |
+| GET | `/data-sources/:dataSource/cities` | Cities with RGB color from data source. `radius` query param (km, default 2.5) |
+| GET | `/data-sources/:dataSource/cities/iot` | Same as above, reduced response (IoT-optimized payload) |
+| GET | `/data-sources/:dataSource/image` | Composited PNG image with city markers |
 
-## Support
+`dataSource` enum: `radar` (only currently implemented source).
 
-For an API issue or idea [open an issue here][github-issue]
+## Data Flow
 
-[maintenance-shield]: https://img.shields.io/maintenance/yes/2025.svg
-[project-stage-shield]: https://img.shields.io/badge/project%20stage-production%20ready-brightgreen.svg
-[release-shield]: https://img.shields.io/badge/version-0.2.3-blue.svg
-[github-release]: https://github.com/radoslavirha/iot-miniservers/releases/tag/interactive-map-feeder-api@0.2.3
-[github-issue]: https://github.com/radoslavirha/iot-miniservers/issues
-[license-shield]: https://img.shields.io/badge/License-MIT-yellow.svg
-[license-url]: https://opensource.org/licenses/MIT
-[semver]: http://semver.org/spec/v2.0.0.html
+```
+ČHMÚ (4 separate image fetches: surface, cities overlay, borders, radar)
+  → composite via sharp (resize + overlay)
+  → for each city: sample radar pixel intensity within `radius` km around city coords
+  → map intensity → RGB
+  → return [{ id, name, lat, lng, r, g, b }]
+```

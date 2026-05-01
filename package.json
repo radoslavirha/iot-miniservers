@@ -9,7 +9,6 @@
   "type": "module",
   "scripts": {
     "build": "pnpm --stream --recursive run build",
-    "build:docs": "node docs.js",
     "changeset:tag": "changeset tag",
     "changeset:version": "changeset version",
     "cleanup:all": "pnpm --stream --recursive run cleanup:all",

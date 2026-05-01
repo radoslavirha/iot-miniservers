@@ -63,22 +63,6 @@ jobs:
           else
             echo "json={\"include\":$include}" >> "$GITHUB_OUTPUT"
           fi
-  docs:
-    name: Build Readme
-    needs: release
-    if: ${{ needs.release.outputs.matrix != '{}' }}
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-      - name: Prepare repository
-        uses: ./.github/actions/prepare
-        with:
-          NODE_AUTH_TOKEN: ${{ secrets.TOOLKIT_HUB_PACKAGES }}
-      - name: Build docs
-        uses: ./.github/actions/documentation
   build-api-images:
     name: Publish ${{ matrix.path }} ${{ matrix.version }}
     needs:

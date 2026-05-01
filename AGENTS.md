@@ -151,7 +151,7 @@ ui/<ui-name>/
 
 2. New workspace members are auto-discovered via `apis/*` glob in `pnpm-workspace.yaml` — no changes needed there.
 3. Run `pnpm install` from the repo root (requires `NODE_AUTH_TOKEN` in env).
-4. Add a `.README.hbs` template (README is generated via `docs.js`).
+4. Add a `.README.md`.
 5. Add a `Dockerfile` stage in the root `Dockerfile` following the `qr-manager-api` pattern (deps → build → final image with `pnpm start:prod`).
 
 ## Adding a New UI

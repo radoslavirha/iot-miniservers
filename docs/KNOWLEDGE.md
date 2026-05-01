@@ -1,0 +1,51 @@
+# IoT Miniservers — Knowledge Base
+
+> Maintained by `/update-docs` skill. Last updated: 2026-04-30.
+
+pnpm monorepo of small independent Node.js APIs and UIs (Ts.ED, TypeScript ESM).
+
+## Apps
+
+| Name | Type | Purpose |
+|------|------|---------|
+| `interactive-map-feeder-api` | API | Fetches ČHMÚ precipitation radar, composites image layers, serves city LED RGB values for LaskaKit IoT map |
+| `miot-bridge-api` | API | Gateway between home automation controllers and Xiaomi MIoT devices. Manages device registry, translates commands, polls properties, dispatches change notifications |
+| `qr-manager-api` | API | QR code redirect manager: allocates slugs, stores slug→URL, resolves via 302 redirect, renders QR images |
+| `qr-manager-ui` | UI | Admin UI for `qr-manager-api`: create/edit/deactivate QR records, download images |
+
+## Shared Packages
+
+| Package | Purpose |
+|---------|---------|
+| `@radoslavirha/miot-device` | Stateful MIoT device client: UDP transport, per-device stamp/handshake lifecycle |
+| `@radoslavirha/otel` | OpenTelemetry bootstrap |
+
+## Communication
+
+```mermaid
+graph LR
+    LaskaKit["LaskaKit IoT Map\nhardware"] -->|HTTP GET /data-sources/:src/cities/iot| IMA["interactive-map-feeder-api"]
+    IMA -->|HTTPS| CHMI["ČHMÚ radar\nexternal"]
+
+    HA["Loxone / HA controller"] -->|HTTP · UDP · MQTT| MBA["miot-bridge-api"]
+    MBA -->|MIoT binary UDP| Xiaomi["Xiaomi devices\nLAN"]
+    MBA -->|HTTPS| MiotSpec["miot-spec.org\nexternal"]
+    MBA <-->|MQTT| MQTTBroker["MQTT broker"]
+    MBA <-->|TCP| MongoDB1[("MongoDB")]
+    MBA -->|HTTP · UDP · MQTT notifications| HA
+
+    QRU["qr-manager-ui"] -->|REST| QRA["qr-manager-api"]
+    Phone["Phone / scanner"] -->|HTTP GET /:slug| QRA
+    QRA <-->|TCP| MongoDB2[("MongoDB")]
+```
+
+## External Dependencies
+
+| App | System | Protocol | Direction | Purpose |
+|-----|--------|----------|-----------|---------|
+| `interactive-map-feeder-api` | ČHMÚ | HTTPS GET | outbound | Precipitation radar images |
+| `miot-bridge-api` | Xiaomi devices (LAN) | MIoT binary UDP | bidirectional | Device control, property read |
+| `miot-bridge-api` | miot-spec.org | HTTPS GET | outbound | Device capability spec (on registration) |
+| `miot-bridge-api` | MQTT broker | MQTT | bidirectional | Inbound commands, outbound notifications |
+| `miot-bridge-api` | MongoDB | TCP | bidirectional | Device and notification storage |
+| `qr-manager-api` | MongoDB | TCP | bidirectional | Slug→URL storage |
