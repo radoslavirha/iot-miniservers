@@ -4,4 +4,5 @@
 apis/interactive-map-feeder-api: apis/interactive-map-feeder-api/**
 apis/miot-bridge-api: apis/miot-bridge-api/**
 apis/qr-manager-api: apis/qr-manager-api/**
+ui/homelab-dashboard-ui: ui/homelab-dashboard-ui/**
 ui/qr-manager-ui: ui/qr-manager-ui/**

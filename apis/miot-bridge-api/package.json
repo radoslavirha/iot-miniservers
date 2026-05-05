@@ -17,10 +17,10 @@
     "test:watch": "vitest"
   },
   "dependencies": {
-    "@opentelemetry/api": "catalog:",
-    "@opentelemetry/instrumentation-mongoose": "catalog:",
+    "@opentelemetry/api": "catalog:otel",
+    "@opentelemetry/instrumentation-mongoose": "catalog:otel",
     "@radoslavirha/otel": "workspace:*",
-    "@opentelemetry/winston-transport": "catalog:",
+    "@opentelemetry/winston-transport": "catalog:otel",
     "@radoslavirha/config-typescript": "catalog:",
     "@radoslavirha/miot-device": "workspace:*",
     "@radoslavirha/tsed-common": "catalog:",

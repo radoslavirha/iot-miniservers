@@ -4,23 +4,6 @@ packages:
   - ui/*
 
 catalog:
-  '@opentelemetry/api': ^1.9.1
-  '@opentelemetry/exporter-logs-otlp-http': ^0.214.0
-  '@opentelemetry/exporter-metrics-otlp-http': ^0.214.0
-  '@opentelemetry/exporter-trace-otlp-http': ^0.214.0
-  '@opentelemetry/host-metrics': ^0.38.3
-  '@opentelemetry/instrumentation': ^0.214.0
-  '@opentelemetry/instrumentation-express': ^0.62.0
-  '@opentelemetry/instrumentation-http': ^0.214.0
-  '@opentelemetry/instrumentation-mongoose': ^0.60.0
-  '@opentelemetry/instrumentation-winston': ^0.58.0
-  '@opentelemetry/winston-transport': ^0.24.0
-  '@opentelemetry/resources': ^2.6.1
-  '@opentelemetry/sdk-logs': ^0.214.0
-  '@opentelemetry/sdk-metrics': ^2.6.1
-  '@opentelemetry/sdk-node': ^0.214.0
-  '@opentelemetry/sdk-trace-node': ^2.6.1
-  '@opentelemetry/semantic-conventions': ^1.40.0
   '@radoslavirha/config-eslint': ^0.3.9
   '@radoslavirha/config-tsdown': 0.1.6
   '@radoslavirha/config-typescript': ^0.3.8
@@ -66,6 +49,36 @@ catalog:
   zod: 4.3.6
 
 catalogs:
+  otel:
+    '@opentelemetry/api': ^1.9.1
+    '@opentelemetry/exporter-logs-otlp-http': ^0.214.0
+    '@opentelemetry/exporter-metrics-otlp-http': ^0.214.0
+    '@opentelemetry/exporter-trace-otlp-http': ^0.214.0
+    '@opentelemetry/host-metrics': ^0.38.3
+    '@opentelemetry/instrumentation': ^0.214.0
+    '@opentelemetry/instrumentation-express': ^0.62.0
+    '@opentelemetry/instrumentation-http': ^0.214.0
+    '@opentelemetry/instrumentation-mongoose': ^0.60.0
+    '@opentelemetry/instrumentation-winston': ^0.58.0
+    '@opentelemetry/winston-transport': ^0.24.0
+    '@opentelemetry/resources': ^2.6.1
+    '@opentelemetry/sdk-logs': ^0.214.0
+    '@opentelemetry/sdk-metrics': ^2.6.1
+    '@opentelemetry/sdk-node': ^0.214.0
+    '@opentelemetry/sdk-trace-node': ^2.6.1
+    '@opentelemetry/semantic-conventions': ^1.40.0
+  react:
+    '@testing-library/jest-dom': ^6.6.3
+    '@testing-library/react': ^16.3.0
+    '@testing-library/user-event': ^14.6.1
+    '@types/react': ^19.2.3
+    '@types/react-dom': ^19.2.3
+    '@vitejs/plugin-react': ^5.1.1
+    jsdom: ^29.1.0
+    react: ^19.2.0
+    react-dom: ^19.2.0
+    react-router-dom: ^7.10.1
+    vite: ^8.0.10
   tsed:
     '@tsed/ajv': ^8.25.4
     '@tsed/core': ^8.25.4

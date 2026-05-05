@@ -17,26 +17,26 @@
     "test:watch": "vitest"
   },
   "dependencies": {
-    "react": "^19.2.0",
-    "react-dom": "^19.2.0",
-    "react-router-dom": "^7.10.1"
+    "react": "catalog:react",
+    "react-dom": "catalog:react",
+    "react-router-dom": "catalog:react"
   },
   "devDependencies": {
     "@radoslavirha/config-eslint": "catalog:",
     "@radoslavirha/config-typescript": "catalog:",
-    "@testing-library/jest-dom": "^6.6.3",
-    "@testing-library/react": "^16.3.0",
-    "@testing-library/user-event": "^14.6.1",
+    "@testing-library/jest-dom": "catalog:react",
+    "@testing-library/react": "catalog:react",
+    "@testing-library/user-event": "catalog:react",
     "@types/node": "catalog:",
-    "@types/react": "^19.2.3",
-    "@types/react-dom": "^19.2.3",
-    "@vitejs/plugin-react": "^5.1.1",
+    "@types/react": "catalog:react",
+    "@types/react-dom": "catalog:react",
+    "@vitejs/plugin-react": "catalog:react",
     "@vitest/coverage-v8": "catalog:",
     "eslint": "catalog:",
-    "jsdom": "^29.1.0",
+    "jsdom": "catalog:react",
     "typescript": "catalog:",
     "typescript-eslint": "catalog:",
-    "vite": "^8.0.10",
+    "vite": "catalog:react",
     "vitest": "catalog:"
   },
   "engines": {

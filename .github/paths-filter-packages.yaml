@@ -1,4 +1,5 @@
 ---
 # Key must match subdirectory in packages/
+http-provider: packages/http-provider/**
 miot-device: packages/miot-device/**
 otel: packages/otel/**

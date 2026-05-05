@@ -54,6 +54,21 @@ WORKDIR /home/app
 ENV NODE_ENV=production
 CMD ["pnpm", "start:prod"]
 
+# ─── homelab-dashboard-ui ──────────────────────────────────────────────────────
+FROM deps AS build-homelab-dashboard-ui
+
+RUN pnpm --filter=homelab-dashboard-ui run build
+
+FROM nginx:1.29-alpine AS homelab-dashboard-ui
+
+COPY --from=build-homelab-dashboard-ui /usr/src/app/ui/homelab-dashboard-ui/dist /usr/share/nginx/html
+# Template is processed at container start by the nginx image's built-in
+# envsubst entrypoint. Set UNIFI_HOST env var in the deployment
+# (e.g. https://192.168.1.1) to configure the Unifi proxy at runtime.
+COPY ui/homelab-dashboard-ui/nginx.conf.template /etc/nginx/templates/default.conf.template
+EXPOSE 80
+CMD ["nginx", "-g", "daemon off;"]
+
 # ─── qr-manager-ui ─────────────────────────────────────────────────────────────
 FROM deps AS build-qr-manager-ui
 
