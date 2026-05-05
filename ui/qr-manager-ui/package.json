@@ -17,6 +17,7 @@
     "test:watch": "vitest"
   },
   "dependencies": {
+    "@radoslavirha/ui-kit": "workspace:*",
     "react": "catalog:react",
     "react-dom": "catalog:react",
     "react-router-dom": "catalog:react"

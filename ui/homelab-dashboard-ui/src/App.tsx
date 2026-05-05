@@ -1,7 +1,6 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { AppShell, StatusBar } from '@radoslavirha/ui-kit';
 import { ClusterSection } from './components/ClusterSection.js';
-import { Header } from './components/Header.js';
-import { StatusBar } from './components/StatusBar.js';
 import { fetchDnsRecords } from './lib/unifi.js';
 import { parseDnsRecords } from './lib/parseDns.js';
 import type { AppConfig, Cluster } from './types.js';
@@ -19,6 +18,22 @@ export function App({ config }: Props) {
         message: `Connecting to ${config.unifi.host}…`
     });
     const [query, setQuery] = useState('');
+    const searchRef = useRef<HTMLInputElement>(null);
+
+    useEffect(() => {
+        const handler = (e: KeyboardEvent) => {
+            if (e.key === '/' && document.activeElement !== searchRef.current) {
+                e.preventDefault();
+                searchRef.current?.focus();
+            }
+            if (e.key === 'Escape') {
+                setQuery('');
+                searchRef.current?.blur();
+            }
+        };
+        document.addEventListener('keydown', handler);
+        return () => document.removeEventListener('keydown', handler);
+    }, []);
 
     useEffect(() => {
         let cancelled = false;
@@ -27,11 +42,11 @@ export function App({ config }: Props) {
             try {
                 setStatus({ state: 'loading', message: 'Fetching DNS records…' });
                 const records = await fetchDnsRecords(config);
-                if (cancelled) return;
+                if (cancelled) { return; }
 
                 setStatus({ state: 'loading', message: `Parsing ${records.length} record(s)…` });
                 const parsed = parseDnsRecords(records, config);
-                if (cancelled) return;
+                if (cancelled) { return; }
 
                 setClusters(parsed);
                 setStatus({
@@ -56,7 +71,7 @@ export function App({ config }: Props) {
 
     const filtered = useMemo(() => {
         const q = query.toLowerCase().trim();
-        if (!q) return clusters;
+        if (!q) { return clusters; }
         return clusters
             .map(c => ({
                 ...c,
@@ -65,18 +80,34 @@ export function App({ config }: Props) {
             .filter(c => c.services.length > 0);
     }, [clusters, query]);
 
-    const handleSearch = useCallback((q: string) => setQuery(q), []);
+    const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+        setQuery(e.target.value);
+    }, []);
 
     return (
-        <>
-            <Header title={config.title ?? 'homelab'} onSearch={handleSearch} />
-            <StatusBar {...status} />
-            <main>
-                {filtered.map(c => (
-                    <ClusterSection key={c.index} cluster={c} />
-                ))}
-                {query.trim() && filtered.length === 0 && <p className="empty visible">no matches found</p>}
-            </main>
-        </>
+        <AppShell
+            headerLeft={
+                <span className="app-logo">{config.title ?? 'Homelab dashboard'}</span>
+            }
+            headerRight={
+                <input
+                    ref={searchRef}
+                    id="search"
+                    className="app-search"
+                    type="text"
+                    placeholder="Filter services…"
+                    autoComplete="off"
+                    spellCheck={false}
+                    value={query}
+                    onChange={handleSearchChange}
+                />
+            }
+        >
+            <StatusBar status={status.state} message={status.message} />
+            {filtered.map(c => (
+                <ClusterSection key={c.index} cluster={c} />
+            ))}
+            {query.trim() && filtered.length === 0 && <p className="empty visible">no matches found</p>}
+        </AppShell>
     );
 }

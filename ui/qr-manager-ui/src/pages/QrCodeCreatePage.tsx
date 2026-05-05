@@ -30,9 +30,9 @@ export const QrCodeCreatePage = () => {
 
     return (
         <section className="page page-create">
-            <header>
+            <div className="page-header">
                 <h1>New QR code</h1>
-            </header>
+            </div>
             <form onSubmit={e => void submit(e)}>
                 <label>
                     Target URL
@@ -48,7 +48,7 @@ export const QrCodeCreatePage = () => {
                         {QR_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
                     </select>
                 </label>
-                <button type="submit" disabled={busy}>Create</button>
+                <button type="submit" className="btn" disabled={busy}>Create</button>
             </form>
             {error && <p role="alert">{error}</p>}
         </section>

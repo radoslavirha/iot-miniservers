@@ -90,14 +90,12 @@ export const QrCodeDetailPage = () => {
 
     return (
         <section className="page page-detail">
-            <header>
+            <div className="page-header">
                 <h1>{qrCode.label}</h1>
-                <p>
-                    <Link to="/admin">← Back to list</Link>
-                </p>
-            </header>
+                <p><Link to="/admin">← Back to list</Link></p>
+            </div>
             <QrImage qrCode={qrCode} apiBaseURL={config.apiBaseURL} />
-            <dl>
+            <dl className="dl-grid">
                 <dt>Slug</dt><dd>{qrCode.slug}</dd>
                 <dt>Type</dt><dd>{qrCode.type}</dd>
                 <dt>Active</dt><dd>{qrCode.active ? 'yes' : 'no'}</dd>
@@ -129,11 +127,11 @@ export const QrCodeDetailPage = () => {
                     />
                 </label>
                 <div className="actions">
-                    <button type="submit" disabled={busy}>Save</button>
-                    <button type="button" onClick={() => void toggleActive()} disabled={busy}>
+                    <button type="submit" className="btn" disabled={busy}>Save</button>
+                    <button type="button" className="btn btn--ghost" onClick={() => void toggleActive()} disabled={busy}>
                         {qrCode.active ? 'Deactivate' : 'Activate'}
                     </button>
-                    <button type="button" className="danger" onClick={() => void remove()} disabled={busy}>
+                    <button type="button" className="btn btn--danger" onClick={() => void remove()} disabled={busy}>
                         Delete
                     </button>
                 </div>

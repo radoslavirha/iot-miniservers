@@ -14,31 +14,15 @@ catalog:
   '@radoslavirha/tsed-platform': ^1.0.4
   '@radoslavirha/tsed-swagger': ^5.0.4
   '@radoslavirha/utils': ^0.7.6
-  '@swc-node/register': ^1.11.1
-  '@swc/cli': ^0.8.0
-  '@swc/core': ^1.15.21
-  '@swc/helpers': ^0.5.20
-  '@types/compression': ^1.8.1
-  '@types/cookie-parser': ^1.4.10
-  '@types/cors': ^2.8.19
-  '@types/express': ^5.0.6
-  '@types/method-override': ^3.0.0
-  '@types/multer': ^2.1.0
   '@types/node': ^25.5.0
   '@types/supertest': ^7.2.0
   '@vitest/coverage-v8': ^4.1.2
   axios: ^1.13.6
   axios-retry: ^4.5.0
-  body-parser: ^2.2.2
-  compression: ^1.8.1
-  cookie-parser: ^1.4.7
-  cors: ^2.8.6
   cross-env: ^10.1.0
   dotenv: ^17.3.1
   eslint: ^10.1.0
-  express: ^5.2.1
   jose: ^6.2.3
-  method-override: ^3.0.0
   nodemon: ^3.1.14
   supertest: ^7.2.2
   tsdown: 0.21.5
@@ -49,6 +33,24 @@ catalog:
   zod: 4.3.6
 
 catalogs:
+  express:
+    '@types/compression': ^1.8.1
+    '@types/cookie-parser': ^1.4.10
+    '@types/cors': ^2.8.19
+    '@types/express': ^5.0.6
+    '@types/method-override': ^3.0.0
+    '@types/multer': ^2.1.0
+    body-parser: ^2.2.2
+    compression: ^1.8.1
+    cookie-parser: ^1.4.7
+    cors: ^2.8.6
+    express: ^5.2.1
+    method-override: ^3.0.0
+  swc:
+    '@swc-node/register': ^1.11.1
+    '@swc/cli': ^0.8.0
+    '@swc/core': ^1.15.21
+    '@swc/helpers': ^0.5.20
   otel:
     '@opentelemetry/api': ^1.9.1
     '@opentelemetry/exporter-logs-otlp-http': ^0.214.0

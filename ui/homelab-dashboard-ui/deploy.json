@@ -1,0 +1,6 @@
+{
+  "production": {
+    "file": "gitops/helm-values/server3/homelab-dashboard-ui.yaml",
+    "yamlPath": ".apps.homelab-dashboard-ui.image.tag"
+  }
+}

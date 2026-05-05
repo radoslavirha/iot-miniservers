@@ -1,238 +1,174 @@
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-:root {
-  --bg:        #0b0e14;
-  --surface:   #111520;
-  --card:      #161b27;
-  --card-hover:#1c2235;
-  --border:    #222840;
-  --text:      #c8d0e0;
-  --muted:     #4f5a72;
-  --bright:    #e8eaf2;
+/* ─── Cluster group ──────────────────────────────────────────────────────── */
+.cluster {
+    margin-bottom: 2.5rem;
 }
-
-body {
-  background: var(--bg);
-  color: var(--text);
-  font-family: 'Outfit', sans-serif;
-  font-weight: 400;
-  min-height: 100vh;
-  padding: 0 0 4rem;
-}
-
-/* ── Header ── */
-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 1.25rem 2rem;
-  border-bottom: 1px solid var(--border);
-  background: var(--surface);
-  position: sticky;
-  top: 0;
-  z-index: 100;
-}
-
-.logo {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: var(--bright);
-  letter-spacing: 0.08em;
-}
-.logo span { color: var(--muted); }
-
-#search {
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  color: var(--text);
-  font-family: 'Outfit', sans-serif;
-  font-size: 0.9rem;
-  padding: 0.45rem 0.9rem;
-  width: 220px;
-  outline: none;
-  transition: border-color 0.15s;
-}
-#search:focus { border-color: #4a6fa5; }
-#search::placeholder { color: var(--muted); }
-
-.time {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 0.8rem;
-  color: var(--muted);
-  min-width: 80px;
-  text-align: right;
-}
-
-/* ── Status bar ── */
-.status-bar {
-  display: flex;
-  align-items: center;
-  gap: 0.7rem;
-  padding: 0.6rem 1.2rem;
-  margin: 1.25rem 2rem 0;
-  border-radius: 6px;
-  font-size: 0.8rem;
-  font-family: 'JetBrains Mono', monospace;
-}
-.status-bar.loading { background: #0f1520; border: 1px solid #1a2540; color: #4a6a9a; }
-.status-bar.ok      { background: #0f1a10; border: 1px solid #1a3a1a; color: #4a8a4a; }
-.status-bar.error   { background: #1a0f0f; border: 1px solid #3a1a1a; color: #8a4a4a; }
-
-.status-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  flex-shrink: 0;
-  background: currentColor;
-}
-.status-dot.pulse { animation: pulse 2s infinite; }
-
-@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
-
-/* ── Main layout ── */
-main { padding: 1.5rem 2rem 0; }
-
-/* ── Cluster group ── */
-.cluster { margin-bottom: 2.5rem; }
 
 .cluster-header {
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-  margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    margin-bottom: 1rem;
 }
+
 .cluster-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  flex-shrink: 0;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
 }
+
 .cluster-name {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 0.72rem;
-  font-weight: 600;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--muted);
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
 }
-.cluster-rule { flex: 1; height: 1px; background: var(--border); }
+
+.cluster-rule {
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+}
+
 .cluster-count {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 0.7rem;
-  color: var(--muted);
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    color: var(--muted);
 }
 
-/* ── Tiles grid ── */
+/* ─── Tiles grid ─────────────────────────────────────────────────────────── */
 .tiles {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-  gap: 10px;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 10px;
 }
 
-/* ── Service tile ── */
+/* ─── Service tile ───────────────────────────────────────────────────────── */
 .tile {
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 0.85rem 1rem;
-  text-decoration: none;
-  color: inherit;
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  transition: background 0.12s, border-color 0.12s, transform 0.1s, border-left-color 0.1s, border-left-width 0.1s;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 0.85rem 1rem;
+    text-decoration: none;
+    color: inherit;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    transition: background 0.12s, border-color 0.12s, transform 0.1s,
+        border-left-color 0.1s, border-left-width 0.1s;
 }
+
 .tile:hover {
-  background: var(--card-hover);
-  border-color: #2d3a58;
-  transform: translateY(-1px);
+    background: var(--card-hover);
+    border-color: #2d3a58;
+    transform: translateY(-1px);
+    text-decoration: none;
 }
 
 .tile-icon {
-  width: 32px;
-  height: 32px;
-  border-radius: 6px;
-  background: var(--surface);
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
+    width: 32px;
+    height: 32px;
+    border-radius: var(--radius);
+    background: var(--surface);
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
 }
+
 .tile-icon img {
-  width: 22px;
-  height: 22px;
-  object-fit: contain;
-  display: block;
+    width: 22px;
+    height: 22px;
+    object-fit: contain;
+    display: block;
 }
+
 .tile-icon .fallback {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 0.6rem;
-  font-weight: 600;
-  color: var(--muted);
-  text-transform: uppercase;
-  text-align: center;
-  line-height: 1;
+    font-family: var(--font-mono);
+    font-size: 0.6rem;
+    font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase;
+    text-align: center;
+    line-height: 1;
 }
 
-.tile-info { flex: 1; min-width: 0; }
+.tile-info {
+    flex: 1;
+    min-width: 0;
+}
+
 .tile-name {
-  font-size: 0.88rem;
-  font-weight: 500;
-  color: var(--bright);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+    font-size: 0.88rem;
+    font-weight: 500;
+    color: var(--bright);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
+
 .tile-host {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 0.68rem;
-  color: var(--muted);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  margin-top: 2px;
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    color: var(--muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-top: 2px;
 }
 
-/* ── Empty state ── */
+/* ─── Status bar spacing in main ─────────────────────────────────────────── */
+.status-bar {
+    margin-bottom: 1.25rem;
+}
+
+/* ─── Empty state ────────────────────────────────────────────────────────── */
 .empty {
-  padding: 3rem;
-  text-align: center;
-  color: var(--muted);
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 0.8rem;
-  display: none;
+    padding: 3rem;
+    text-align: center;
+    color: var(--muted);
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    display: none;
 }
-.empty.visible { display: block; }
 
-/* ── Config error screen ── */
+.empty.visible {
+    display: block;
+}
+
+/* ─── Config error screen ────────────────────────────────────────────────── */
 .config-error {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-height: 100vh;
-  gap: 1rem;
-  padding: 2rem;
-  text-align: center;
-  font-family: 'JetBrains Mono', monospace;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    gap: 1rem;
+    padding: 2rem;
+    text-align: center;
+    font-family: var(--font-mono);
 }
+
 .config-error__title {
-  font-size: 1rem;
-  font-weight: 600;
-  color: var(--bright);
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--bright);
 }
+
 .config-error__msg {
-  font-size: 0.85rem;
-  color: #8a4a4a;
+    font-size: 0.85rem;
+    color: var(--error-text);
 }
+
 .config-error__hint {
-  font-size: 0.75rem;
-  color: var(--muted);
-  line-height: 1.7;
+    font-size: 0.75rem;
+    color: var(--muted);
+    line-height: 1.7;
 }
+
 .config-error__hint code {
-  color: #4a6fa5;
+    color: var(--accent);
 }

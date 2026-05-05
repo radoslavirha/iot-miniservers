@@ -1,42 +1,50 @@
 {
-    "name": "homelab-dashboard-ui",
+    "name": "@radoslavirha/ui-kit",
     "version": "0.1.0",
     "private": true,
-    "description": "Dashboard UI for homelab services, driven by Unifi DNS records.",
+    "description": "Shared design system and UI components for iot-miniservers UIs",
     "type": "module",
+    "exports": {
+        ".": {
+            "types": "./src/index.ts",
+            "default": "./src/index.ts"
+        },
+        "./styles.css": "./src/styles.css"
+    },
+    "files": [
+        "src",
+        "package.json"
+    ],
     "scripts": {
-        "build": "tsc --noEmit && vite build",
+        "build": "tsc --noEmit",
         "cleanup:all": "pnpm run cleanup:artifacts && pnpm run cleanup:modules",
-        "cleanup:artifacts": "rm -rf coverage dist",
+        "cleanup:artifacts": "rm -rf coverage",
         "cleanup:modules": "rm -rf node_modules",
-        "dev": "vite",
         "lint": "eslint .",
         "lint:fix": "eslint --fix .",
-        "preview": "vite preview",
         "test": "vitest run",
         "test:watch": "vitest"
     },
-    "dependencies": {
-        "@radoslavirha/ui-kit": "workspace:*",
-        "react": "catalog:react",
-        "react-dom": "catalog:react"
+    "peerDependencies": {
+        "react": "^19.0.0",
+        "react-dom": "^19.0.0"
     },
     "devDependencies": {
         "@radoslavirha/config-eslint": "catalog:",
         "@radoslavirha/config-typescript": "catalog:",
+        "@radoslavirha/config-vitest": "catalog:",
         "@testing-library/jest-dom": "catalog:react",
         "@testing-library/react": "catalog:react",
-        "@testing-library/user-event": "catalog:react",
-        "@types/node": "catalog:",
         "@types/react": "catalog:react",
         "@types/react-dom": "catalog:react",
         "@vitejs/plugin-react": "catalog:react",
         "@vitest/coverage-v8": "catalog:",
         "eslint": "catalog:",
         "jsdom": "catalog:react",
+        "react": "catalog:react",
+        "react-dom": "catalog:react",
         "typescript": "catalog:",
         "typescript-eslint": "catalog:",
-        "vite": "catalog:react",
         "vitest": "catalog:"
     },
     "engines": {

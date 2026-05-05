@@ -38,9 +38,9 @@ export const QrCodeListPage = () => {
 
     return (
         <section className="page page-list">
-            <header>
+            <div className="page-header">
                 <h1>QR codes</h1>
-            </header>
+            </div>
             <Filters value={filter} onChange={setFilter} />
             {loading && <p role="status">Loading…</p>}
             {error && <p role="alert">Error: {error}</p>}
@@ -52,7 +52,7 @@ export const QrCodeListPage = () => {
                             <strong>{item.label}</strong>
                             <span className="slug">{item.slug}</span>
                             <span className="type">{item.type}</span>
-                            {!item.active && <span className="badge inactive">inactive</span>}
+                            {!item.active && <span className="badge badge--inactive">inactive</span>}
                         </Link>
                     </li>
                 ))}

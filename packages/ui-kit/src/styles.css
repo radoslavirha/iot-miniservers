@@ -1,0 +1,461 @@
+/* ─── Google Fonts ─────────────────────────────────────────────────────── */
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Outfit:wght@300;400;500&display=swap');
+
+/* ─── Design tokens — dark (default) ───────────────────────────────────── */
+:root {
+    --bg:            #0b0e14;
+    --surface:       #111520;
+    --card:          #161b27;
+    --card-hover:    #1c2235;
+    --border:        #222840;
+    --text:          #c8d0e0;
+    --muted:         #4f5a72;
+    --bright:        #e8eaf2;
+    --accent:        #4a6fa5;
+    --accent-hover:  #5a7fb5;
+    --accent-text:   #ffffff;
+
+    /* Status */
+    --ok-text:          #4a8a4a;
+    --ok-bg:            #0f1a10;
+    --ok-border:        #1a3a1a;
+    --error-text:       #8a4a4a;
+    --error-bg:         #1a0f0f;
+    --error-border:     #3a1a1a;
+    --loading-text:     #4a6a9a;
+    --loading-bg:       #0f1520;
+    --loading-border:   #1a2540;
+
+    /* Badge */
+    --inactive-text:    #cc5555;
+    --inactive-bg:      rgba(180, 40, 40, 0.14);
+    --inactive-border:  rgba(180, 40, 40, 0.28);
+
+    /* Typography */
+    --font-sans: 'Outfit', system-ui, -apple-system, sans-serif;
+    --font-mono: 'JetBrains Mono', ui-monospace, 'Cascadia Code', monospace;
+
+    /* Shape */
+    --radius-sm: 4px;
+    --radius:    6px;
+    --radius-lg: 8px;
+
+    /* Layout */
+    --header-h: 56px;
+}
+
+/* ─── Design tokens — light ─────────────────────────────────────────────── */
+@media (prefers-color-scheme: light) {
+    :root {
+        --bg:            #eef1f8;
+        --surface:       #ffffff;
+        --card:          #ffffff;
+        --card-hover:    #f4f6fc;
+        --border:        #d2d8ea;
+        --text:          #28304a;
+        --muted:         #7a849c;
+        --bright:        #0d1228;
+        --accent:        #3b5bdb;
+        --accent-hover:  #2c4bc8;
+        --accent-text:   #ffffff;
+
+        --ok-text:          #2d7a32;
+        --ok-bg:            #f0faf1;
+        --ok-border:        #b8dbb9;
+        --error-text:       #b02828;
+        --error-bg:         #fdf0f0;
+        --error-border:     #e0b8b8;
+        --loading-text:     #3b5bdb;
+        --loading-bg:       #eef2ff;
+        --loading-border:   #c5cae9;
+
+        --inactive-text:    #b71c1c;
+        --inactive-bg:      rgba(183, 28, 28, 0.09);
+        --inactive-border:  rgba(183, 28, 28, 0.22);
+    }
+}
+
+/* ─── Reset ──────────────────────────────────────────────────────────────── */
+*, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+/* ─── Base ───────────────────────────────────────────────────────────────── */
+body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-sans);
+    font-size: 16px;
+    font-weight: 400;
+    line-height: 1.5;
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+}
+
+a {
+    color: var(--accent);
+    text-decoration: none;
+}
+
+a:hover {
+    color: var(--accent-hover);
+    text-decoration: underline;
+}
+
+/* ─── App shell ──────────────────────────────────────────────────────────── */
+.app-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 2rem;
+    height: var(--header-h);
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    gap: 1rem;
+}
+
+.app-header__left {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-shrink: 0;
+}
+
+.app-header__right {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.app-main {
+    padding: 1.5rem 2rem 4rem;
+}
+
+/* ─── Logo ───────────────────────────────────────────────────────────────── */
+.app-logo {
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--bright);
+    letter-spacing: 0.08em;
+    text-decoration: none;
+}
+
+.app-logo:hover {
+    text-decoration: none;
+    color: var(--bright);
+}
+
+/* ─── Nav ────────────────────────────────────────────────────────────────── */
+.app-nav {
+    display: flex;
+    align-items: center;
+    gap: 0.2rem;
+}
+
+.app-nav-link {
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    font-weight: 500;
+    color: var(--muted);
+    text-decoration: none;
+    padding: 0.3rem 0.65rem;
+    border-radius: var(--radius-sm);
+    letter-spacing: 0.04em;
+    transition: color 0.12s, background 0.12s;
+}
+
+.app-nav-link:hover {
+    color: var(--bright);
+    background: var(--card);
+    text-decoration: none;
+}
+
+.app-nav-link.active {
+    color: var(--bright);
+    background: var(--card);
+}
+
+/* ─── Search ─────────────────────────────────────────────────────────────── */
+.app-search {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text);
+    font-family: var(--font-sans);
+    font-size: 0.9rem;
+    padding: 0.4rem 0.85rem;
+    width: 220px;
+    outline: none;
+    transition: border-color 0.15s;
+}
+
+.app-search:focus {
+    border-color: var(--accent);
+}
+
+.app-search::placeholder {
+    color: var(--muted);
+}
+
+/* ─── Clock ──────────────────────────────────────────────────────────────── */
+.app-clock {
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    color: var(--muted);
+    min-width: 80px;
+    text-align: right;
+}
+
+/* ─── Status bar ─────────────────────────────────────────────────────────── */
+.status-bar {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    padding: 0.55rem 1rem;
+    border-radius: var(--radius);
+    font-size: 0.8rem;
+    font-family: var(--font-mono);
+    border: 1px solid;
+}
+
+.status-bar--loading {
+    background: var(--loading-bg);
+    border-color: var(--loading-border);
+    color: var(--loading-text);
+}
+
+.status-bar--ok {
+    background: var(--ok-bg);
+    border-color: var(--ok-border);
+    color: var(--ok-text);
+}
+
+.status-bar--error {
+    background: var(--error-bg);
+    border-color: var(--error-border);
+    color: var(--error-text);
+}
+
+.status-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    background: currentColor;
+}
+
+.status-dot--pulse {
+    animation: status-pulse 2s infinite;
+}
+
+@keyframes status-pulse {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: 0.35; }
+}
+
+/* ─── Card ───────────────────────────────────────────────────────────────── */
+.card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 1rem 1.25rem;
+}
+
+/* ─── Buttons ────────────────────────────────────────────────────────────── */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    padding: 0.45rem 1rem;
+    border-radius: var(--radius);
+    border: 1px solid transparent;
+    background: var(--accent);
+    color: var(--accent-text);
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.12s, opacity 0.12s;
+    white-space: nowrap;
+}
+
+.btn:hover:not(:disabled) {
+    background: var(--accent-hover);
+}
+
+.btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+.btn--danger {
+    background: var(--error-text);
+}
+
+.btn--danger:hover:not(:disabled) {
+    background: var(--error-border);
+}
+
+.btn--ghost {
+    background: transparent;
+    border-color: var(--border);
+    color: var(--text);
+}
+
+.btn--ghost:hover:not(:disabled) {
+    background: var(--card);
+}
+
+.btn--sm {
+    padding: 0.3rem 0.65rem;
+    font-size: 0.8rem;
+}
+
+/* ─── Forms ──────────────────────────────────────────────────────────────── */
+form label {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    margin-bottom: 0.85rem;
+    font-size: 0.875rem;
+    color: var(--text);
+}
+
+form input,
+form select,
+form textarea {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text);
+    font-family: var(--font-sans);
+    font-size: 0.9rem;
+    padding: 0.45rem 0.75rem;
+    outline: none;
+    transition: border-color 0.15s;
+}
+
+form input:focus,
+form select:focus,
+form textarea:focus {
+    border-color: var(--accent);
+}
+
+form input::placeholder,
+form textarea::placeholder {
+    color: var(--muted);
+}
+
+/* ─── Badges ─────────────────────────────────────────────────────────────── */
+.badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.1rem 0.5rem;
+    border-radius: var(--radius-sm);
+    font-size: 0.75rem;
+    font-weight: 500;
+    border: 1px solid;
+    white-space: nowrap;
+}
+
+.badge--inactive {
+    color: var(--inactive-text);
+    background: var(--inactive-bg);
+    border-color: var(--inactive-border);
+}
+
+/* ─── Actions group ──────────────────────────────────────────────────────── */
+.actions {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+/* ─── Page sections ──────────────────────────────────────────────────────── */
+.page {
+    max-width: 960px;
+    margin: 0 auto;
+}
+
+.page-header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1.25rem;
+}
+
+.page-header h1 {
+    font-family: var(--font-mono);
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--bright);
+    letter-spacing: 0.04em;
+}
+
+.page-header a {
+    font-size: 0.875rem;
+    color: var(--muted);
+}
+
+.page-header a:hover {
+    color: var(--text);
+}
+
+/* ─── Definition list ────────────────────────────────────────────────────── */
+.dl-grid {
+    display: grid;
+    grid-template-columns: max-content 1fr;
+    gap: 0.3rem 1.25rem;
+    margin: 0 0 1rem;
+}
+
+.dl-grid dt {
+    color: var(--muted);
+    font-size: 0.875rem;
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+}
+
+.dl-grid dd {
+    font-size: 0.875rem;
+    color: var(--text);
+    word-break: break-all;
+}
+
+/* ─── Inline code / slug ─────────────────────────────────────────────────── */
+.code {
+    font-family: var(--font-mono);
+    background: var(--card);
+    border: 1px solid var(--border);
+    padding: 0.1rem 0.45rem;
+    border-radius: var(--radius-sm);
+    font-size: 0.85em;
+    color: var(--bright);
+}
+
+/* ─── Alerts ─────────────────────────────────────────────────────────────── */
+[role="alert"] {
+    display: block;
+    color: var(--error-text);
+    background: var(--error-bg);
+    border: 1px solid var(--error-border);
+    border-radius: var(--radius);
+    padding: 0.55rem 0.9rem;
+    font-size: 0.875rem;
+    margin: 0.5rem 0;
+}
+
+[role="status"] {
+    color: var(--loading-text);
+    font-size: 0.875rem;
+    padding: 0.5rem 0;
+}

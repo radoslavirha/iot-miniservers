@@ -41,6 +41,10 @@ runs:
             echo "No deploy.json for ${APP_PATH}, skipping"
             continue
           fi
+          if ! jq -e ".$ENV" "$DEPLOY_CONFIG" > /dev/null 2>&1; then
+            echo "Environment '${ENV}' not found in deploy.json for ${APP_PATH}, skipping"
+            continue
+          fi
           FILE=$(jq -r ".$ENV.file" "$DEPLOY_CONFIG")
           YAML_PATH=$(jq -r ".$ENV.yamlPath" "$DEPLOY_CONFIG")
           echo "Updating ${APP_PATH} to ${VERSION} in homelab/${FILE} at ${YAML_PATH}"

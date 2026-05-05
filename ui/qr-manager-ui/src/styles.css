@@ -1,49 +1,4 @@
-:root {
-    color-scheme: light dark;
-    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-}
-
-body {
-    margin: 0;
-    background: #fafafa;
-    color: #222;
-}
-
-.app-header {
-    display: flex;
-    align-items: center;
-    gap: 1.5rem;
-    padding: 0.75rem 1.5rem;
-    background: #1f2937;
-    color: #fff;
-}
-
-.app-header .brand {
-    font-weight: 700;
-    color: #fff;
-    text-decoration: none;
-}
-
-.app-header nav {
-    display: flex;
-    gap: 1rem;
-}
-
-.app-header nav a {
-    color: #cbd5e1;
-    text-decoration: none;
-}
-
-.app-header nav a:hover {
-    color: #fff;
-}
-
-main {
-    max-width: 960px;
-    margin: 1.5rem auto;
-    padding: 0 1.5rem;
-}
-
+/* ─── QR list ────────────────────────────────────────────────────────────── */
 .qr-list {
     list-style: none;
     padding: 0;
@@ -57,125 +12,112 @@ main {
     align-items: center;
     gap: 1rem;
     padding: 0.75rem 1rem;
-    background: #fff;
-    border: 1px solid #e5e7eb;
-    border-radius: 0.5rem;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
     text-decoration: none;
-    color: inherit;
+    color: var(--text);
+    transition: background 0.12s, border-color 0.12s;
+}
+
+.qr-list li a:hover {
+    background: var(--card-hover);
+    border-color: var(--accent);
+    text-decoration: none;
+}
+
+.qr-list li a strong {
+    color: var(--bright);
+    font-size: 0.9rem;
 }
 
 .qr-list .slug {
-    font-family: ui-monospace, monospace;
-    background: #f3f4f6;
-    padding: 0.1rem 0.4rem;
-    border-radius: 0.25rem;
+    font-family: var(--font-mono);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 0.1rem 0.45rem;
+    border-radius: var(--radius-sm);
+    font-size: 0.8rem;
+    color: var(--text);
 }
 
 .qr-list .type {
-    color: #6b7280;
-    font-size: 0.875rem;
+    color: var(--muted);
+    font-size: 0.8rem;
+    font-family: var(--font-mono);
 }
 
-.qr-list .badge.inactive {
+.qr-list .badge {
     margin-left: auto;
-    background: #fee2e2;
-    color: #991b1b;
-    padding: 0.1rem 0.5rem;
-    border-radius: 0.25rem;
-    font-size: 0.75rem;
 }
 
+/* ─── Filters ────────────────────────────────────────────────────────────── */
 .filters {
     display: flex;
     gap: 1rem;
-    border: 1px solid #e5e7eb;
-    border-radius: 0.5rem;
+    flex-wrap: wrap;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
     padding: 0.75rem 1rem;
-    background: #fff;
+    margin-bottom: 1rem;
 }
 
 .filters label {
     display: flex;
     flex-direction: column;
-    font-size: 0.875rem;
-    color: #4b5563;
+    gap: 0.25rem;
+    font-size: 0.8rem;
+    color: var(--muted);
+    font-family: var(--font-mono);
+    margin-bottom: 0;
 }
 
+.filters select,
+.filters input[type="text"] {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text);
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    padding: 0.3rem 0.5rem;
+    outline: none;
+    transition: border-color 0.15s;
+}
+
+.filters select:focus,
+.filters input[type="text"]:focus {
+    border-color: var(--accent);
+}
+
+/* ─── QR image ───────────────────────────────────────────────────────────── */
 .qr-image {
-    margin: 0 0 1rem;
+    margin: 0 0 1.25rem;
     text-align: center;
 }
 
 .qr-image img {
-    background: #fff;
+    background: #ffffff;
     padding: 0.5rem;
-    border: 1px solid #e5e7eb;
-    border-radius: 0.5rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
 }
 
 .qr-image-downloads {
     display: flex;
     gap: 1rem;
     justify-content: center;
-    margin-top: 0.5rem;
+    margin-top: 0.75rem;
     flex-wrap: wrap;
 }
 
 .qr-image-downloads a {
-    color: #2563eb;
+    color: var(--accent);
     font-size: 0.875rem;
+    font-family: var(--font-mono);
 }
 
-form label {
-    display: flex;
-    flex-direction: column;
-    gap: 0.25rem;
-    margin-bottom: 0.75rem;
-}
-
-form input,
-form select {
-    padding: 0.5rem;
-    border: 1px solid #cbd5e1;
-    border-radius: 0.25rem;
-    font: inherit;
-}
-
-.actions {
-    display: flex;
-    gap: 0.5rem;
-    flex-wrap: wrap;
-}
-
-button {
-    padding: 0.5rem 1rem;
-    border-radius: 0.25rem;
-    border: 1px solid transparent;
-    background: #2563eb;
-    color: #fff;
-    cursor: pointer;
-}
-
-button:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-}
-
-button.danger {
-    background: #b91c1c;
-}
-
-dl {
-    display: grid;
-    grid-template-columns: max-content 1fr;
-    gap: 0.25rem 1rem;
-    margin: 0 0 1rem;
-}
-
-dl dt {
-    color: #6b7280;
-}
-
-[role="alert"] {
-    color: #b91c1c;
+.qr-image-downloads a:hover {
+    color: var(--accent-hover);
 }
