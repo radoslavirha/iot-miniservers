@@ -1,7 +1,7 @@
 {
-    "name": "@radoslavirha/otel",
-    "version": "0.2.1",
-    "description": "OpenTelemetry bootstrap and telemetry helpers",
+    "name": "@radoslavirha/http-provider",
+    "version": "0.1.0",
+    "description": "Auth-aware, retry-capable HTTP provider factory backed by axios",
     "private": true,
     "type": "module",
     "exports": {
@@ -29,46 +29,28 @@
         "cleanup:modules": "rm -rf node_modules",
         "lint": "eslint .",
         "lint:fix": "eslint --fix .",
-        "test": "vitest run"
-    },
-    "peerDependencies": {
-        "@opentelemetry/api": "catalog:"
+        "test": "vitest run",
+        "test:watch": "vitest"
     },
     "dependencies": {
-        "@opentelemetry/api": "catalog:",
-        "@opentelemetry/exporter-logs-otlp-http": "catalog:",
-        "@opentelemetry/exporter-metrics-otlp-http": "catalog:",
-        "@opentelemetry/exporter-trace-otlp-http": "catalog:",
-        "@opentelemetry/host-metrics": "catalog:",
-        "@opentelemetry/instrumentation": "catalog:",
-        "@opentelemetry/instrumentation-express": "catalog:",
-        "@opentelemetry/instrumentation-http": "catalog:",
-        "@opentelemetry/instrumentation-winston": "catalog:",
-        "@opentelemetry/resources": "catalog:",
-        "@opentelemetry/sdk-logs": "catalog:",
-        "@opentelemetry/sdk-metrics": "catalog:",
-        "@opentelemetry/sdk-node": "catalog:",
-        "@opentelemetry/sdk-trace-node": "catalog:",
-        "@opentelemetry/semantic-conventions": "catalog:",
-        "@opentelemetry/winston-transport": "catalog:",
+        "@radoslavirha/config-typescript": "catalog:",
         "@radoslavirha/utils": "catalog:",
+        "axios": "catalog:",
+        "axios-retry": "catalog:",
+        "jose": "catalog:",
+        "typescript": "catalog:",
         "zod": "catalog:"
     },
     "devDependencies": {
         "@radoslavirha/config-eslint": "catalog:",
         "@radoslavirha/config-tsdown": "catalog:",
-        "@radoslavirha/config-typescript": "catalog:",
         "@radoslavirha/config-vitest": "catalog:",
         "@types/node": "catalog:",
         "@vitest/coverage-v8": "catalog:",
+        "axios-mock-adapter": "^2.1.0",
         "eslint": "catalog:",
         "tsdown": "catalog:",
-        "typescript": "catalog:",
         "typescript-eslint": "catalog:",
         "vitest": "catalog:"
-    },
-    "engines": {
-        "node": ">= 24",
-        "pnpm": ">= 10"
     }
 }

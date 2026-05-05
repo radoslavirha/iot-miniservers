@@ -39,12 +39,12 @@
     },
     "devDependencies": {
         "@radoslavirha/config-eslint": "catalog:",
-        "@radoslavirha/config-tsdown": "0.1.6",
+        "@radoslavirha/config-tsdown": "catalog:",
         "@radoslavirha/config-vitest": "catalog:",
         "@types/node": "catalog:",
         "@vitest/coverage-v8": "catalog:",
         "eslint": "catalog:",
-        "tsdown": "0.21.5",
+        "tsdown": "catalog:",
         "typescript-eslint": "catalog:",
         "vitest": "catalog:"
     }

@@ -22,6 +22,7 @@ catalog:
   '@opentelemetry/sdk-trace-node': ^2.6.1
   '@opentelemetry/semantic-conventions': ^1.40.0
   '@radoslavirha/config-eslint': ^0.3.9
+  '@radoslavirha/config-tsdown': 0.1.6
   '@radoslavirha/config-typescript': ^0.3.8
   '@radoslavirha/config-vitest': ^0.3.9
   '@radoslavirha/tsed-common': ^0.4.13
@@ -44,6 +45,7 @@ catalog:
   '@types/supertest': ^7.2.0
   '@vitest/coverage-v8': ^4.1.2
   axios: ^1.13.6
+  axios-retry: ^4.5.0
   body-parser: ^2.2.2
   compression: ^1.8.1
   cookie-parser: ^1.4.7
@@ -52,9 +54,11 @@ catalog:
   dotenv: ^17.3.1
   eslint: ^10.1.0
   express: ^5.2.1
+  jose: ^6.2.3
   method-override: ^3.0.0
   nodemon: ^3.1.14
   supertest: ^7.2.2
+  tsdown: 0.21.5
   tslib: ^2.8.1
   typescript: ^6.0.2
   typescript-eslint: ^8.57.2
