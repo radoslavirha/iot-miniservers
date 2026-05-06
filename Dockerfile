@@ -61,13 +61,16 @@ RUN pnpm --filter=homelab-dashboard-ui run build
 
 FROM nginx:1.29-alpine AS homelab-dashboard-ui
 
+RUN apk add --no-cache jq
+
 COPY --from=build-homelab-dashboard-ui /usr/src/app/ui/homelab-dashboard-ui/dist /usr/share/nginx/html
-# Template is processed at container start by the nginx image's built-in
-# envsubst entrypoint. Set UNIFI_HOST env var in the deployment
-# (e.g. https://192.168.1.1) to configure the Unifi proxy at runtime.
-COPY ui/homelab-dashboard-ui/nginx.conf.template /etc/nginx/templates/default.conf.template
+COPY ui/homelab-dashboard-ui/nginx.conf.template /etc/nginx/nginx.conf.template
+COPY ui/homelab-dashboard-ui/docker-entrypoint.sh /docker-entrypoint.sh
+RUN chmod +x /docker-entrypoint.sh
+# Remove the default stub so nothing starts if config.json is absent.
+RUN rm -f /etc/nginx/conf.d/default.conf
 EXPOSE 80
-CMD ["nginx", "-g", "daemon off;"]
+ENTRYPOINT ["/docker-entrypoint.sh"]
 
 # ─── qr-manager-ui ─────────────────────────────────────────────────────────────
 FROM deps AS build-qr-manager-ui
