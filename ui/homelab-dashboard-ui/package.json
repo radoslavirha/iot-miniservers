@@ -1,6 +1,6 @@
 {
     "name": "homelab-dashboard-ui",
-    "version": "0.1.1",
+    "version": "0.1.2",
     "private": true,
     "description": "Dashboard UI for homelab services, driven by Unifi DNS records.",
     "type": "module",
