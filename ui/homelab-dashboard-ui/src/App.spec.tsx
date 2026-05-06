@@ -89,10 +89,10 @@ describe('<App />', () => {
         expect(screen.getByText('no matches found')).toBeInTheDocument();
     });
 
-    it('uses default title "homelab" when config.title is not set', async () => {
+    it('uses default title "Homelab dashboard" when config.title is not set', async () => {
         mockFetch([]);
         const cfgNoTitle: AppConfig = { unifi: config.unifi };
         render(<App config={cfgNoTitle} />);
-        await waitFor(() => expect(screen.getByText('homelab')).toBeInTheDocument());
+        await waitFor(() => expect(screen.getByText('Homelab dashboard')).toBeInTheDocument());
     });
 });

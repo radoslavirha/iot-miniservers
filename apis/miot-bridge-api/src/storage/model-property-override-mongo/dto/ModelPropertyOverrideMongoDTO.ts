@@ -10,7 +10,7 @@ import { ModelPropertyValueMongoDTO } from './ModelPropertyValueMongoDTO.js';
 @Model({ collection: 'model-property-overrides', schemaOptions: { timestamps: true, versionKey: false } })
 export class ModelPropertyOverrideMongoDTO extends BaseMongo {
     /** Device model this override applies to (e.g. xiaomi.vacuum.c102gl). */
-    @Required() @Property(String) public model: string;
+    @Required() @Property(String) public modelName: string;
     /** Command key segment used in the spec map (e.g. turbo-fan). */
     @Required() @Property(String) public key: string;
     /** Service instance ID. */

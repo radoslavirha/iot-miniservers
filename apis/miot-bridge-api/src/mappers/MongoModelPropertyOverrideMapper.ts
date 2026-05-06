@@ -19,7 +19,7 @@ export class MongoModelPropertyOverrideMapper extends MongoMapper<ModelPropertyO
     public async mongoToModel(mongo: ModelPropertyOverrideMongoDTO): Promise<ModelPropertyOverride> {
         return CommonUtils.buildModelStrict(ModelPropertyOverride, {
             ...this.mongoToModelBase(mongo),
-            model: mongo.model,
+            model: mongo.modelName,
             key: mongo.key,
             siid: mongo.siid,
             piid: mongo.piid,

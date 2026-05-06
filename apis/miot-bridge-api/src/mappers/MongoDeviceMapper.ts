@@ -27,7 +27,7 @@ export class MongoDeviceMapper extends MongoMapper<DeviceMongoDTO, DeviceCache> 
             address: mongo.address,
             token: mongo.token,
             stamp: mongo.stamp,
-            model: mongo.model,
+            model: mongo.modelName,
             specURL: mongo.specURL,
             rawSpec: await this.miotSpecV2Mapper.mapDTOToModel(specDto),
             stampUpdatedAt: DefaultsUtil.number(mongo.stampUpdatedAt, 0)
@@ -41,7 +41,7 @@ export class MongoDeviceMapper extends MongoMapper<DeviceMongoDTO, DeviceCache> 
             address: entity.address,
             token: entity.token,
             stamp: entity.stamp,
-            model: entity.model,
+            modelName: entity.model,
             specURL: entity.specURL,
             rawSpec: Serializer.serialize(rawSpec, MiotSpecV2DTO),
             stampUpdatedAt: DefaultsUtil.number(entity.stampUpdatedAt, 0)
@@ -55,7 +55,7 @@ export class MongoDeviceMapper extends MongoMapper<DeviceMongoDTO, DeviceCache> 
             address: entity.address,
             token: entity.token,
             stamp: entity.stamp,
-            model: entity.model,
+            modelName: entity.model,
             specURL: entity.specURL,
             rawSpec: Serializer.serialize(rawSpec, MiotSpecV2DTO),
             stampUpdatedAt: DefaultsUtil.number(entity.stampUpdatedAt, 0)

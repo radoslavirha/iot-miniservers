@@ -24,8 +24,8 @@ export class ModelPropertyOverrideMongoRepository extends MongoRepository<ModelP
         return this.deserialize(result);
     }
 
-    public async findByModel(model: string): Promise<ModelPropertyOverrideMongoDTO[]> {
-        const results = await this.model.find({ model }).lean<ModelPropertyOverrideMongoDTO[]>();
+    public async findByModel(modelName: string): Promise<ModelPropertyOverrideMongoDTO[]> {
+        const results = await this.model.find({ modelName }).lean<ModelPropertyOverrideMongoDTO[]>();
         return this.deserializeArray(results);
     }
 

@@ -1,9 +1,7 @@
 {
-  "extends": "@radoslavirha/config-typescript/tsconfig.json",
+  "extends": "@radoslavirha/config-typescript/tsconfig.tsed.json",
   "compilerOptions": {
     "composite": false,
-    "types": [
-      "vitest/globals"
-    ]
+    "types": ["vitest/globals"]
   }
 }

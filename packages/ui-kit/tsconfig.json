@@ -1,22 +1,4 @@
 {
-    "compilerOptions": {
-        "composite": false,
-        "noEmit": true,
-        "target": "ES2022",
-        "lib": ["ES2023", "DOM", "DOM.Iterable"],
-        "module": "ESNext",
-        "moduleResolution": "Bundler",
-        "jsx": "react-jsx",
-        "strict": true,
-        "noUnusedLocals": true,
-        "noUnusedParameters": true,
-        "noFallthroughCasesInSwitch": true,
-        "noUncheckedSideEffectImports": true,
-        "skipLibCheck": true,
-        "isolatedModules": true,
-        "esModuleInterop": true,
-        "allowSyntheticDefaultImports": true,
-        "types": ["node"]
-    },
+    "extends": "@radoslavirha/config-typescript/tsconfig.react-app.json",
     "include": ["src"]
 }
