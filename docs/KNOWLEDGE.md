@@ -18,7 +18,18 @@ pnpm monorepo of small independent Node.js APIs and UIs (Ts.ED, TypeScript ESM).
 | Package | Purpose |
 |---------|---------|
 | `@radoslavirha/miot-device` | Stateful MIoT device client: UDP transport, per-device stamp/handshake lifecycle |
-| `@radoslavirha/otel` | OpenTelemetry bootstrap |
+| `@radoslavirha/otel` | OpenTelemetry bootstrap — traces + custom metrics via OTLP; logs via stdout JSON (no OTLP log export) |
+
+## Observability (OTel signal routing)
+
+| Signal | Transport | Notes |
+|--------|-----------|-------|
+| Traces | OTLP → alloy-receiver:4318/v1/traces | `WinstonInstrumentation` injects `trace_id`/`span_id` into every JSON log line |
+| Custom metrics | OTLP → alloy-receiver:4318/v1/metrics | App-level counters/histograms only |
+| Logs | stdout JSON → Alloy podLogs DaemonSet | Alloy parses JSON, extracts `trace_id` as Loki structured metadata; Grafana derived field links log row → Tempo trace |
+| Node/host metrics | k8s-monitoring (node-exporter) | `HostMetrics` SDK instrumentation removed — k8s-monitoring covers node/container level |
+
+`logs.enabled` in `OtelConfig` defaults to `false` in production helm values. OTLP log export can be re-enabled at any time for debugging by setting `logs.enabled: true`.
 
 ## Communication
 

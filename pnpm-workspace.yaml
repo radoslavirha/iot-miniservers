@@ -51,7 +51,6 @@ catalogs:
     '@opentelemetry/exporter-logs-otlp-http': ^0.216.0
     '@opentelemetry/exporter-metrics-otlp-http': ^0.216.0
     '@opentelemetry/exporter-trace-otlp-http': ^0.216.0
-    '@opentelemetry/host-metrics': ^0.38.3
     '@opentelemetry/instrumentation': ^0.216.0
     '@opentelemetry/instrumentation-express': ^0.64.0
     '@opentelemetry/instrumentation-http': ^0.216.0

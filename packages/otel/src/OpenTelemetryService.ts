@@ -1,8 +1,7 @@
 import { OTLPLogExporter } from '@opentelemetry/exporter-logs-otlp-http';
 import { OTLPMetricExporter } from '@opentelemetry/exporter-metrics-otlp-http';
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http';
-import { diag, DiagConsoleLogger, DiagLogLevel, metrics } from '@opentelemetry/api';
-import { HostMetrics } from '@opentelemetry/host-metrics';
+import { diag, DiagConsoleLogger, DiagLogLevel } from '@opentelemetry/api';
 import type { Instrumentation } from '@opentelemetry/instrumentation';
 import { ExpressInstrumentation } from '@opentelemetry/instrumentation-express';
 import { HttpInstrumentation } from '@opentelemetry/instrumentation-http';
@@ -66,15 +65,6 @@ export class OpenTelemetryService {
         });
 
         sdk.start();
-
-        if (ObjectUtils.isEnabled(config.metrics)) {
-            this.appendHostMetrics();
-        }
-    }
-
-    private appendHostMetrics(): void {
-        const hostMetrics = new HostMetrics({ meterProvider: metrics.getMeterProvider() });
-        hostMetrics.start();
     }
 
     private getMetricReaders(config?: OTELMetricsConfig): PeriodicExportingMetricReader[] | undefined {

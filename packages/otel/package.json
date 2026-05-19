@@ -39,7 +39,6 @@
         "@opentelemetry/exporter-logs-otlp-http": "catalog:otel",
         "@opentelemetry/exporter-metrics-otlp-http": "catalog:otel",
         "@opentelemetry/exporter-trace-otlp-http": "catalog:otel",
-        "@opentelemetry/host-metrics": "catalog:otel",
         "@opentelemetry/instrumentation": "catalog:otel",
         "@opentelemetry/instrumentation-express": "catalog:otel",
         "@opentelemetry/instrumentation-http": "catalog:otel",
