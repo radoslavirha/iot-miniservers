@@ -5,7 +5,7 @@ FROM $BUILD_FROM AS base
 
 LABEL maintainer="radoslav.irha@gmail.com"
 ENV LANG=C.UTF-8
-RUN corepack enable pnpm
+RUN npm install -g pnpm@11
 
 FROM base AS deps
 

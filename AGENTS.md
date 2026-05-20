@@ -20,7 +20,7 @@ This is a **pnpm monorepo** containing small independent Node.js APIs built with
 ## Tech Stack
 
 - **Runtime**: Node.js 24+
-- **Package manager**: pnpm 10+ (workspaces)
+- **Package manager**: pnpm 11+ (workspaces)
 - **Language**: TypeScript with `@radoslavirha/config-typescript` (ESM, `.js` extensions in imports)
 - **Framework**: Ts.ED with `@radoslavirha/tsed-*`
 - **Testing**: Vitest with `@radoslavirha/config-vitest`

@@ -13,10 +13,10 @@ runs:
   steps:
     - name: Checkout repository
       uses: actions/checkout@v4
-    - name: Set up pnpm v10
+    - name: Set up pnpm v11
       uses: pnpm/action-setup@v4
       with:
-        version: 10
+        version: 11
     - name: Set up Node.js v24
       uses: actions/setup-node@v6
       with:

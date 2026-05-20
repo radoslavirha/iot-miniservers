@@ -32,18 +32,10 @@
   },
   "engines": {
     "node": ">= 24",
-    "pnpm": ">= 10"
+    "pnpm": ">= 11"
   },
   "os": [
     "darwin",
     "linux"
-  ],
-  "pnpm": {
-    "ignoredBuiltDependencies": [
-      "@scarf/scarf",
-      "@swc/core",
-      "esbuild",
-      "sharp"
-    ]
-  }
+  ]
 }

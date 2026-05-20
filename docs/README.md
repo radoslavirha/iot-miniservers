@@ -7,7 +7,7 @@ This document describes the process for running these APIs on your local compute
 ### Prerequisites
 
 - node.js > 24
-- pnpm > 10
+- pnpm > 11
 
 ### Getting started
 

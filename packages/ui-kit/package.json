@@ -41,14 +41,14 @@
         "@vitest/coverage-v8": "catalog:",
         "eslint": "catalog:",
         "jsdom": "catalog:react",
-        "react": "catalog:react",
-        "react-dom": "catalog:react",
+        "react": "^19.2.6",
+        "react-dom": "^19.2.6",
         "typescript": "catalog:",
         "typescript-eslint": "catalog:",
         "vitest": "catalog:"
     },
     "engines": {
         "node": ">= 24",
-        "pnpm": ">= 10"
+        "pnpm": ">= 11"
     }
 }

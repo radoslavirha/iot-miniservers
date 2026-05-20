@@ -26,7 +26,7 @@
     "@radoslavirha/tsed-common": "catalog:",
     "@radoslavirha/tsed-configuration": "catalog:",
     "@radoslavirha/tsed-logger": "catalog:",
-    "@radoslavirha/tsed-mongoose": "^4.0.9",
+    "@radoslavirha/tsed-mongoose": "catalog:",
     "@radoslavirha/tsed-platform": "catalog:",
     "@radoslavirha/tsed-swagger": "catalog:",
     "@radoslavirha/utils": "catalog:",
@@ -62,7 +62,7 @@
     "dotenv": "catalog:",
     "express": "catalog:express",
     "method-override": "catalog:express",
-    "mongoose": "^9.6.1",
+    "mongoose": "^9.6.2",
     "mqtt": "^5.15.1",
     "typescript": "catalog:",
     "zod": "catalog:"
@@ -91,7 +91,7 @@
   },
   "engines": {
     "node": ">= 24",
-    "pnpm": ">= 10"
+    "pnpm": ">= 11"
   },
   "tsed": {
     "convention": "conv_default",
