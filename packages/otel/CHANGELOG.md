@@ -1,5 +1,13 @@
 # @radoslavirha/otel
 
+## 0.3.0
+
+### Minor Changes
+
+- [`aeff188`](https://github.com/radoslavirha/iot-miniservers/commit/aeff188f97952da65227e41d36e7fec2626f8cb2) Thanks [@radoslavirha](https://github.com/radoslavirha)! - Update dependencies
+
+- [`ccd9628`](https://github.com/radoslavirha/iot-miniservers/commit/ccd9628a9d80104c53779572a720546229720e19) Thanks [@radoslavirha](https://github.com/radoslavirha)! - Disable host metrics
+
 ## 0.2.2
 
 ### Patch Changes
