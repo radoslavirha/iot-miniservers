@@ -26,7 +26,7 @@ FROM base AS interactive-map-feeder-api
 COPY --from=build-interactive-map-feeder-api /prod/interactive-map-feeder-api /home/app
 WORKDIR /home/app
 ENV NODE_ENV=production
-CMD ["pnpm", "start:prod"]
+CMD ["node", "--import", "@swc-node/register/esm-register", "--import", "/home/app/dist/otel/instrument.js", "dist/index.js"]
 
 # ─── miot-bridge-api ───────────────────────────────────────────────────────────────
 FROM deps AS build-miot-bridge-api
@@ -39,7 +39,7 @@ FROM base AS miot-bridge-api
 COPY --from=build-miot-bridge-api /prod/miot-bridge-api /home/app
 WORKDIR /home/app
 ENV NODE_ENV=production
-CMD ["pnpm", "start:prod"]
+CMD ["node", "--import", "@swc-node/register/esm-register", "--import", "/home/app/dist/otel/instrument.js", "dist/index.js"]
 
 # ─── qr-manager-api ────────────────────────────────────────────────────────────
 FROM deps AS build-qr-manager-api
@@ -52,7 +52,7 @@ FROM base AS qr-manager-api
 COPY --from=build-qr-manager-api /prod/qr-manager-api /home/app
 WORKDIR /home/app
 ENV NODE_ENV=production
-CMD ["pnpm", "start:prod"]
+CMD ["node", "--import", "@swc-node/register/esm-register", "--import", "/home/app/dist/otel/instrument.js", "dist/index.js"]
 
 # ─── homelab-dashboard-ui ──────────────────────────────────────────────────────
 FROM deps AS build-homelab-dashboard-ui
