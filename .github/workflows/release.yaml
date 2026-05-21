@@ -1,5 +1,5 @@
 ---
-name: Release APIs
+name: Release APPs
 
 # yamllint disable-line rule:truthy
 on:
@@ -9,10 +9,10 @@ on:
 
 jobs:
   release:
-    name: Release APIs
+    name: Release APPs
     runs-on: ubuntu-latest
     outputs:
-      matrix: ${{ steps.set-apis-matrix.outputs.json }}
+      matrix: ${{ steps.set-apps-matrix.outputs.json }}
     permissions:
       contents: write
       pull-requests: write
@@ -27,14 +27,14 @@ jobs:
         id: changesets
         uses: changesets/action@v1
         with:
-          title: Release APIs
+          title: Release APPs
           commit: Version APIs
           version: pnpm changeset:version
           publish: pnpm changeset:tag
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - name: Set APIs matrix
-        id: set-apis-matrix
+      - name: Set APPs matrix
+        id: set-apps-matrix
         shell: bash
         run: |
           packages='${{ steps.changesets.outputs.publishedPackages }}'
@@ -63,7 +63,7 @@ jobs:
           else
             echo "json={\"include\":$include}" >> "$GITHUB_OUTPUT"
           fi
-  build-api-images:
+  build-app-images:
     name: Publish ${{ matrix.path }} ${{ matrix.version }}
     needs:
       - release
@@ -83,7 +83,7 @@ jobs:
     name: Deploy to Sandbox
     needs:
       - release
-      - build-api-images
+      - build-app-images
     if: ${{ needs.release.outputs.matrix != '{}' }}
     runs-on: ubuntu-latest
     environment: sandbox
