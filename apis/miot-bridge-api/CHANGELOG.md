@@ -1,5 +1,11 @@
 # miot-bridge
 
+## 0.18.1
+
+### Patch Changes
+
+- [`065250c`](https://github.com/radoslavirha/iot-miniservers/commit/065250c3c2a1f91797e1f8bb6e6db318a88ff93f) Thanks [@radoslavirha](https://github.com/radoslavirha)! - Startup script fix
+
 ## 0.18.0
 
 ### Minor Changes
