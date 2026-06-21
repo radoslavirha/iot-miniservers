@@ -66,11 +66,16 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-      - name: Set up .npmrc
-        uses: v-venes/create-npmrc@v1.0.0
-        with:
-          org_name: radoslavirha
-          auth_token: ${{ secrets.TOOLKIT_HUB_PACKAGES }}
+      - name: Prepare npm auth file
+        shell: bash
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.TOOLKIT_HUB_PACKAGES }}
+        run: |
+          cat > /tmp/npmrc.auth <<EOF
+          @radoslavirha:registry=https://npm.pkg.github.com/
+          //npm.pkg.github.com/:_authToken=${NODE_AUTH_TOKEN}
+          EOF
+          chmod 600 /tmp/npmrc.auth
       - name: Login to GHCR
         if: ${{ inputs.PUBLISH == true || inputs.PUBLISH == 'true' }}
         uses: docker/login-action@v3
@@ -90,7 +95,7 @@ jobs:
             ${{ needs.image-data.outputs.image }}:latest
             ${{ needs.image-data.outputs.image }}:${{ needs.image-data.outputs.version }}
           secret-files: |
-            "npmrc=.npmrc"
+            "npmrc=/tmp/npmrc.auth"
           labels: |
             maintainer=Radoslav Irha <radoslav.irha@gmail.com>
             org.opencontainers.image.title=${{ needs.image-data.outputs.image }}
@@ -103,3 +108,6 @@ jobs:
             org.opencontainers.image.created=${{ needs.image-data.outputs.date }}
             org.opencontainers.image.revision=${{ github.sha }}
             org.opencontainers.image.version=${{ needs.image-data.outputs.version }}
+      - name: Cleanup npm auth file
+        if: always()
+        run: rm -f /tmp/npmrc.auth

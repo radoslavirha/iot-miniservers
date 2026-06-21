@@ -18,7 +18,8 @@ RUN pnpm --filter './packages/**' run build
 # ─── interactive-map-feeder-api ────────────────────────────────────────────────────
 FROM deps AS build-interactive-map-feeder-api
 
-RUN pnpm --filter=interactive-map-feeder-api run build && \
+RUN --mount=type=secret,id=npmrc,target=/root/.npmrc \
+    pnpm --filter=interactive-map-feeder-api run build && \
     pnpm deploy --filter=interactive-map-feeder-api --prod /prod/interactive-map-feeder-api
 
 FROM base AS interactive-map-feeder-api
@@ -31,7 +32,8 @@ CMD ["node", "--import", "@swc-node/register/esm-register", "--import", "/home/a
 # ─── miot-bridge-api ───────────────────────────────────────────────────────────────
 FROM deps AS build-miot-bridge-api
 
-RUN pnpm --filter=miot-bridge-api run build && \
+RUN --mount=type=secret,id=npmrc,target=/root/.npmrc \
+    pnpm --filter=miot-bridge-api run build && \
     pnpm deploy --filter=miot-bridge-api --prod /prod/miot-bridge-api
 
 FROM base AS miot-bridge-api
@@ -44,7 +46,8 @@ CMD ["node", "--import", "@swc-node/register/esm-register", "--import", "/home/a
 # ─── qr-manager-api ────────────────────────────────────────────────────────────
 FROM deps AS build-qr-manager-api
 
-RUN pnpm --filter=qr-manager-api run build && \
+RUN --mount=type=secret,id=npmrc,target=/root/.npmrc \
+    pnpm --filter=qr-manager-api run build && \
     pnpm deploy --filter=qr-manager-api --prod /prod/qr-manager-api
 
 FROM base AS qr-manager-api

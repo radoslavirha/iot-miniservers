@@ -24,12 +24,15 @@ runs:
         cache: pnpm
         registry-url: https://npm.pkg.github.com/
         scope: '@radoslavirha'
+    - name: Configure pnpm auth token
+      shell: bash
+      env:
+        NODE_AUTH_TOKEN: ${{ inputs.NODE_AUTH_TOKEN }}
+      run: pnpm config set //npm.pkg.github.com/:_authToken "$NODE_AUTH_TOKEN"
     - name: Install ${{ inputs.TARGET_APP }} dependencies
       if: "${{ inputs.TARGET_APP != '' }}"
       run: pnpm install --frozen-lockfile --filter "./${{ inputs.TARGET_APP }}" --filter "./packages/**"
       shell: bash
-      env:
-        NODE_AUTH_TOKEN: ${{ inputs.NODE_AUTH_TOKEN }}
     - name: Build workspace packages
       if: "${{ inputs.TARGET_APP != '' }}"
       run: pnpm --filter './packages/**' run build
@@ -38,5 +41,3 @@ runs:
       if: "${{ inputs.TARGET_APP == '' }}"
       run: pnpm install --frozen-lockfile
       shell: bash
-      env:
-        NODE_AUTH_TOKEN: ${{ inputs.NODE_AUTH_TOKEN }}
