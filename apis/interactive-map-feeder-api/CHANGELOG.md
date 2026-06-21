@@ -1,5 +1,11 @@
 # interactive-map-feeder
 
+## 0.9.0
+
+### Minor Changes
+
+- [`26233ea`](https://github.com/radoslavirha/iot-miniservers/commit/26233ea6e6ae6792dc7dd863bf788aa64d00d4e9) Thanks [@radoslavirha](https://github.com/radoslavirha)! - Update chmi URLs
+
 ## 0.8.1
 
 ### Patch Changes
