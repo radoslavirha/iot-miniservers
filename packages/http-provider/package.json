@@ -1,6 +1,6 @@
 {
     "name": "@radoslavirha/http-provider",
-    "version": "0.1.1",
+    "version": "0.1.2",
     "description": "Auth-aware, retry-capable HTTP provider factory backed by axios",
     "private": true,
     "type": "module",

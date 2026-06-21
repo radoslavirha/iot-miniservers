@@ -1,5 +1,11 @@
 # @radoslavirha/ui-kit
 
+## 0.2.1
+
+### Patch Changes
+
+- [`422cfcf`](https://github.com/radoslavirha/iot-miniservers/commit/422cfcf17880bbd18b824b20592cac85e007ec88) Thanks [@radoslavirha](https://github.com/radoslavirha)! - Update packages
+
 ## 0.2.0
 
 ### Minor Changes
