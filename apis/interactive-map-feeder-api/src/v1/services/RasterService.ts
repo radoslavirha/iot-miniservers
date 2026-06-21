@@ -1,21 +1,21 @@
 import { ProviderScope, Scope, Service } from '@tsed/di';
 import { CommonUtils, GeoUtils, NumberUtils, ObjectUtils } from '@radoslavirha/utils';
-import Sharp from 'sharp';
+import sharp, { Sharp, SharpOptions } from 'sharp';
 import { BBox, Position, RGBA } from '../models/index.js';
 import { CITIES } from '../Cities.js';
 
 @Service()
 @Scope(ProviderScope.SINGLETON)
 export class RasterService {
-    public createImage(buffer: Buffer, options?: Sharp.SharpOptions): Sharp.Sharp {
-        return Sharp(buffer, options);
+    public createImage(buffer: Buffer, options?: SharpOptions): Sharp {
+        return sharp(buffer, options);
     }
 
-    public async compositeImages(base: Sharp.Sharp, images: Buffer[]): Promise<Sharp.Sharp> {
+    public async compositeImages(base: Sharp, images: Buffer[]): Promise<Sharp> {
         return await base.composite(images.map(image => ({ input: image })));
     }
 
-    public async getRGBAOnCoordinates(latitude: number, longitude: number, bbox: BBox, image: Sharp.Sharp, radiusInKm: number = 2.5): Promise<RGBA>{
+    public async getRGBAOnCoordinates(latitude: number, longitude: number, bbox: BBox, image: Sharp, radiusInKm: number = 2.5): Promise<RGBA>{
         const metadata = await image.metadata();
         const position = this.getPositionOnImage(latitude, longitude, bbox, metadata.height!, metadata.width!);
         
@@ -89,7 +89,7 @@ export class RasterService {
         });
     }
 
-    private async getPixelsWithRadius(position: Position, image: Sharp.Sharp, radius = 0): Promise<RGBA[]> {
+    private async getPixelsWithRadius(position: Position, image: Sharp, radius = 0): Promise<RGBA[]> {
         const { data, info } = await image
             .raw()
             .toBuffer({ resolveWithObject: true });
