@@ -1,5 +1,18 @@
 # interactive-map-feeder
 
+## 0.10.0
+
+### Minor Changes
+
+- [`066fff7`](https://github.com/radoslavirha/iot-miniservers/commit/066fff712957dd5d0ae36fe98cb2cdfcd218804c) Thanks [@radoslavirha](https://github.com/radoslavirha)! - Fix sharp imports
+
+### Patch Changes
+
+- [`422cfcf`](https://github.com/radoslavirha/iot-miniservers/commit/422cfcf17880bbd18b824b20592cac85e007ec88) Thanks [@radoslavirha](https://github.com/radoslavirha)! - Update packages
+
+- Updated dependencies [[`422cfcf`](https://github.com/radoslavirha/iot-miniservers/commit/422cfcf17880bbd18b824b20592cac85e007ec88)]:
+  - @radoslavirha/otel@0.3.1
+
 ## 0.9.0
 
 ### Minor Changes
