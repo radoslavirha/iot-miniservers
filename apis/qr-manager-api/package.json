@@ -60,8 +60,8 @@
     "dotenv": "catalog:",
     "express": "catalog:express",
     "method-override": "catalog:express",
-    "mongoose": "^9.6.2",
-    "nanoid": "^5.1.11",
+    "mongoose": "^9.7.1",
+    "nanoid": "^5.1.14",
     "qrcode": "^1.5.4",
     "typescript": "catalog:",
     "zod": "catalog:"
