@@ -4,17 +4,17 @@ packages:
   - ui/*
 
 catalog:
-  '@radoslavirha/config-eslint': ^0.4.2
-  '@radoslavirha/config-tsdown': 0.2.1
-  '@radoslavirha/config-typescript': ^1.1.1
-  '@radoslavirha/config-vitest': ^0.4.1
-  '@radoslavirha/tsed-common': ^0.5.1
-  '@radoslavirha/tsed-configuration': ^0.7.1
-  '@radoslavirha/tsed-logger': ^0.4.1
-  '@radoslavirha/tsed-platform': ^2.0.1
-  '@radoslavirha/tsed-swagger': ^6.0.1
-  '@radoslavirha/utils': ^0.8.1
-  '@radoslavirha/tsed-mongoose': ^5.0.1
+  '@radoslavirha/config-eslint': ^0.4.3
+  '@radoslavirha/config-tsdown': 0.2.2
+  '@radoslavirha/config-typescript': ^1.1.2
+  '@radoslavirha/config-vitest': ^0.4.2
+  '@radoslavirha/tsed-common': ^0.5.2
+  '@radoslavirha/tsed-configuration': ^0.7.2
+  '@radoslavirha/tsed-logger': ^0.4.2
+  '@radoslavirha/tsed-platform': ^2.0.2
+  '@radoslavirha/tsed-swagger': ^6.0.2
+  '@radoslavirha/utils': ^0.8.2
+  '@radoslavirha/tsed-mongoose': ^5.0.2
   '@types/node': ^26.0.0
   '@types/supertest': ^7.2.0
   '@vitest/coverage-v8': ^4.1.9
