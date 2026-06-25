@@ -14,8 +14,8 @@ export class RedirectHandler {
         private readonly qrCodeService: QrCodeService
     ) {}
 
-    public async execute(slug: string): Promise<RedirectResult> {
-        const model = await this.qrCodeService.getBySlug(slug);
+    public async execute(slug: string, signal?: AbortSignal): Promise<RedirectResult> {
+        const model = await this.qrCodeService.getBySlug(slug, signal);
         if (CommonUtils.isNil(model) || !model.active) {
             throw new NotFound(`QR code ${slug} not found.`);
         }

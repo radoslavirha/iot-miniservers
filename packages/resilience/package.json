@@ -1,7 +1,7 @@
 {
-    "name": "@radoslavirha/http-provider",
-    "version": "0.1.3",
-    "description": "Auth-aware, retry-capable HTTP provider factory backed by axios",
+    "name": "@radoslavirha/resilience",
+    "version": "0.1.0",
+    "description": "Transport-agnostic resilience (timeout, retry, circuit breaker) with AbortSignal support, backed by cockatiel",
     "private": true,
     "type": "module",
     "exports": {
@@ -34,10 +34,8 @@
     },
     "dependencies": {
         "@radoslavirha/config-typescript": "catalog:",
-        "@radoslavirha/resilience": "workspace:*",
         "@radoslavirha/utils": "catalog:",
-        "axios": "catalog:",
-        "jose": "catalog:",
+        "cockatiel": "catalog:",
         "typescript": "catalog:",
         "zod": "catalog:"
     },
@@ -47,7 +45,6 @@
         "@radoslavirha/config-vitest": "catalog:",
         "@types/node": "catalog:",
         "@vitest/coverage-v8": "catalog:",
-        "axios-mock-adapter": "^2.1.0",
         "eslint": "catalog:",
         "tsdown": "catalog:",
         "typescript-eslint": "catalog:",

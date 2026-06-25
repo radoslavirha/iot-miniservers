@@ -1,5 +1,8 @@
-import axios, { type AxiosInstance, type InternalAxiosRequestConfig } from 'axios';
-import axiosRetry from 'axios-retry';
+import axios, {
+    type AxiosInstance,
+    type InternalAxiosRequestConfig
+} from 'axios';
+import { createResiliencePolicy, type ResilienceConfig, type ResiliencePolicy } from '@radoslavirha/resilience';
 import { DefaultsUtil } from '@radoslavirha/utils';
 import { AuthStrategy } from './schemas/auth.schema.js';
 import type { HttpProviderEntry } from './schemas/provider.schema.js';
@@ -13,6 +16,24 @@ import { applyTransport } from './utils/applyTransport.js';
 
 interface RetriableRequestConfig extends InternalAxiosRequestConfig {
     _retried?: boolean;
+}
+
+const DEFAULT_RETRY_STATUS_CODES = [500, 502, 503, 504];
+
+/**
+ * A transient HTTP failure that retry/circuit-breaker policies should act on:
+ * a configured 5xx-style status, or a network error (no response received).
+ * Cancellations (our own timeout / an aborted caller signal) are excluded.
+ */
+function isRetriableHttpError(error: unknown, statusCodes: number[]): boolean {
+    if (!axios.isAxiosError(error)) {
+        return false;
+    }
+    const status = error.response?.status;
+    if (status !== undefined) {
+        return statusCodes.includes(status);
+    }
+    return error.code !== 'ERR_CANCELED';
 }
 
 export class HttpProviderFactory<K extends string> {
@@ -40,8 +61,6 @@ export class HttpProviderFactory<K extends string> {
     private createInstance(entry: HttpProviderEntry): AxiosInstance {
         const instance = axios.create({ baseURL: entry.baseURL });
 
-        this.configureRetry(instance, entry);
-
         const strategy = this.createStrategy(entry);
         const transport = this.resolveTransport(entry);
 
@@ -49,24 +68,70 @@ export class HttpProviderFactory<K extends string> {
             this.attachAuthInterceptor(instance, strategy, transport);
         }
 
+        this.configureResilience(instance, entry);
+
         return instance;
     }
 
-    private configureRetry(instance: AxiosInstance, entry: HttpProviderEntry): void {
-        const retry = entry.retry;
-        const count = DefaultsUtil.number(retry?.count, 3);
-        const delay = DefaultsUtil.number(retry?.delay, 1000);
-        const statusCodes = retry?.statusCodes ?? [500, 502, 503, 504];
+    /**
+     * Routes every request through a cockatiel resilience policy (retry +
+     * circuit breaker + timeout) when `retry` or `resilience` is configured.
+     *
+     * The policy wraps the resolved axios **adapter** (the network call) via a
+     * request interceptor, so it composes with auth interceptors and survives a
+     * later `instance.defaults.adapter` swap. The timeout's `AbortSignal` is
+     * threaded into the adapter and derived from the caller's signal, so both a
+     * timeout and request-lifecycle cancellation abort the underlying call.
+     */
+    private configureResilience(instance: AxiosInstance, entry: HttpProviderEntry): void {
+        const legacyRetry = entry.retry;
+        const resilience = entry.resilience;
 
-        axiosRetry(instance, {
-            retries: count,
-            retryDelay: (retryCount) => retryCount * delay,
-            retryCondition: (error) => {
-                if (axiosRetry.isNetworkError(error)) return true;
-                const status = error.response?.status;
-                return status !== undefined && statusCodes.includes(status);
-            }
+        // Opt-in: a bare provider stays a plain axios instance.
+        if (!legacyRetry && !resilience) {
+            return;
+        }
+
+        const statusCodes = legacyRetry?.statusCodes ?? DEFAULT_RETRY_STATUS_CODES;
+
+        const config: ResilienceConfig = {
+            timeout: resilience?.timeout,
+            circuitBreaker: resilience?.circuitBreaker,
+            // Prefer an explicit resilience.retry; otherwise map the legacy
+            // retry config (count/delay) onto cockatiel's retry.
+            retry:
+                resilience?.retry ??
+                (legacyRetry
+                    ? { count: DefaultsUtil.number(legacyRetry.count, 3), backoffMs: DefaultsUtil.number(legacyRetry.delay, 1000) }
+                    : undefined)
+        };
+
+        const policy = createResiliencePolicy(config, {
+            shouldHandle: (error) => isRetriableHttpError(error, statusCodes)
         });
+
+        instance.interceptors.request.use((requestConfig: InternalAxiosRequestConfig) => {
+            this.wrapAdapterWithPolicy(instance, requestConfig, policy);
+            return requestConfig;
+        });
+    }
+
+    /**
+     * Replaces the request's adapter with a policy-wrapped version of whatever
+     * adapter axios would otherwise use, resolved at request time. The caller's
+     * signal becomes the policy's parent signal; cockatiel derives the timeout
+     * signal from it and forwards the combined signal to the adapter.
+     */
+    private wrapAdapterWithPolicy(
+        instance: AxiosInstance,
+        requestConfig: InternalAxiosRequestConfig,
+        policy: ResiliencePolicy
+    ): void {
+        const resolved = axios.getAdapter(instance.defaults.adapter);
+        const parentSignal = requestConfig.signal as AbortSignal | undefined;
+
+        requestConfig.adapter = (config) =>
+            policy.execute((signal) => resolved({ ...config, signal }), parentSignal);
     }
 
     private createStrategy(entry: HttpProviderEntry): IAuthStrategy {

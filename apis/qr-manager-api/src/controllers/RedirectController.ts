@@ -3,6 +3,7 @@ import { Context, PathParams } from '@tsed/platform-params';
 import { PlatformContext } from '@tsed/platform-http';
 import { Description, Get, Pattern, Returns } from '@tsed/schema';
 import { Docs } from '@tsed/swagger';
+import { RequestCancellation } from '@radoslavirha/tsed-resilience';
 import { SLUG_PATTERN } from '../constants.js';
 import { RedirectHandler } from '../handlers/RedirectHandler.js';
 import { SwaggerDocs } from '../models/SwaggerDocs.enum.js';
@@ -31,7 +32,10 @@ export class RedirectController {
         @PathParams('slug') @Pattern(SLUG_PATTERN) slug: string,
         @Context() ctx: PlatformContext
     ): Promise<void> {
-        const { targetURL } = await this.redirectHandler.execute(slug);
+        // Resolve the request-scoped cancellation for this request and thread its
+        // signal down so a client disconnect aborts the DB lookup.
+        const cancellation = ctx.injector.invoke<RequestCancellation>(RequestCancellation, { locals: ctx.container });
+        const { targetURL } = await this.redirectHandler.execute(slug, cancellation.signal);
         ctx.response.redirect(302, targetURL);
     }
 }

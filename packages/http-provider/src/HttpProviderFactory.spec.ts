@@ -2,6 +2,7 @@ import { type AxiosInstance } from 'axios';
 import AxiosMockAdapter from 'axios-mock-adapter';
 import { readFile } from 'node:fs/promises';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { isTaskCancelledError } from '@radoslavirha/resilience';
 import { AuthStrategy } from './schemas/auth.schema.js';
 import { createProvidersSchema } from './schemas/providers.schema.js';
 import { HttpProviderFactory } from './HttpProviderFactory.js';
@@ -226,8 +227,8 @@ describe('HttpProviderFactory', () => {
         });
     });
 
-    describe('status-code retry', () => {
-        it('retries on a configured status code and calls retryDelay', async () => {
+    describe('status-code retry (via cockatiel)', () => {
+        it('retries on a configured status code then succeeds', async () => {
             const factory = new HttpProviderFactory({
                 'api': {
                     baseURL: 'http://api.example.com',
@@ -240,6 +241,110 @@ describe('HttpProviderFactory', () => {
 
             const response = await instance.get('/retry-test');
             expect(response.status).toBe(200);
+            expect(mock.history['get']).toHaveLength(2); // initial + 1 retry
+            mock.restore();
+        });
+
+        it('does not retry a status code outside the configured set', async () => {
+            const factory = new HttpProviderFactory({
+                'api': {
+                    baseURL: 'http://api.example.com',
+                    retry: { count: 3, delay: 0, statusCodes: [500] }
+                }
+            });
+            const instance = factory.get('api');
+            const mock = new MockAdapter(instance);
+            mock.onGet('/no-retry').reply(404);
+
+            await expect(instance.get('/no-retry')).rejects.toThrow();
+            expect(mock.history['get']).toHaveLength(1); // not retried
+            mock.restore();
+        });
+
+        it('retries a network error (no response) then succeeds', async () => {
+            const factory = new HttpProviderFactory({
+                'api': {
+                    baseURL: 'http://api.example.com',
+                    retry: { count: 1, delay: 0 }
+                }
+            });
+            const instance = factory.get('api');
+            const mock = new MockAdapter(instance);
+            mock.onGet('/net').networkErrorOnce().onGet('/net').replyOnce(200, { ok: true });
+
+            const response = await instance.get('/net');
+            expect(response.status).toBe(200);
+            expect(mock.history['get']).toHaveLength(2);
+            mock.restore();
+        });
+
+        it('does not retry a non-axios error thrown by the adapter', async () => {
+            const factory = new HttpProviderFactory({
+                'api': {
+                    baseURL: 'http://api.example.com',
+                    retry: { count: 3, delay: 0 }
+                }
+            });
+            const instance = factory.get('api');
+            const mock = new MockAdapter(instance);
+            mock.onGet('/throw').reply(() => {
+                throw new Error('not-an-axios-error');
+            });
+
+            await expect(instance.get('/throw')).rejects.toThrow('not-an-axios-error');
+            expect(mock.history['get']).toHaveLength(1); // shouldHandle returned false → not retried
+            mock.restore();
+        });
+    });
+
+    describe('resilience policy', () => {
+        it('times out a hung request and rejects with a cancellation error', async () => {
+            const factory = new HttpProviderFactory({
+                'api': {
+                    baseURL: 'http://api.example.com',
+                    resilience: { timeout: { ms: 20 } }
+                }
+            });
+            const instance = factory.get('api');
+            const mock = new MockAdapter(instance);
+            mock.onGet('/hang').reply(() => new Promise(() => { /* never resolves */ }));
+
+            await expect(instance.get('/hang')).rejects.toSatisfy(isTaskCancelledError);
+            mock.restore();
+        });
+
+        it('aborts the request when the caller signal aborts', async () => {
+            const factory = new HttpProviderFactory({
+                'api': {
+                    baseURL: 'http://api.example.com',
+                    resilience: { timeout: { ms: 5000 } }
+                }
+            });
+            const instance = factory.get('api');
+            const mock = new MockAdapter(instance);
+            mock.onGet('/hang').reply(() => new Promise(() => { /* never resolves */ }));
+
+            const controller = new AbortController();
+            const pending = instance.get('/hang', { signal: controller.signal });
+            controller.abort();
+
+            await expect(pending).rejects.toBeDefined();
+            mock.restore();
+        });
+
+        it('still performs normal requests with a resilience policy configured', async () => {
+            const factory = new HttpProviderFactory({
+                'api': {
+                    baseURL: 'http://api.example.com',
+                    resilience: { timeout: { ms: 1000 }, circuitBreaker: {} }
+                }
+            });
+            const instance = factory.get('api');
+            const mock = new MockAdapter(instance);
+            mock.onGet('/ok').reply(200, { ok: true });
+
+            const response = await instance.get('/ok');
+            expect(response.data).toEqual({ ok: true });
             mock.restore();
         });
     });
