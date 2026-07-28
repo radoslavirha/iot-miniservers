@@ -8,7 +8,7 @@ Framework-agnostic axios wrapper providing auth-aware, retry-capable `AxiosInsta
 - **Get/set separation**: auth strategy _gets_ credentials; transport config _sets_ them on requests
 - **Placeholder interpolation**: use `{{name}}` in transport values — replaced by credential fields at runtime
 - **Static values**: API keys, bearer tokens, or any fixed header/query param go directly in `transport`
-- **axios-retry** integration with configurable status codes, count, and delay
+- **Resilience policy** integration (retry, circuit breaker, timeout)
 - **401 retry** — on a 401 response, credentials are invalidated and one retry is attempted automatically
 - **Zero framework dependency** — works in any Node.js 24+ project
 
@@ -310,16 +310,17 @@ Static transport on the auth request itself (passed via `headers`/`queryParams` 
 }
 ```
 
-### 14. With retry config
+### 14. With resilience retry config
 
 ```json
 {
   "flaky-api": {
     "baseURL": "http://flaky-api.svc.cluster.local",
-    "retry": {
-      "count": 5,
-      "delay": 500,
-      "statusCodes": [500, 502, 503, 504, 429]
+    "resilience": {
+      "retry": {
+        "count": 5,
+        "backoffMs": 500
+      }
     }
   }
 }
@@ -353,10 +354,9 @@ For single-value strategies (k8s SA, simple token exchange), the credential is a
 
 For multi-field token exchange, use `as` to name each field → reference by that name in transport.
 
-## Retry Configuration Defaults
+## Resilience Retry Defaults
 
 | Field | Default |
 |---|---|
-| `count` | `3` |
-| `delay` | `1000` ms |
-| `statusCodes` | `[500, 502, 503, 504]` |
+| `count` | `0` |
+| `backoffMs` | `250` ms |

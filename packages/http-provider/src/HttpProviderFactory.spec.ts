@@ -227,12 +227,12 @@ describe('HttpProviderFactory', () => {
         });
     });
 
-    describe('status-code retry (via cockatiel)', () => {
-        it('retries on a configured status code then succeeds', async () => {
+    describe('status-code retry (via resilience)', () => {
+        it('retries on a retriable status code then succeeds', async () => {
             const factory = new HttpProviderFactory({
                 'api': {
                     baseURL: 'http://api.example.com',
-                    retry: { count: 1, delay: 0, statusCodes: [500] }
+                    resilience: { retry: { count: 1, backoffMs: 0 } }
                 }
             });
             const instance = factory.get('api');
@@ -245,11 +245,11 @@ describe('HttpProviderFactory', () => {
             mock.restore();
         });
 
-        it('does not retry a status code outside the configured set', async () => {
+        it('does not retry a status code outside the default retriable set', async () => {
             const factory = new HttpProviderFactory({
                 'api': {
                     baseURL: 'http://api.example.com',
-                    retry: { count: 3, delay: 0, statusCodes: [500] }
+                    resilience: { retry: { count: 3, backoffMs: 0 } }
                 }
             });
             const instance = factory.get('api');
@@ -265,7 +265,7 @@ describe('HttpProviderFactory', () => {
             const factory = new HttpProviderFactory({
                 'api': {
                     baseURL: 'http://api.example.com',
-                    retry: { count: 1, delay: 0 }
+                    resilience: { retry: { count: 1, backoffMs: 0 } }
                 }
             });
             const instance = factory.get('api');
@@ -282,7 +282,7 @@ describe('HttpProviderFactory', () => {
             const factory = new HttpProviderFactory({
                 'api': {
                     baseURL: 'http://api.example.com',
-                    retry: { count: 3, delay: 0 }
+                    resilience: { retry: { count: 3, backoffMs: 0 } }
                 }
             });
             const instance = factory.get('api');
@@ -381,6 +381,28 @@ describe('HttpProviderFactory', () => {
                 'qr-manager': { baseURL: 'http://localhost:4002' }
             });
             expect(result.success).toBe(true);
+        });
+
+        it('createProvidersSchema applies resilience defaults', () => {
+            enum ApiKey { QRManager = 'qr-manager' }
+            const schema = createProvidersSchema(Object.values(ApiKey));
+            const parsed = schema.parse({
+                'qr-manager': {
+                    baseURL: 'http://localhost:4002',
+                    resilience: {
+                        retry: {},
+                        circuitBreaker: {}
+                    }
+                }
+            });
+
+            expect(parsed['qr-manager'].resilience?.retry).toEqual({ count: 0, backoffMs: 250 });
+            expect(parsed['qr-manager'].resilience?.circuitBreaker).toEqual({
+                halfOpenAfterMs: 10000,
+                threshold: 0.5,
+                samplingDurationMs: 10000,
+                minimumThroughput: 5
+            });
         });
     });
 });
