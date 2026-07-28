@@ -360,3 +360,5 @@ For multi-field token exchange, use `as` to name each field → reference by tha
 |---|---|
 | `count` | `0` |
 | `backoffMs` | `250` ms |
+
+Retry is disabled by default (`count: 0`). Set `resilience.retry.count` to a value greater than `0` to enable retries.

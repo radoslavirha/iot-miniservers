@@ -228,6 +228,21 @@ describe('HttpProviderFactory', () => {
     });
 
     describe('status-code retry (via resilience)', () => {
+        it('does not retry when resilience is not configured', async () => {
+            const factory = new HttpProviderFactory({
+                'api': {
+                    baseURL: 'http://api.example.com'
+                }
+            });
+            const instance = factory.get('api');
+            const mock = new MockAdapter(instance);
+            mock.onGet('/no-resilience').reply(500);
+
+            await expect(instance.get('/no-resilience')).rejects.toThrow();
+            expect(mock.history['get']).toHaveLength(1);
+            mock.restore();
+        });
+
         it('retries on a retriable status code then succeeds', async () => {
             const factory = new HttpProviderFactory({
                 'api': {
