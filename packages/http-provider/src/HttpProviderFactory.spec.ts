@@ -398,6 +398,23 @@ describe('HttpProviderFactory', () => {
             expect(result.success).toBe(true);
         });
 
+        it('createProvidersSchema keeps resilience undefined when omitted', async () => {
+            enum ApiKey { QRManager = 'qr-manager' }
+            const schema = createProvidersSchema(Object.values(ApiKey));
+            const parsed = schema.parse({
+                'qr-manager': { baseURL: 'http://api.example.com' }
+            });
+
+            const factory = new HttpProviderFactory(parsed);
+            const instance = factory.get(ApiKey.QRManager);
+            const mock = new MockAdapter(instance);
+            mock.onGet('/no-resilience').reply(500);
+
+            await expect(instance.get('/no-resilience')).rejects.toThrow();
+            expect(mock.history['get']).toHaveLength(1);
+            mock.restore();
+        });
+
         it('createProvidersSchema applies resilience defaults', () => {
             enum ApiKey { QRManager = 'qr-manager' }
             const schema = createProvidersSchema(Object.values(ApiKey));

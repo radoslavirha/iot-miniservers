@@ -312,6 +312,8 @@ Static transport on the auth request itself (passed via `headers`/`queryParams` 
 
 ### 14. With resilience retry config
 
+Retries are opt-in — set `resilience.retry.count` above `0` to enable retry attempts.
+
 ```json
 {
   "flaky-api": {
