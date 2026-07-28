@@ -31,14 +31,24 @@ export class RequestCancellation {
     protected $ctx?: PlatformContext;
 
     private readonly controller = new AbortController();
+    private listenersBound = false;
 
     /**
      * Ts.ED lifecycle hook — runs once the request context has been injected.
      * Wires the abort to the underlying request's `close`/`aborted` events.
      */
     public $onInit(): void {
+        this.bindRequestListeners();
+    }
+
+    private bindRequestListeners(): void {
+        if (this.listenersBound) {
+            return;
+        }
+
         const raw = this.$ctx?.request?.raw as { once?: (event: string, listener: () => void) => void } | undefined;
         if (raw && typeof raw.once === 'function') {
+            this.listenersBound = true;
             const onClose = (): void => this.abort();
             raw.once('close', onClose);
             raw.once('aborted', onClose);
@@ -47,6 +57,7 @@ export class RequestCancellation {
 
     /** Aborts when the client disconnects (or {@link abort} is called). */
     public get signal(): AbortSignal {
+        this.bindRequestListeners();
         return this.controller.signal;
     }
 
@@ -56,6 +67,7 @@ export class RequestCancellation {
      * the native `AbortSignal.any`/`AbortSignal.timeout` (Node >= 24).
      */
     public withTimeout(ms: number): AbortSignal {
+        this.bindRequestListeners();
         return AbortSignal.any([this.controller.signal, AbortSignal.timeout(ms)]);
     }
 

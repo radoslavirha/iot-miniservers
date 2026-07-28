@@ -1,4 +1,4 @@
-import { type AxiosInstance } from 'axios';
+import { type AxiosAdapter, type AxiosInstance } from 'axios';
 import AxiosMockAdapter from 'axios-mock-adapter';
 import { readFile } from 'node:fs/promises';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -346,6 +346,30 @@ describe('HttpProviderFactory', () => {
             const response = await instance.get('/ok');
             expect(response.data).toEqual({ ok: true });
             mock.restore();
+        });
+
+        it('honours a per-request adapter override when resilience is enabled', async () => {
+            const factory = new HttpProviderFactory({
+                'api': {
+                    baseURL: 'http://api.example.com',
+                    resilience: { timeout: { ms: 1000 } }
+                }
+            });
+            const instance = factory.get('api');
+            const requestAdapter = vi.fn(async (config: Parameters<AxiosAdapter>[0]) => ({
+                config,
+                data: { via: 'request-adapter' },
+                headers: {},
+                status: 200,
+                statusText: 'OK'
+            }));
+
+            const response = await instance.get('/custom-adapter', {
+                adapter: requestAdapter as AxiosAdapter
+            });
+
+            expect(response.data).toEqual({ via: 'request-adapter' });
+            expect(requestAdapter).toHaveBeenCalledTimes(1);
         });
     });
 

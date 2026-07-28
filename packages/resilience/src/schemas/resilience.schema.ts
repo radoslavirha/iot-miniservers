@@ -24,7 +24,7 @@ export const RetryConfigSchema = z.object({
  */
 export const CircuitBreakerConfigSchema = z.object({
     halfOpenAfterMs: z.number().int().min(0).default(10000),
-    threshold: z.number().min(0).max(1).default(0.5),
+    threshold: z.number().gt(0).lt(1).default(0.5),
     samplingDurationMs: z.number().int().min(0).default(10000),
     minimumThroughput: z.number().int().min(1).default(5)
 });

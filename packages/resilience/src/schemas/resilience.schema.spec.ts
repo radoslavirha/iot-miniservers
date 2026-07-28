@@ -28,7 +28,9 @@ describe('resilience.schema', () => {
         expect(ResilienceConfigSchema.parse({})).toEqual({});
     });
 
-    it('rejects a threshold outside 0..1', () => {
+    it('rejects a threshold outside (0, 1)', () => {
+        expect(() => CircuitBreakerConfigSchema.parse({ threshold: 0 })).toThrow();
+        expect(() => CircuitBreakerConfigSchema.parse({ threshold: 1 })).toThrow();
         expect(() => CircuitBreakerConfigSchema.parse({ threshold: 1.5 })).toThrow();
     });
 

@@ -127,7 +127,7 @@ export class HttpProviderFactory<K extends string> {
         requestConfig: InternalAxiosRequestConfig,
         policy: ResiliencePolicy
     ): void {
-        const resolved = axios.getAdapter(instance.defaults.adapter);
+        const resolved = axios.getAdapter(requestConfig.adapter ?? instance.defaults.adapter);
         const parentSignal = requestConfig.signal as AbortSignal | undefined;
 
         requestConfig.adapter = (config) =>

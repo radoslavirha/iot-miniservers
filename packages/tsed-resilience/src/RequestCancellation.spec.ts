@@ -66,4 +66,16 @@ describe('RequestCancellation', () => {
         const signal = cancellation.withTimeout(10_000);
         expect(signal.aborted).toBe(true);
     });
+
+    it('binds request listeners when signal is accessed without calling $onInit', async () => {
+        const raw = new EventEmitter();
+        const cancellation = new RequestCancellation();
+        const ctx = { request: { raw } } as unknown as DIContext;
+
+        await runInContext(ctx, async () => {
+            void cancellation.signal;
+            raw.emit('close');
+            expect(cancellation.signal.aborted).toBe(true);
+        });
+    });
 });
