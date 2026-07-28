@@ -243,6 +243,22 @@ describe('HttpProviderFactory', () => {
             mock.restore();
         });
 
+        it('does not retry when retry count is 0', async () => {
+            const factory = new HttpProviderFactory({
+                'api': {
+                    baseURL: 'http://api.example.com',
+                    resilience: { retry: { count: 0, backoffMs: 0 } }
+                }
+            });
+            const instance = factory.get('api');
+            const mock = new MockAdapter(instance);
+            mock.onGet('/retry-disabled').reply(500);
+
+            await expect(instance.get('/retry-disabled')).rejects.toThrow();
+            expect(mock.history['get']).toHaveLength(1);
+            mock.restore();
+        });
+
         it('retries on a retriable status code then succeeds', async () => {
             const factory = new HttpProviderFactory({
                 'api': {
