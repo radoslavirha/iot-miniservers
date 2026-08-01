@@ -1,9 +1,8 @@
 import { Logger } from '@radoslavirha/tsed-logger';
-import { OverrideProvider, ProviderScope, Scope } from '@tsed/di';
+import { Injectable, ProviderScope } from '@tsed/di';
 import { ConfigService } from '../services/ConfigService.js';
 
-@OverrideProvider(Logger)
-@Scope(ProviderScope.SINGLETON)
+@Injectable({ token: Logger, scope: ProviderScope.SINGLETON })
 export class LoggerProvider extends Logger {
 
     constructor(configService: ConfigService) {

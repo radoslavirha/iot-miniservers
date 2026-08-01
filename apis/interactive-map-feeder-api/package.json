@@ -40,7 +40,6 @@
     "@tsed/platform-exceptions": "catalog:tsed",
     "@tsed/platform-express": "catalog:tsed",
     "@tsed/platform-http": "catalog:tsed",
-    "@tsed/platform-log-request": "catalog:tsed",
     "@tsed/platform-middlewares": "catalog:tsed",
     "@tsed/platform-params": "catalog:tsed",
     "@tsed/platform-response-filter": "catalog:tsed",
@@ -57,7 +56,7 @@
     "dotenv": "catalog:",
     "express": "catalog:express",
     "method-override": "catalog:express",
-    "sharp": "^0.35.2",
+    "sharp": "^0.35.3",
     "typescript": "catalog:",
     "zod": "catalog:"
   },

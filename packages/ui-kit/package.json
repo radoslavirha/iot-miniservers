@@ -41,8 +41,8 @@
         "@vitest/coverage-v8": "catalog:",
         "eslint": "catalog:",
         "jsdom": "catalog:react",
-        "react": "^19.2.7",
-        "react-dom": "^19.2.7",
+        "react": "^19.2.8",
+        "react-dom": "^19.2.8",
         "typescript": "catalog:",
         "typescript-eslint": "catalog:",
         "vitest": "catalog:"

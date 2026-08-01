@@ -3,6 +3,7 @@ import { getServerDefaultConfig } from '@radoslavirha/tsed-configuration';
 import { BaseServer } from '@radoslavirha/tsed-platform';
 import { Configuration } from '@tsed/di';
 import '@tsed/mongoose';
+import './providers/index.js';
 import * as rest from './controllers/index.js';
 import { ObjectUtils } from '@radoslavirha/utils';
 

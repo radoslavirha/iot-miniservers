@@ -93,9 +93,9 @@ export class OpenTelemetryService {
         }
 
         return [
-            new BatchLogRecordProcessor(
-                new OTLPLogExporter({ url: config.exporter.url, headers: {} })
-            )
+            new BatchLogRecordProcessor({
+                exporter: new OTLPLogExporter({ url: config.exporter.url, headers: {} })
+            })
         ];
     }
 

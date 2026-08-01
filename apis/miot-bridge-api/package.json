@@ -45,7 +45,6 @@
     "@tsed/platform-exceptions": "catalog:tsed",
     "@tsed/platform-express": "catalog:tsed",
     "@tsed/platform-http": "catalog:tsed",
-    "@tsed/platform-log-request": "catalog:tsed",
     "@tsed/platform-middlewares": "catalog:tsed",
     "@tsed/platform-params": "catalog:tsed",
     "@tsed/platform-response-filter": "catalog:tsed",
@@ -62,8 +61,8 @@
     "dotenv": "catalog:",
     "express": "catalog:express",
     "method-override": "catalog:express",
-    "mongoose": "^9.7.1",
-    "mqtt": "^5.15.1",
+    "mongoose": "^9.9.0",
+    "mqtt": "^5.15.2",
     "typescript": "catalog:",
     "zod": "catalog:"
   },
