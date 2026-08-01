@@ -1,5 +1,11 @@
 # @radoslavirha/http-provider
 
+## 0.1.3
+
+### Patch Changes
+
+- [`4a34a89`](https://github.com/radoslavirha/iot-miniservers/commit/4a34a892fa02d4d44307e756a9cab77c1e68256a) Thanks [@radoslavirha](https://github.com/radoslavirha)! - Update packages
+
 ## 0.1.2
 
 ### Patch Changes
