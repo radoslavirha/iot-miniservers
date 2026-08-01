@@ -1,5 +1,15 @@
 # miot-bridge
 
+## 0.18.3
+
+### Patch Changes
+
+- [`4a34a89`](https://github.com/radoslavirha/iot-miniservers/commit/4a34a892fa02d4d44307e756a9cab77c1e68256a) Thanks [@radoslavirha](https://github.com/radoslavirha)! - Update packages
+
+- Updated dependencies [[`4a34a89`](https://github.com/radoslavirha/iot-miniservers/commit/4a34a892fa02d4d44307e756a9cab77c1e68256a)]:
+  - @radoslavirha/otel@0.3.2
+  - @radoslavirha/miot-device@0.4.4
+
 ## 0.18.2
 
 ### Patch Changes
