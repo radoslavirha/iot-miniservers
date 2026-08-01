@@ -34,7 +34,6 @@
     },
     "dependencies": {
         "@radoslavirha/config-typescript": "catalog:",
-        "@radoslavirha/utils": "catalog:",
         "cockatiel": "catalog:",
         "typescript": "catalog:",
         "zod": "catalog:"

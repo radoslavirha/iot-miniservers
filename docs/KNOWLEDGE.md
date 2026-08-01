@@ -1,6 +1,6 @@
 # IoT Miniservers — Knowledge Base
 
-> Maintained by `/update-docs` skill. Last updated: 2026-04-30.
+> Maintained by `/update-docs` skill. Last updated: 2026-08-01.
 
 pnpm monorepo of small independent Node.js APIs and UIs (Ts.ED, TypeScript ESM).
 
@@ -17,8 +17,12 @@ pnpm monorepo of small independent Node.js APIs and UIs (Ts.ED, TypeScript ESM).
 
 | Package | Purpose |
 |---------|---------|
+| `@radoslavirha/http-provider` | Auth-aware axios factory from Zod config: auth strategies, transport interpolation, optional resilience policy |
 | `@radoslavirha/miot-device` | Stateful MIoT device client: UDP transport, per-device stamp/handshake lifecycle |
 | `@radoslavirha/otel` | OpenTelemetry bootstrap — traces + custom metrics via OTLP; logs via stdout JSON (no OTLP log export) |
+| `@radoslavirha/resilience` | Transport-agnostic timeout / retry / circuit breaker over `AbortSignal`, backed by cockatiel |
+| `@radoslavirha/tsed-resilience` | Ts.ED `@RequestSignal()` decorator — an `AbortSignal` tied to the HTTP request lifecycle |
+| `@radoslavirha/ui-kit` | Shared design system and UI components for the UIs |
 
 ## Observability (OTel signal routing)
 

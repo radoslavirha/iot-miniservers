@@ -178,6 +178,45 @@ describe('HttpProviderFactory', () => {
             await expect(instance.get('/secure')).rejects.toThrow();
             mock.restore();
         });
+
+        it('does not nest the resilience policy when the 401 retry replays the request', async () => {
+            vi.mocked(readFile).mockResolvedValue('token' as never);
+
+            const factory = new HttpProviderFactory({
+                'svc': {
+                    baseURL: 'http://svc.local',
+                    auth: {
+                        strategy: AuthStrategy.KubernetesServiceAccount,
+                        tokenPath: '/run/secrets/token',
+                        transport: {
+                            headers: [{ name: 'Authorization', value: 'Bearer {{value}}' }]
+                        }
+                    },
+                    resilience: { retry: { count: 2, backoffMs: 0 } }
+                }
+            });
+            const instance = factory.get('svc');
+
+            // A hand-rolled adapter rather than axios-mock-adapter: the real
+            // adapter reports the config it was handed (including `adapter`) on
+            // the error, which is what lets a replay re-wrap its own wrapper.
+            // axios-mock-adapter drops that field and would hide the nesting.
+            let calls = 0;
+            instance.defaults.adapter = (async (config) => {
+                calls++;
+                const status = calls === 1 ? 401 : 500;
+                throw Object.assign(new Error(`http ${status}`), {
+                    isAxiosError: true,
+                    config,
+                    response: { status, data: {}, headers: {}, config }
+                });
+            }) as AxiosAdapter;
+
+            await expect(instance.get('/secure')).rejects.toThrow();
+            // 1 x 401, then the replay runs 1 initial + 2 retries. Nested
+            // policies would square the retry count instead (3 x 3 + 1 = 10).
+            expect(calls).toBe(4);
+        });
     });
 
     describe('strategy selection', () => {
@@ -289,6 +328,41 @@ describe('HttpProviderFactory', () => {
 
             await expect(instance.get('/no-retry')).rejects.toThrow();
             expect(mock.history['get']).toHaveLength(1); // not retried
+            mock.restore();
+        });
+
+        it('retries a status code added via retriableStatusCodes', async () => {
+            const factory = new HttpProviderFactory({
+                'api': {
+                    baseURL: 'http://api.example.com',
+                    resilience: { retry: { count: 1, backoffMs: 0 } },
+                    retriableStatusCodes: [429]
+                }
+            });
+            const instance = factory.get('api');
+            const mock = new MockAdapter(instance);
+            mock.onGet('/throttled').replyOnce(429).onGet('/throttled').replyOnce(200, { ok: true });
+
+            const response = await instance.get('/throttled');
+            expect(response.status).toBe(200);
+            expect(mock.history['get']).toHaveLength(2); // initial + 1 retry
+            mock.restore();
+        });
+
+        it('stops retrying a default status once retriableStatusCodes overrides it', async () => {
+            const factory = new HttpProviderFactory({
+                'api': {
+                    baseURL: 'http://api.example.com',
+                    resilience: { retry: { count: 3, backoffMs: 0 } },
+                    retriableStatusCodes: [429]
+                }
+            });
+            const instance = factory.get('api');
+            const mock = new MockAdapter(instance);
+            mock.onGet('/server-error').reply(503);
+
+            await expect(instance.get('/server-error')).rejects.toThrow();
+            expect(mock.history['get']).toHaveLength(1); // 503 is no longer retriable
             mock.restore();
         });
 

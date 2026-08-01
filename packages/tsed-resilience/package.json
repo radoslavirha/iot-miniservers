@@ -1,7 +1,7 @@
 {
     "name": "@radoslavirha/tsed-resilience",
     "version": "0.1.0",
-    "description": "Ts.ED request-scoped cancellation: an AbortSignal tied to the HTTP request lifecycle",
+    "description": "Ts.ED request cancellation: a @RequestSignal() decorator injecting an AbortSignal tied to the HTTP request lifecycle",
     "private": true,
     "type": "module",
     "exports": {
@@ -34,8 +34,6 @@
     },
     "dependencies": {
         "@radoslavirha/config-typescript": "catalog:",
-        "@radoslavirha/resilience": "workspace:*",
-        "@tsed/platform-http": "catalog:tsed",
         "typescript": "catalog:"
     },
     "devDependencies": {
@@ -43,7 +41,10 @@
         "@radoslavirha/config-tsdown": "catalog:",
         "@radoslavirha/config-vitest": "catalog:",
         "@swc/helpers": "catalog:swc",
+        "@tsed/core": "catalog:tsed",
         "@tsed/di": "catalog:tsed",
+        "@tsed/platform-http": "catalog:tsed",
+        "@tsed/platform-params": "catalog:tsed",
         "@tsed/schema": "catalog:tsed",
         "@types/node": "catalog:",
         "@vitest/coverage-v8": "catalog:",
@@ -54,6 +55,10 @@
         "vitest": "catalog:"
     },
     "peerDependencies": {
-        "@tsed/di": "catalog:tsed"
+        "@tsed/core": "catalog:tsed",
+        "@tsed/di": "catalog:tsed",
+        "@tsed/platform-http": "catalog:tsed",
+        "@tsed/platform-params": "catalog:tsed",
+        "@tsed/schema": "catalog:tsed"
     }
 }

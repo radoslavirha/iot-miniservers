@@ -1,6 +1,6 @@
 # @radoslavirha/http-provider
 
-Framework-agnostic axios wrapper providing auth-aware, retry-capable `AxiosInstance` objects from a typed, Zod-validated configuration.
+Framework-agnostic axios wrapper providing auth-aware, resilience-capable `AxiosInstance` objects from a typed, Zod-validated configuration.
 
 ## Features
 
@@ -8,7 +8,7 @@ Framework-agnostic axios wrapper providing auth-aware, retry-capable `AxiosInsta
 - **Get/set separation**: auth strategy _gets_ credentials; transport config _sets_ them on requests
 - **Placeholder interpolation**: use `{{name}}` in transport values — replaced by credential fields at runtime
 - **Static values**: API keys, bearer tokens, or any fixed header/query param go directly in `transport`
-- **Resilience policy** integration (retry, circuit breaker, timeout)
+- **Resilience policy** integration (timeout, retry, circuit breaker) with configurable retriable statuses
 - **401 retry** — on a 401 response, credentials are invalidated and one retry is attempted automatically
 - **Zero framework dependency** — works in any Node.js 24+ project
 
@@ -328,7 +328,40 @@ Retries are opt-in — set `resilience.retry.count` above `0` to enable retry at
 }
 ```
 
-### 15. Runtime passthrough pattern (no strategy, per-request header)
+### 15. Custom retriable status codes
+
+`retriableStatusCodes` **replaces** the default set, so list every status you want treated as
+transient — here the defaults plus `429` (rate limited) and `408` (request timeout):
+
+```json
+{
+  "throttled-api": {
+    "baseURL": "http://throttled-api.svc.cluster.local",
+    "resilience": {
+      "retry": { "count": 3, "backoffMs": 500 },
+      "circuitBreaker": {}
+    },
+    "retriableStatusCodes": [500, 502, 503, 504, 429, 408]
+  }
+}
+```
+
+### 16. Full resilience — timeout, retry and circuit breaker
+
+```json
+{
+  "spec-api": {
+    "baseURL": "http://spec-api.svc.cluster.local",
+    "resilience": {
+      "timeout": { "ms": 3000 },
+      "retry": { "count": 2, "backoffMs": 250 },
+      "circuitBreaker": { "threshold": 0.5, "halfOpenAfterMs": 10000 }
+    }
+  }
+}
+```
+
+### 17. Runtime passthrough pattern (no strategy, per-request header)
 
 Omit `auth` and set headers on each request manually when the caller owns the credentials:
 
@@ -356,12 +389,49 @@ For single-value strategies (k8s SA, simple token exchange), the credential is a
 
 For multi-field token exchange, use `as` to name each field → reference by that name in transport.
 
-## Resilience Retry Defaults
+## Resilience Reference
 
-| Field | Default |
-|---|---|
-| `count` | `0` |
-| `backoffMs` | `250` ms |
+`resilience` is **entirely optional** — omit it and requests run unwrapped. Provide it and every
+request is routed through a [`@radoslavirha/resilience`](../resilience) policy composed as
+**retry → circuit breaker → timeout**. Each section is independently optional; see that
+package's README for the full option table and defaults.
 
-Retry is disabled by default (`count: 0`). Set `resilience.retry.count` to a value greater than `0` to enable retries.
-When enabled, retries apply to network errors and HTTP status codes `[500, 502, 503, 504]`.
+| Entry field | Default | Meaning |
+|---|---|---|
+| `resilience.timeout.ms` | `5000` | Per-attempt budget. Aborts the request and rejects with `TaskCancelledError`. |
+| `resilience.retry.count` | `0` | Additional attempts after the first. **Retry is off by default.** |
+| `resilience.retry.backoffMs` | `250` | Constant delay between attempts. |
+| `resilience.circuitBreaker` | — | Omit to disable; `{}` enables it with defaults. |
+| `retriableStatusCodes` | `[500, 502, 503, 504]` | Statuses treated as transient. **Replaces** the default list when set. |
+
+### What counts as a transient failure
+
+Retry and the circuit breaker act on the same set of failures:
+
+- a response whose status is in `retriableStatusCodes`, or
+- a network error (no response received).
+
+Everything else — 4xx responses, non-axios errors thrown from an interceptor, and cancellations
+(`ERR_CANCELED`, i.e. our own timeout or an aborted caller signal) — is **not** retried and does
+not trip the breaker.
+
+### Cancellation
+
+The policy's `AbortSignal` is threaded into the axios adapter, and a `signal` passed on the
+request becomes the policy's parent signal. Both a timeout and a caller cancellation therefore
+abort the underlying connection:
+
+```ts
+const client = factory.get('spec-api');
+await client.get('/spec', { signal: requestSignal });
+```
+
+### Relationship to the 401 retry
+
+The automatic single retry on a `401` response is a separate auth concern and is **always
+active** when an auth strategy is configured — it is unrelated to `resilience.retry` and is not
+governed by `retriableStatusCodes`.
+
+The two compose without multiplying: the 401 replay re-enters the resilience policy exactly
+once, so a `401` followed by persistent `500`s costs `1 + (1 + retry.count)` requests, not
+`(1 + retry.count)²`.

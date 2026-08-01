@@ -1,10 +1,15 @@
 import axios, {
+    type AxiosAdapter,
     type AxiosInstance,
     type InternalAxiosRequestConfig
 } from 'axios';
 import { createResiliencePolicy, type ResiliencePolicy } from '@radoslavirha/resilience';
 import { AuthStrategy } from './schemas/auth.schema.js';
-import type { HttpProviderEntry } from './schemas/provider.schema.js';
+import {
+    HttpProviderEntrySchema,
+    type HttpProviderEntry,
+    type ResolvedHttpProviderEntry
+} from './schemas/provider.schema.js';
 import type { TransportConfig } from './schemas/transport.schema.js';
 import { JwtSelfSignedStrategy } from './strategies/JwtSelfSignedStrategy.js';
 import { KubernetesServiceAccountStrategy } from './strategies/KubernetesServiceAccountStrategy.js';
@@ -17,7 +22,9 @@ interface RetriableRequestConfig extends InternalAxiosRequestConfig {
     _retried?: boolean;
 }
 
-const RETRIABLE_STATUS_CODES = [500, 502, 503, 504];
+interface PolicyRequestConfig extends InternalAxiosRequestConfig {
+    _resilienceBaseAdapter?: AxiosAdapter;
+}
 
 /**
  * A transient HTTP failure that retry/circuit-breaker policies should act on:
@@ -57,7 +64,14 @@ export class HttpProviderFactory<K extends string> {
         return instance;
     }
 
-    private createInstance(entry: HttpProviderEntry): AxiosInstance {
+    /**
+     * Parses the raw entry so every Zod default (auth token paths, transports,
+     * retriable statuses, resilience sections) is resolved in one place rather
+     * than hand-applied here. Parsing is idempotent, so an entry that already
+     * went through `HttpProvidersConfigSchema` at config load passes untouched.
+     */
+    private createInstance(rawEntry: HttpProviderEntry): AxiosInstance {
+        const entry: ResolvedHttpProviderEntry = HttpProviderEntrySchema.parse(rawEntry);
         const instance = axios.create({ baseURL: entry.baseURL });
 
         const strategy = this.createStrategy(entry);
@@ -82,15 +96,16 @@ export class HttpProviderFactory<K extends string> {
      * threaded into the adapter and derived from the caller's signal, so both a
      * timeout and request-lifecycle cancellation abort the underlying call.
      */
-    private configureResilience(instance: AxiosInstance, entry: HttpProviderEntry): void {
+    private configureResilience(instance: AxiosInstance, entry: ResolvedHttpProviderEntry): void {
         const resilience = entry.resilience;
 
         if (!resilience) {
             return;
         }
 
+        const retriableStatusCodes = entry.retriableStatusCodes;
         const policy = createResiliencePolicy(resilience, {
-            shouldHandle: (error) => isRetriableHttpError(error, RETRIABLE_STATUS_CODES)
+            shouldHandle: (error) => isRetriableHttpError(error, retriableStatusCodes)
         });
 
         instance.interceptors.request.use((requestConfig: InternalAxiosRequestConfig) => {
@@ -104,20 +119,28 @@ export class HttpProviderFactory<K extends string> {
      * adapter axios would otherwise use, resolved at request time. The caller's
      * signal becomes the policy's parent signal; cockatiel derives the timeout
      * signal from it and forwards the combined signal to the adapter.
+     *
+     * The 401 handler below replays the request config through
+     * `instance.request()`, so this interceptor runs a second time. The
+     * unwrapped adapter is therefore memoised on the config and always used as
+     * the wrap target — wrapping the *previous* wrapper instead would nest the
+     * policies, multiplying retry attempts and double-counting breaker failures.
      */
     private wrapAdapterWithPolicy(
         instance: AxiosInstance,
-        requestConfig: InternalAxiosRequestConfig,
+        requestConfig: PolicyRequestConfig,
         policy: ResiliencePolicy
     ): void {
-        const resolved = axios.getAdapter(requestConfig.adapter ?? instance.defaults.adapter);
+        const baseAdapter = requestConfig._resilienceBaseAdapter
+            ?? axios.getAdapter(requestConfig.adapter ?? instance.defaults.adapter);
         const parentSignal = requestConfig.signal as AbortSignal | undefined;
 
+        requestConfig._resilienceBaseAdapter = baseAdapter;
         requestConfig.adapter = (config) =>
-            policy.execute((signal) => resolved({ ...config, signal }), parentSignal);
+            policy.execute((signal) => baseAdapter({ ...config, signal }), parentSignal);
     }
 
-    private createStrategy(entry: HttpProviderEntry): IAuthStrategy {
+    private createStrategy(entry: ResolvedHttpProviderEntry): IAuthStrategy {
         const auth = entry.auth;
         if (!auth || !('strategy' in auth) || !auth.strategy || auth.strategy === AuthStrategy.None) {
             return new NoAuthStrategy();
@@ -134,7 +157,7 @@ export class HttpProviderFactory<K extends string> {
         return new NoAuthStrategy();
     }
 
-    private resolveTransport(entry: HttpProviderEntry): TransportConfig | undefined {
+    private resolveTransport(entry: ResolvedHttpProviderEntry): TransportConfig | undefined {
         const auth = entry.auth;
         if (!auth) return undefined;
         if ('transport' in auth) return auth.transport as TransportConfig | undefined;

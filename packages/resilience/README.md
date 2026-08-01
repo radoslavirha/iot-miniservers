@@ -7,23 +7,23 @@ the MongoDB driver / mongoose, queues, UDP — anything that accepts an `AbortSi
 simply want bounded by a timeout and protected by a breaker).
 
 > Designed with zero framework coupling so it can graduate to `toolkit-hub` unchanged. For a
-> Ts.ED request-scoped cancellation signal, see `@radoslavirha/tsed-resilience`.
+> Ts.ED request-lifecycle signal to feed in as the parent, see `@radoslavirha/tsed-resilience`.
 
 ## 🚀 Quick Reference for AI Agents
 
 ```ts
-import { createResiliencePolicy, combineSignals, isBrokenCircuitError } from '@radoslavirha/resilience';
+import { createResiliencePolicy, isBrokenCircuitError } from '@radoslavirha/resilience';
 
 const policy = createResiliencePolicy(
   { timeout: { ms: 2000 }, retry: { count: 2, backoffMs: 200 }, circuitBreaker: {} },
   { shouldHandle: (e) => isTransient(e) }   // optional: scope failures for retry + breaker
 );
 
-// `signal` aborts on timeout (or when a parent signal aborts) — forward it to the transport
+// `signal` aborts on timeout (or when the parent signal aborts) — forward it to the transport
 const data = await policy.execute((signal) => fetch(url, { signal }));
 ```
 
-### Configuration (`ResilienceConfigSchema`, Zod)
+## Configuration (`ResilienceConfigSchema`, Zod)
 
 | Section | Field | Default | Meaning |
 |---|---|---|---|
@@ -35,33 +35,108 @@ const data = await policy.execute((signal) => fetch(url, { signal }));
 | `circuitBreaker` | `samplingDurationMs` | `10000` | Trailing window for the ratio. |
 | `circuitBreaker` | `minimumThroughput` | `5` | Min calls/sec before the breaker can open. |
 
-All sections are optional; omit one to disable that policy. Composition order is
-**retry → circuit breaker → timeout** (timeout innermost).
+Every section is **optional — omitting one disables that policy entirely**. Pass `{}` for a
+section to enable it with all defaults (`{ circuitBreaker: {} }`). Note that `retry` defaults to
+`count: 0`, so `{ retry: {} }` enables the section but still performs no retries — set `count`
+explicitly.
 
-### Named policies — `ResiliencePolicyFactory`
+`createResiliencePolicy` parses its input, so config may be written in the schema's *input*
+shape (defaulted fields omitted). Parsing is idempotent — config already parsed at load time by
+your own Zod schema passes through unchanged.
+
+## Composition order
+
+Policies compose as **retry → circuit breaker → timeout**, with the timeout innermost:
+
+```text
+retry( breaker( timeout( yourFn(signal) ) ) )
+```
+
+Consequences worth knowing:
+
+- The timeout applies **per attempt**, not to the whole retry sequence.
+- The breaker observes each individual attempt, so a retry storm trips it as intended.
+- Because retry is outermost, it sees `BrokenCircuitError` from the breaker. With the default
+  `handleAll` predicate that error **is retried**, which is rarely what you want — pass a
+  `shouldHandle` that returns `false` for it (a transport-specific predicate normally does so
+  naturally, since a `BrokenCircuitError` is not a transport error).
+
+### `shouldHandle` — the transport seam
+
+`shouldHandle` decides which errors count as failures for **both** retry and the breaker. It
+defaults to handling every error. This is the seam that keeps the package transport-agnostic:
+
+```ts
+import axios from 'axios';
+
+createResiliencePolicy(config, {
+  // only network errors and 5xx are transient; 404 and BrokenCircuitError are not
+  shouldHandle: (e) => axios.isAxiosError(e) && (e.response === undefined || e.response.status >= 500)
+});
+```
+
+### Lifecycle hooks
+
+Plain callbacks, no logger or framework dependency — wire them to your own telemetry:
+
+```ts
+createResiliencePolicy(config, {
+  hooks: {
+    onBreak:    () => logger.warn('circuit opened'),
+    onReset:    () => logger.info('circuit closed'),
+    onHalfOpen: () => logger.info('circuit half-open'),
+    onTimeout:  () => logger.warn('operation timed out'),
+    onRetry:    ({ attempt, delay }) => logger.info({ attempt, delay }, 'retrying')
+  }
+});
+```
+
+## Named policies — `ResiliencePolicyFactory`
 
 A circuit breaker is only useful when its state is **shared** across calls, so resolve a
 long-lived policy per dependency rather than building one per call:
 
 ```ts
-const factory = new ResiliencePolicyFactory({
-  'spec-api': { timeout: { ms: 5000 }, circuitBreaker: {} },
-  'db':       { timeout: { ms: 2000 } }
+enum Dep { SpecApi = 'spec-api', Db = 'db' }
+
+const factory = new ResiliencePolicyFactory<Dep>({
+  [Dep.SpecApi]: { timeout: { ms: 5000 }, circuitBreaker: {} },
+  [Dep.Db]:      { timeout: { ms: 2000 } }
 });
-await factory.get('spec-api').execute((signal) => http.get(url, { signal }));
+
+await factory.get(Dep.SpecApi).execute((signal) => http.get(url, { signal }));
 ```
 
-### Combining signals
+Policies are created lazily and cached per key. `get()` throws for an unconfigured key.
 
-`combineSignals(...signals)` merges a request-lifecycle signal with a per-operation timeout via
-the native `AbortSignal.any` (returns `undefined` when none are given, the single signal when one
-is given):
+## Cancellation
+
+`execute(fn, parentSignal?)` threads cancellation in one direction: the signal handed to `fn`
+is **derived from** `parentSignal`, so it aborts when the timeout fires *or* when the parent
+aborts. Forward that inner signal — and only that one — to the transport:
 
 ```ts
-const signal = combineSignals(requestSignal, AbortSignal.timeout(2000));
+await policy.execute(
+  (signal) => fetch(url, { signal }),   // ✅ already covers the parent signal
+  requestSignal
+);
 ```
 
-### Using with mongoose
+Retry also observes the parent: once `parentSignal` aborts, no further attempts are made.
+
+### `combineSignals`
+
+For merging signals **outside** a policy (where no derivation happens for you),
+`combineSignals(...signals)` wraps the native `AbortSignal.any`. It returns `undefined` when
+given none — so the result can be forwarded straight into APIs that treat `signal: undefined`
+as "no signal" — and returns the single signal unchanged when given one.
+
+```ts
+const signal = combineSignals(requestSignal, userSignal);
+await fetch(url, { signal });
+```
+
+## Using with mongoose
 
 cockatiel's timeout rejects the **caller**, but only the driver `signal` + `maxTimeMS` stop the
 query **server-side** — pass both:
@@ -69,16 +144,24 @@ query **server-side** — pass both:
 ```ts
 private readonly policy = createResiliencePolicy({ timeout: { ms: 2000 }, circuitBreaker: {} });
 
-async findBySlug(slug: string, signal?: AbortSignal) {
-  return this.policy.execute((timeoutSignal) =>
-    this.model.findOne({ slug }, null, {
-      signal: combineSignals(signal, timeoutSignal),
-      maxTimeMS: 2000
-    }).lean());
+public async findBySlug(slug: string, signal?: AbortSignal) {
+  return this.policy.execute(
+    (lookupSignal) => this.model
+      .findOne({ slug }, null, { signal: lookupSignal, maxTimeMS: 2000 })
+      .lean()
+      .exec(),
+    signal
+  );
 }
 ```
 
-### Errors
+`lookupSignal` already aborts when the caller's `signal` does, so there is no need to combine
+the two.
+
+## Errors
 
 - `isBrokenCircuitError(e)` — the circuit is open and the call was short-circuited.
-- `isTaskCancelledError(e)` — a timeout (or aborted parent signal) cancelled the operation.
+- `isTaskCancelledError(e)` — a timeout (or an aborted parent signal) cancelled the operation.
+
+Both are re-exported from cockatiel (`BrokenCircuitError`, `TaskCancelledError`) so consumers
+never need to import it directly. Prefer the type guards over `instanceof`.
