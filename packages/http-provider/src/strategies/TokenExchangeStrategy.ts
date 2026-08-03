@@ -1,4 +1,4 @@
-import axios from 'axios';
+import axios, { type AxiosInstance } from 'axios';
 import type { TokenExchangeAuth, TokenExtractorEntry } from '../schemas/auth.schema.js';
 import { extractByPath } from '../utils/extractByPath.js';
 import type { IAuthStrategy } from './IAuthStrategy.js';
@@ -6,9 +6,20 @@ import type { IAuthStrategy } from './IAuthStrategy.js';
 export class TokenExchangeStrategy implements IAuthStrategy {
     private cachedCredentials: Record<string, string> | undefined;
     private readonly extractors: TokenExtractorEntry[];
+    private readonly client: AxiosInstance;
 
-    public constructor(private readonly config: TokenExchangeAuth) {
+    /**
+     * @param client Client used for the token request. `HttpProviderFactory`
+     *   supplies one carrying the provider's resilience policy and logging, so
+     *   the auth hop is bounded and observable like any other call. Defaults to
+     *   the bare axios instance for standalone use.
+     */
+    public constructor(
+        private readonly config: TokenExchangeAuth,
+        client: AxiosInstance = axios
+    ) {
         this.extractors = config.tokenExtractor;
+        this.client = client;
     }
 
     public async getCredentials(): Promise<Record<string, string>> {
@@ -39,7 +50,7 @@ export class TokenExchangeStrategy implements IAuthStrategy {
             }
         }
 
-        const response = await axios.request<unknown>({
+        const response = await this.client.request<unknown>({
             method,
             url,
             headers: requestHeaders,

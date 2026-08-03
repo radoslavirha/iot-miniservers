@@ -22,6 +22,7 @@
     "@radoslavirha/otel": "workspace:*",
     "@radoslavirha/tsed-common": "catalog:",
     "@radoslavirha/tsed-configuration": "catalog:",
+    "@radoslavirha/tsed-http-provider": "workspace:*",
     "@radoslavirha/tsed-logger": "catalog:",
     "@radoslavirha/tsed-platform": "catalog:",
     "@radoslavirha/tsed-swagger": "catalog:",
@@ -63,6 +64,7 @@
   "devDependencies": {
     "@radoslavirha/config-eslint": "catalog:",
     "@radoslavirha/config-vitest": "catalog:",
+    "axios-mock-adapter": "^2.1.0",
     "@swc/core": "catalog:swc",
     "@types/compression": "catalog:express",
     "@types/cookie-parser": "catalog:express",

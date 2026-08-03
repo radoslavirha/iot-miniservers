@@ -16,6 +16,8 @@ import { KubernetesServiceAccountStrategy } from './strategies/KubernetesService
 import { NoAuthStrategy } from './strategies/NoAuthStrategy.js';
 import { TokenExchangeStrategy } from './strategies/TokenExchangeStrategy.js';
 import type { IAuthStrategy } from './strategies/IAuthStrategy.js';
+import { AxiosHttpClient } from './client/AxiosHttpClient.js';
+import type { HttpClient } from './client/HttpClient.js';
 import { applyTransport } from './utils/applyTransport.js';
 
 interface RetriableRequestConfig extends InternalAxiosRequestConfig {
@@ -42,16 +44,47 @@ function isRetriableHttpError(error: unknown, statusCodes: number[]): boolean {
     return error.code !== 'ERR_CANCELED';
 }
 
-export class HttpProviderFactory<K extends string> {
-    private readonly instances = new Map<K, AxiosInstance>();
-    private readonly config: Partial<Record<K, HttpProviderEntry>>;
+/** Which client an {@link HttpProviderFactoryOptions.onInstanceCreated} call refers to. */
+export type HttpInstanceRole = 'client' | 'auth';
 
-    public constructor(config: Partial<Record<K, HttpProviderEntry>>) {
+/** Construction-time hooks that cannot come from JSON configuration. */
+export interface HttpProviderFactoryOptions<K extends string = string> {
+    /**
+     * Called for each newly created `AxiosInstance`, **before** this factory
+     * attaches its own auth and resilience interceptors.
+     *
+     * Ordering matters: axios runs response interceptors in registration order,
+     * so anything registered here observes a raw failure before the 401 auth
+     * handler can recover it. That is the seam integrations use to add
+     * cross-cutting behaviour — logging, tracing, metrics — without this package
+     * having to know about any of it.
+     *
+     * @param role `'client'` for the provider itself, `'auth'` for the internal
+     *   client used by the token-exchange strategy.
+     */
+    onInstanceCreated?: (instance: AxiosInstance, key: K, role: HttpInstanceRole) => void;
+}
+
+export class HttpProviderFactory<K extends string> {
+    private readonly clients = new Map<K, HttpClient>();
+    private readonly config: Partial<Record<K, HttpProviderEntry>>;
+    private readonly onInstanceCreated: HttpProviderFactoryOptions<K>['onInstanceCreated'];
+
+    public constructor(
+        config: Partial<Record<K, HttpProviderEntry>>,
+        options: HttpProviderFactoryOptions<K> = {}
+    ) {
         this.config = config;
+        this.onInstanceCreated = options.onInstanceCreated;
     }
 
-    public get(key: K): AxiosInstance {
-        const existing = this.instances.get(key);
+    /**
+     * Returns the cached {@link HttpClient} for a configured provider.
+     *
+     * @throws when `key` has no entry in the configuration.
+     */
+    public get(key: K): HttpClient {
+        const existing = this.clients.get(key);
         if (existing) return existing;
 
         const entry = this.config[key];
@@ -59,22 +92,25 @@ export class HttpProviderFactory<K extends string> {
             throw new Error(`HTTP provider "${key}" is not configured`);
         }
 
-        const instance = this.createInstance(entry);
-        this.instances.set(key, instance);
-        return instance;
+        const client = new AxiosHttpClient(this.createInstance(entry, key));
+        this.clients.set(key, client);
+        return client;
     }
 
     /**
      * Parses the raw entry so every Zod default (auth token paths, transports,
-     * retriable statuses, resilience sections) is resolved in one place rather
-     * than hand-applied here. Parsing is idempotent, so an entry that already
-     * went through `HttpProvidersConfigSchema` at config load passes untouched.
+     * retriable statuses, resilience) is resolved in one place rather than
+     * hand-applied here. Parsing is idempotent, so an entry that already went
+     * through `HttpProvidersConfigSchema` at config load passes untouched.
      */
-    private createInstance(rawEntry: HttpProviderEntry): AxiosInstance {
+    private createInstance(rawEntry: HttpProviderEntry, key: K): AxiosInstance {
         const entry: ResolvedHttpProviderEntry = HttpProviderEntrySchema.parse(rawEntry);
         const instance = axios.create({ baseURL: entry.baseURL });
 
-        const strategy = this.createStrategy(entry);
+        // Before auth/resilience, so integrations see raw failures first.
+        this.onInstanceCreated?.(instance, key, 'client');
+
+        const strategy = this.createStrategy(entry, key);
         const transport = this.resolveTransport(entry);
 
         if (transport) {
@@ -84,6 +120,21 @@ export class HttpProviderFactory<K extends string> {
         this.configureResilience(instance, entry);
 
         return instance;
+    }
+
+    /**
+     * Builds the client used by {@link TokenExchangeStrategy} to call the auth
+     * endpoint. It carries the same resilience policy as the provider itself —
+     * an auth endpoint fails like any other dependency, and a hanging token call
+     * would otherwise stall every request waiting behind it.
+     */
+    private createAuthClient(entry: ResolvedHttpProviderEntry, key: K): AxiosInstance {
+        const client = axios.create();
+
+        this.onInstanceCreated?.(client, key, 'auth');
+        this.configureResilience(client, entry);
+
+        return client;
     }
 
     /**
@@ -140,7 +191,7 @@ export class HttpProviderFactory<K extends string> {
             policy.execute((signal) => baseAdapter({ ...config, signal }), parentSignal);
     }
 
-    private createStrategy(entry: ResolvedHttpProviderEntry): IAuthStrategy {
+    private createStrategy(entry: ResolvedHttpProviderEntry, key: K): IAuthStrategy {
         const auth = entry.auth;
         if (!auth || !('strategy' in auth) || !auth.strategy || auth.strategy === AuthStrategy.None) {
             return new NoAuthStrategy();
@@ -149,7 +200,7 @@ export class HttpProviderFactory<K extends string> {
             return new KubernetesServiceAccountStrategy(auth);
         }
         if (auth.strategy === AuthStrategy.TokenExchange) {
-            return new TokenExchangeStrategy(auth);
+            return new TokenExchangeStrategy(auth, this.createAuthClient(entry, key));
         }
         if (auth.strategy === AuthStrategy.JwtSelfSigned) {
             return new JwtSelfSignedStrategy(auth);

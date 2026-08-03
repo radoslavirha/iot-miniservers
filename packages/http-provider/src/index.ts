@@ -1,4 +1,6 @@
 export { HttpProviderFactory } from './HttpProviderFactory.js';
+export type { HttpClient, HttpMethod, HttpRequest, HttpRequestOptions, HttpResponseType } from './client/HttpClient.js';
+export type { HttpProviderFactoryOptions, HttpInstanceRole } from './HttpProviderFactory.js';
 export { AuthStrategy } from './schemas/auth.schema.js';
 export { HttpProvidersConfigSchema, createProvidersSchema } from './schemas/providers.schema.js';
 export { HttpProviderEntrySchema, DEFAULT_RETRIABLE_STATUS_CODES } from './schemas/provider.schema.js';

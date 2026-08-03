@@ -1,6 +1,8 @@
 # @radoslavirha/http-provider
 
-Framework-agnostic axios wrapper providing auth-aware, resilience-capable `AxiosInstance` objects from a typed, Zod-validated configuration.
+Framework-agnostic HTTP provider: auth-aware, resilience-capable clients built from a typed, Zod-validated configuration.
+
+Deliberately has **no logging** — see [`@radoslavirha/tsed-http-provider`](../tsed-http-provider) for Ts.ED wiring that adds redacted request/response logging on top.
 
 ## Features
 
@@ -10,6 +12,7 @@ Framework-agnostic axios wrapper providing auth-aware, resilience-capable `Axios
 - **Static values**: API keys, bearer tokens, or any fixed header/query param go directly in `transport`
 - **Resilience policy** integration (timeout, retry, circuit breaker) with configurable retriable statuses
 - **401 retry** — on a 401 response, credentials are invalidated and one retry is attempted automatically
+- **Transport-neutral client** — `HttpClient` is this package's own contract, not a third-party client's API
 - **Zero framework dependency** — works in any Node.js 24+ project
 
 ## Installation
@@ -23,14 +26,14 @@ pnpm add @radoslavirha/http-provider
 ```ts
 import { HttpProviderFactory, AuthStrategy } from '@radoslavirha/http-provider';
 
-enum ApiKey {
-  QRManager = 'qr-manager',
-  MiotBridge = 'miot-bridge',
+enum ExternalApi {
+  QRManager = 'QR_MANAGER',
+  MiotBridge = 'MIOT_BRIDGE',
 }
 
 const factory = new HttpProviderFactory({
-  [ApiKey.QRManager]: { baseURL: 'http://qr-manager.svc.cluster.local' },
-  [ApiKey.MiotBridge]: {
+  [ExternalApi.QRManager]: { baseURL: 'http://qr-manager.svc.cluster.local' },
+  [ExternalApi.MiotBridge]: {
     baseURL: 'http://miot-bridge.svc.cluster.local',
     auth: {
       strategy: AuthStrategy.KubernetesServiceAccount,
@@ -41,8 +44,8 @@ const factory = new HttpProviderFactory({
   },
 });
 
-const qrClient = factory.get(ApiKey.QRManager);    // raw AxiosInstance
-const bridgeClient = factory.get(ApiKey.MiotBridge);
+const qrClient = factory.get(ExternalApi.QRManager);     // HttpClient
+const { items } = await qrClient.get('/qr-codes');       // resolves to the body
 ```
 
 ## Config Schema Integration
@@ -52,11 +55,11 @@ Use `createProvidersSchema` to embed HTTP provider config inside your own Zod co
 ```ts
 import { createProvidersSchema } from '@radoslavirha/http-provider';
 
-enum ApiKey {
-  QRManager = 'qr-manager',
+enum ExternalApi {
+  QRManager = 'QR_MANAGER',
 }
 
-const HttpProvidersSchema = createProvidersSchema(Object.values(ApiKey));
+const HttpProvidersSchema = createProvidersSchema(Object.values(ExternalApi));
 
 const AppConfigSchema = z.object({
   server: z.object({ httpPort: z.number() }),
@@ -435,3 +438,52 @@ governed by `retriableStatusCodes`.
 The two compose without multiplying: the 401 replay re-enters the resilience policy exactly
 once, so a `401` followed by persistent `500`s costs `1 + (1 + retry.count)` requests, not
 `(1 + retry.count)²`.
+
+## The client
+
+`factory.get(key)` returns an `HttpClient` — **not** an `AxiosInstance`. Axios is an
+implementation detail: auth, resilience and configuration are already this package's concerns,
+so exposing a third-party client's full API as ours would tie every consumer to it and make the
+transport impossible to change.
+
+```ts
+interface HttpClient {
+  readonly baseURL: string | undefined;
+  get<T>(url, options?): Promise<T>;
+  post<T>(url, body?, options?): Promise<T>;
+  put<T>(url, body?, options?): Promise<T>;
+  patch<T>(url, body?, options?): Promise<T>;
+  delete<T>(url, options?): Promise<T>;
+  request<T>(request): Promise<T>;
+  readonly raw: unknown;      // escape hatch
+}
+```
+
+Methods resolve to the **response body** — no envelope unwrapping. Options are transport-neutral
+(`headers`, `params`, `signal`, `responseType: 'json' | 'text' | 'binary'`).
+
+`raw` exists for integrations that must attach interceptors and for tests that mock the
+transport. Application code using it is coupled to the current transport; swapping transports
+means writing a sibling of `AxiosHttpClient` and nothing else.
+
+## Extending instances — `onInstanceCreated`
+
+Cross-cutting concerns (logging, tracing, metrics) are **not** built in. The factory instead
+calls an optional hook for each new `AxiosInstance`, **before** attaching its own auth and
+resilience interceptors:
+
+```ts
+const factory = new HttpProviderFactory(config, {
+  onInstanceCreated: (instance, key, role) => {
+    // role: 'client' for the provider, 'auth' for the token-exchange client
+    instance.interceptors.response.use(onSuccess, onFailure);
+  }
+});
+```
+
+Ordering is the point. Axios runs response interceptors in registration order, so anything
+registered here observes a raw failure **before** the 401 auth handler can recover it. Register
+afterwards instead and a `401` is invisible while its replay gets counted twice.
+
+[`@radoslavirha/tsed-http-provider`](../tsed-http-provider) uses this seam to add redacted
+request/response logging.

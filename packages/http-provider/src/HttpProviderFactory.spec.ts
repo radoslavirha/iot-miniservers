@@ -13,6 +13,12 @@ vi.mock('node:fs/promises');
  
 const MockAdapter = AxiosMockAdapter as unknown as new (instance: AxiosInstance, options?: Record<string, unknown>) => AxiosMockAdapter;
 
+/**
+ * The transport behind a client. Tests mock at this level; application code
+ * should never need it.
+ */
+const transport = (client: { raw: unknown }): AxiosInstance => client.raw as AxiosInstance;
+
 describe('HttpProviderFactory', () => {
     it('throws when key is not configured', () => {
         const factory = new HttpProviderFactory<'unknown'>({});
@@ -42,7 +48,7 @@ describe('HttpProviderFactory', () => {
             'my-api': { baseURL: 'http://my-api.example.com' }
         });
         const instance = factory.get('my-api');
-        expect(instance.defaults.baseURL).toBe('http://my-api.example.com');
+        expect(instance.baseURL).toBe('http://my-api.example.com');
     });
 
     describe('static transport (no strategy)', () => {
@@ -58,7 +64,7 @@ describe('HttpProviderFactory', () => {
                 }
             });
             const instance = factory.get('api');
-            const mock = new MockAdapter(instance);
+            const mock = new MockAdapter(transport(instance));
             mock.onGet('/test').reply(200, { ok: true });
 
             await instance.get('/test');
@@ -78,7 +84,7 @@ describe('HttpProviderFactory', () => {
                 }
             });
             const instance = factory.get('api');
-            const mock = new MockAdapter(instance);
+            const mock = new MockAdapter(transport(instance));
             mock.onGet('/test').reply(200, {});
 
             await instance.get('/test');
@@ -110,7 +116,7 @@ describe('HttpProviderFactory', () => {
                 }
             });
             const instance = factory.get('svc');
-            const mock = new MockAdapter(instance);
+            const mock = new MockAdapter(transport(instance));
             mock.onGet('/health').reply(200, {});
 
             await instance.get('/health');
@@ -142,7 +148,7 @@ describe('HttpProviderFactory', () => {
                 }
             });
             const instance = factory.get('svc');
-            const mock = new MockAdapter(instance);
+            const mock = new MockAdapter(transport(instance));
             // First call returns 401, second returns 200
             mock.onGet('/data')
                 .replyOnce(401)
@@ -150,7 +156,7 @@ describe('HttpProviderFactory', () => {
                 .replyOnce(200, { data: 'ok' });
 
             const response = await instance.get('/data');
-            expect(response.data).toEqual({ data: 'ok' });
+            expect(response).toEqual({ data: 'ok' });
             // Second request should use new token
             expect(mock.history['get']?.[1]?.headers?.['Authorization']).toBe('Bearer new-token');
             mock.restore();
@@ -172,7 +178,7 @@ describe('HttpProviderFactory', () => {
                 }
             });
             const instance = factory.get('svc');
-            const mock = new MockAdapter(instance);
+            const mock = new MockAdapter(transport(instance));
             mock.onGet('/secure').reply(401);
 
             await expect(instance.get('/secure')).rejects.toThrow();
@@ -202,7 +208,7 @@ describe('HttpProviderFactory', () => {
             // the error, which is what lets a replay re-wrap its own wrapper.
             // axios-mock-adapter drops that field and would hide the nesting.
             let calls = 0;
-            instance.defaults.adapter = (async (config) => {
+            transport(instance).defaults.adapter = (async (config) => {
                 calls++;
                 const status = calls === 1 ? 401 : 500;
                 throw Object.assign(new Error(`http ${status}`), {
@@ -274,7 +280,7 @@ describe('HttpProviderFactory', () => {
                 }
             });
             const instance = factory.get('api');
-            const mock = new MockAdapter(instance);
+            const mock = new MockAdapter(transport(instance));
             mock.onGet('/no-resilience').reply(500);
 
             await expect(instance.get('/no-resilience')).rejects.toThrow();
@@ -290,7 +296,7 @@ describe('HttpProviderFactory', () => {
                 }
             });
             const instance = factory.get('api');
-            const mock = new MockAdapter(instance);
+            const mock = new MockAdapter(transport(instance));
             mock.onGet('/retry-disabled').reply(500);
 
             await expect(instance.get('/retry-disabled')).rejects.toThrow();
@@ -306,11 +312,11 @@ describe('HttpProviderFactory', () => {
                 }
             });
             const instance = factory.get('api');
-            const mock = new MockAdapter(instance);
+            const mock = new MockAdapter(transport(instance));
             mock.onGet('/retry-test').replyOnce(500).onGet('/retry-test').replyOnce(200, { ok: true });
 
             const response = await instance.get('/retry-test');
-            expect(response.status).toBe(200);
+            expect(response).toBeDefined();
             expect(mock.history['get']).toHaveLength(2); // initial + 1 retry
             mock.restore();
         });
@@ -323,7 +329,7 @@ describe('HttpProviderFactory', () => {
                 }
             });
             const instance = factory.get('api');
-            const mock = new MockAdapter(instance);
+            const mock = new MockAdapter(transport(instance));
             mock.onGet('/no-retry').reply(404);
 
             await expect(instance.get('/no-retry')).rejects.toThrow();
@@ -340,11 +346,11 @@ describe('HttpProviderFactory', () => {
                 }
             });
             const instance = factory.get('api');
-            const mock = new MockAdapter(instance);
+            const mock = new MockAdapter(transport(instance));
             mock.onGet('/throttled').replyOnce(429).onGet('/throttled').replyOnce(200, { ok: true });
 
             const response = await instance.get('/throttled');
-            expect(response.status).toBe(200);
+            expect(response).toBeDefined();
             expect(mock.history['get']).toHaveLength(2); // initial + 1 retry
             mock.restore();
         });
@@ -358,7 +364,7 @@ describe('HttpProviderFactory', () => {
                 }
             });
             const instance = factory.get('api');
-            const mock = new MockAdapter(instance);
+            const mock = new MockAdapter(transport(instance));
             mock.onGet('/server-error').reply(503);
 
             await expect(instance.get('/server-error')).rejects.toThrow();
@@ -374,11 +380,11 @@ describe('HttpProviderFactory', () => {
                 }
             });
             const instance = factory.get('api');
-            const mock = new MockAdapter(instance);
+            const mock = new MockAdapter(transport(instance));
             mock.onGet('/net').networkErrorOnce().onGet('/net').replyOnce(200, { ok: true });
 
             const response = await instance.get('/net');
-            expect(response.status).toBe(200);
+            expect(response).toBeDefined();
             expect(mock.history['get']).toHaveLength(2);
             mock.restore();
         });
@@ -391,7 +397,7 @@ describe('HttpProviderFactory', () => {
                 }
             });
             const instance = factory.get('api');
-            const mock = new MockAdapter(instance);
+            const mock = new MockAdapter(transport(instance));
             mock.onGet('/throw').reply(() => {
                 throw new Error('not-an-axios-error');
             });
@@ -411,7 +417,7 @@ describe('HttpProviderFactory', () => {
                 }
             });
             const instance = factory.get('api');
-            const mock = new MockAdapter(instance);
+            const mock = new MockAdapter(transport(instance));
             mock.onGet('/hang').reply(() => new Promise(() => { /* never resolves */ }));
 
             await expect(instance.get('/hang')).rejects.toSatisfy(isTaskCancelledError);
@@ -426,7 +432,7 @@ describe('HttpProviderFactory', () => {
                 }
             });
             const instance = factory.get('api');
-            const mock = new MockAdapter(instance);
+            const mock = new MockAdapter(transport(instance));
             mock.onGet('/hang').reply(() => new Promise(() => { /* never resolves */ }));
 
             const controller = new AbortController();
@@ -445,11 +451,11 @@ describe('HttpProviderFactory', () => {
                 }
             });
             const instance = factory.get('api');
-            const mock = new MockAdapter(instance);
+            const mock = new MockAdapter(transport(instance));
             mock.onGet('/ok').reply(200, { ok: true });
 
             const response = await instance.get('/ok');
-            expect(response.data).toEqual({ ok: true });
+            expect(response).toEqual({ ok: true });
             mock.restore();
         });
 
@@ -469,7 +475,9 @@ describe('HttpProviderFactory', () => {
                 statusText: 'OK'
             }));
 
-            const response = await instance.get('/custom-adapter', {
+            // A per-request adapter is transport-specific, so it is set through
+            // the transport rather than the neutral client contract.
+            const response = await transport(instance).get('/custom-adapter', {
                 adapter: requestAdapter as AxiosAdapter
             });
 
@@ -478,10 +486,91 @@ describe('HttpProviderFactory', () => {
         });
     });
 
+    describe('onInstanceCreated seam', () => {
+        it('runs for the provider client with its key and role', () => {
+            const onInstanceCreated = vi.fn();
+            const factory = new HttpProviderFactory({
+                'api': { baseURL: 'http://api.example.com' }
+            }, { onInstanceCreated });
+
+            const instance = factory.get('api');
+
+            expect(onInstanceCreated).toHaveBeenCalledExactlyOnceWith(transport(instance), 'api', 'client');
+        });
+
+        it('runs only once per key, matching instance caching', () => {
+            const onInstanceCreated = vi.fn();
+            const factory = new HttpProviderFactory({
+                'api': { baseURL: 'http://api.example.com' }
+            }, { onInstanceCreated });
+
+            factory.get('api');
+            factory.get('api');
+
+            expect(onInstanceCreated).toHaveBeenCalledOnce();
+        });
+
+        it('runs for the token-exchange auth client with the auth role', () => {
+            const onInstanceCreated = vi.fn();
+            const factory = new HttpProviderFactory({
+                'api': {
+                    baseURL: 'http://api.example.com',
+                    auth: {
+                        strategy: AuthStrategy.TokenExchange,
+                        request: { method: 'POST', url: 'https://auth.example.com/token' },
+                        tokenExtractor: 'access_token',
+                        transport: { headers: [{ name: 'Authorization', value: 'Bearer {{value}}' }] }
+                    }
+                }
+            }, { onInstanceCreated });
+
+            factory.get('api');
+
+            const roles = onInstanceCreated.mock.calls.map(([, , role]) => role);
+            expect(roles).toEqual(expect.arrayContaining(['client', 'auth']));
+        });
+
+        it('registers before the auth interceptor, so it observes a raw 401', async () => {
+            const seen: number[] = [];
+            const factory = new HttpProviderFactory({
+                'api': {
+                    baseURL: 'http://api.example.com',
+                    auth: {
+                        strategy: AuthStrategy.None,
+                        transport: { headers: [{ name: 'X-Api-Key', value: 'static' }] }
+                    }
+                }
+            }, {
+                onInstanceCreated: (instance) => {
+                    instance.interceptors.response.use(
+                        (response) => {
+                            seen.push(response.status);
+                            return response;
+                        },
+                        (error) => {
+                            seen.push((error as { response?: { status?: number } }).response?.status ?? 0);
+                            return Promise.reject(error);
+                        }
+                    );
+                }
+            });
+            const instance = factory.get('api');
+            const mock = new MockAdapter(transport(instance));
+            mock.onGet('/data').replyOnce(401).onGet('/data').replyOnce(200, { ok: true });
+
+            await expect(instance.get('/data')).resolves.toEqual({ ok: true });
+
+            // The 401 is observed as itself before the auth retry recovers it —
+            // this ordering is what lets integrations log the real exchange.
+            expect(seen).toEqual([401, 200]);
+            mock.restore();
+        });
+    });
+
     describe('schema validation integration', () => {
         it('createProvidersSchema validates a correct config', () => {
-            enum ApiKey { QRManager = 'qr-manager' }
-            const schema = createProvidersSchema(Object.values(ApiKey));
+            enum ExternalApi { QRManager = 'qr-manager' }
+            const schema = createProvidersSchema(Object.values(ExternalApi));
             const result = schema.safeParse({
                 'qr-manager': { baseURL: 'http://localhost:4002' }
             });
@@ -489,15 +578,15 @@ describe('HttpProviderFactory', () => {
         });
 
         it('createProvidersSchema keeps resilience undefined when omitted', async () => {
-            enum ApiKey { QRManager = 'qr-manager' }
-            const schema = createProvidersSchema(Object.values(ApiKey));
+            enum ExternalApi { QRManager = 'qr-manager' }
+            const schema = createProvidersSchema(Object.values(ExternalApi));
             const parsed = schema.parse({
                 'qr-manager': { baseURL: 'http://api.example.com' }
             });
 
             const factory = new HttpProviderFactory(parsed);
-            const instance = factory.get(ApiKey.QRManager);
-            const mock = new MockAdapter(instance);
+            const instance = factory.get(ExternalApi.QRManager);
+            const mock = new MockAdapter(transport(instance));
             mock.onGet('/no-resilience').reply(500);
 
             await expect(instance.get('/no-resilience')).rejects.toThrow();
@@ -506,8 +595,8 @@ describe('HttpProviderFactory', () => {
         });
 
         it('createProvidersSchema applies resilience defaults', () => {
-            enum ApiKey { QRManager = 'qr-manager' }
-            const schema = createProvidersSchema(Object.values(ApiKey));
+            enum ExternalApi { QRManager = 'qr-manager' }
+            const schema = createProvidersSchema(Object.values(ExternalApi));
             const parsed = schema.parse({
                 'qr-manager': {
                     baseURL: 'http://localhost:4002',

@@ -21,6 +21,7 @@
     "@opentelemetry/instrumentation-mongoose": "catalog:otel",
     "@opentelemetry/winston-transport": "catalog:otel",
     "@radoslavirha/config-typescript": "catalog:",
+    "@radoslavirha/tsed-http-provider": "workspace:*",
     "@radoslavirha/miot-device": "workspace:*",
     "@radoslavirha/otel": "workspace:*",
     "@radoslavirha/tsed-common": "catalog:",
