@@ -2,6 +2,15 @@
 
 The `onboard-to-homelab` skill reads this to discover deployment metadata without parsing code.
 
+## Configuration Compatibility Rule
+
+All configuration changes must be backward compatible for rolling deployments.
+
+- A new ConfigMap may be applied before all old pods are replaced.
+- During rollout, old and new application versions may run concurrently.
+- Do not require strict rejection of unknown future keys at runtime if that would block old pods.
+- Additive changes are preferred; remove legacy keys only after all workloads run a compatible version.
+
 ---
 
 ## App: <app-name>

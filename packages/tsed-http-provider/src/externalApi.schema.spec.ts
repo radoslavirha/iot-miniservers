@@ -46,4 +46,17 @@ describe('createExternalApisSchema', () => {
 
         expect(parsed['MIOT_SPEC'].logging.response.enabled).toBe(false);
     });
+
+    it('tolerates unknown configuration keys for rolling deployment compatibility', () => {
+        const result = Schema.safeParse({
+            'MIOT_SPEC': { baseURL: 'https://miot-spec.org/miot-spec-v2' },
+            'UNKNOWN': { baseURL: 'https://unknown.test' }
+        });
+
+        expect(result.success).toBe(true);
+
+        if (result.success) {
+            expect((result.data as Record<string, unknown>)['UNKNOWN']).toBeUndefined();
+        }
+    });
 });

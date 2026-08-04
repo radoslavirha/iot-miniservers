@@ -34,6 +34,10 @@ describe('resilience.schema', () => {
         expect(() => CircuitBreakerConfigSchema.parse({ threshold: 1.5 })).toThrow();
     });
 
+    it('rejects a zero circuit-breaker sampling duration', () => {
+        expect(() => CircuitBreakerConfigSchema.parse({ samplingDurationMs: 0 })).toThrow();
+    });
+
     it('rejects a negative timeout', () => {
         expect(() => TimeoutConfigSchema.parse({ ms: -1 })).toThrow();
     });

@@ -204,6 +204,15 @@ ui/<ui-name>/
   - `config/custom-environment-variables.json` is not mandatory, it's only for advanced usage when [config](https://www.npmjs.com/package/config) can use/replace environment variable in json file during runtime.
 - uses `@radoslavirha/tsed-configuration` for loading server configuration.
 
+### Configuration backward compatibility (repository-wide rule)
+
+- Treat configuration as a versioned contract across all apps and packages.
+- All config changes must be backward compatible for rolling deployments.
+- Assume a new ConfigMap can be applied before all old pods are replaced.
+- During rollout, old and new versions may run concurrently.
+- Prefer additive config changes; remove legacy keys only after all workloads run a compatible version.
+- Do not enforce runtime strict rejection of unknown future keys when it can block older running versions.
+
 ## Versioning & Changesets
 
 - Uses `@changesets/cli` for versioning

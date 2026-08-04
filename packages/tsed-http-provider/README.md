@@ -42,9 +42,14 @@ export enum ExternalApi {
 ```
 
 **2. Add `externalApis` to the config schema.** `createExternalApisSchema` ties it to the enum,
-so an unknown or missing key fails at config load rather than at first call. Keep it
+so missing required keys fail at config load rather than at first call. Keep it
 **required** — if the service cannot work without its external APIs, an absent block should stop
 startup rather than surface as a runtime error on the first request.
+
+Runtime parsing intentionally tolerates unknown extra keys to preserve rolling-deployment
+compatibility. This allows config to be prepared ahead of rollout while older pods still run.
+As a deployment rule, the whole configuration must remain backward compatible with both the
+currently running and next application versions.
 
 ```ts
 export const ConfigSchema = BaseConfig.extend({

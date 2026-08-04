@@ -32,13 +32,15 @@ const data = await policy.execute((signal) => fetch(url, { signal }));
 | `retry` | `backoffMs` | `250` | Constant delay between attempts. |
 | `circuitBreaker` | `halfOpenAfterMs` | `10000` | Wait before a trial call after opening. |
 | `circuitBreaker` | `threshold` | `0.5` | Error ratio (0..1) that opens the circuit. |
-| `circuitBreaker` | `samplingDurationMs` | `10000` | Trailing window for the ratio. |
+| `circuitBreaker` | `samplingDurationMs` | `10000` | Trailing window for the ratio (must be `>= 1`). |
 | `circuitBreaker` | `minimumThroughput` | `5` | Min calls/sec before the breaker can open. |
 
 Every section is **optional — omitting one disables that policy entirely**. Pass `{}` for a
 section to enable it with all defaults (`{ circuitBreaker: {} }`). Note that `retry` defaults to
 `count: 0`, so `{ retry: {} }` enables the section but still performs no retries — set `count`
 explicitly.
+
+`samplingDurationMs` is validated as a positive integer; `0` is rejected at config load.
 
 `createResiliencePolicy` parses its input, so config may be written in the schema's *input*
 shape (defaulted fields omitted). Parsing is idempotent — config already parsed at load time by

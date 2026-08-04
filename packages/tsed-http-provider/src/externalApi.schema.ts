@@ -16,7 +16,11 @@ export const ExternalApiEntrySchema = HttpProviderEntrySchema.extend({
 
 /**
  * Builds a schema for an `externalApis` map constrained to the given enum keys,
- * so an unknown key fails at config load rather than at first call.
+ * so missing required keys fail at config load rather than at first call.
+ *
+ * Unknown extra keys are intentionally tolerated at runtime to keep rolling
+ * deployments configuration-backward-compatible (new keys can be introduced in
+ * config before every pod has been upgraded).
  *
  * @example
  * ```ts
