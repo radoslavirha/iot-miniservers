@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { AuthStrategy, HttpProviderFactory } from '@radoslavirha/http-provider';
 import type { BaseLogger } from '@radoslavirha/tsed-logger';
 import { ExternalApiEntrySchema, type ExternalApiEntry } from './externalApi.schema.js';
-import { HttpLogConfigSchema } from './logging.schema.js';
+import { DEFAULT_HEADER_REDACT_PATHS, HttpLogConfigSchema } from './logging.schema.js';
 import { attachRequestLogging } from './attachRequestLogging.js';
 
 const MockAdapter = AxiosMockAdapter as unknown as new (
@@ -47,6 +47,68 @@ function buildClient(entry: ExternalApiEntry, logger?: TestLogger): AxiosInstanc
 }
 
 describe('outbound request logging', () => {
+    it('uses metadata-only defaults for successful requests', async () => {
+        const logger = buildLogger();
+        const instance = buildClient({ baseURL: 'http://api.example.com' }, logger);
+        const mock = new MockAdapter(instance);
+        mock.onGet('/things').reply(200, { ok: true });
+
+        await instance.get('/things', {
+            headers: { Authorization: 'Bearer super-secret' },
+            params: { page: 2 }
+        });
+
+        const [, meta] = logger.info.mock.calls[0] as [string, Record<string, unknown>];
+        expect(meta).toMatchObject({ provider: 'api', method: 'GET', url: '/things', status: 200 });
+        expect(meta['duration']).toBeTypeOf('number');
+        expect(meta).not.toHaveProperty('headers');
+        expect(meta).not.toHaveProperty('query');
+        expect(meta).not.toHaveProperty('request');
+        expect(meta).not.toHaveProperty('response');
+        mock.restore();
+    });
+
+    it('uses metadata-only defaults for failed requests', async () => {
+        const logger = buildLogger();
+        const instance = buildClient({ baseURL: 'http://api.example.com' }, logger);
+        const mock = new MockAdapter(instance);
+        mock.onGet('/boom').reply(500, { detail: 'failure' });
+
+        await expect(instance.get('/boom')).rejects.toThrow();
+
+        const [, meta] = logger.error.mock.calls[0] as [string, Record<string, unknown>];
+        expect(meta).toMatchObject({ provider: 'api', method: 'GET', url: '/boom', status: 500 });
+        expect(meta['duration']).toBeTypeOf('number');
+        expect(meta).not.toHaveProperty('headers');
+        expect(meta).not.toHaveProperty('query');
+        expect(meta).not.toHaveProperty('request');
+        expect(meta).not.toHaveProperty('response');
+        expect(meta).not.toHaveProperty('error_stack');
+        mock.restore();
+    });
+
+    it('logs request and response payload only when explicitly enabled', async () => {
+        const logger = buildLogger();
+        const instance = buildClient({
+            baseURL: 'http://api.example.com',
+            logging: {
+                request: { enabled: true, redactPaths: ['password'] },
+                response: { enabled: true, redactPaths: ['token'] }
+            }
+        }, logger);
+        const mock = new MockAdapter(instance);
+        mock.onPost('/login').reply(200, { ok: true, token: 'secret-token' });
+
+        await instance.post('/login', { user: 'me', password: 'hunter2' });
+
+        const [, meta] = logger.info.mock.calls[0] as [string, Record<string, unknown>];
+        expect(meta['request']).toContain('***');
+        expect(meta['request']).not.toContain('hunter2');
+        expect(meta['response']).toContain('***');
+        expect(meta['response']).not.toContain('secret-token');
+        mock.restore();
+    });
+
     it('logs a completed request with method, url, status and duration', async () => {
         const logger = buildLogger();
         const instance = buildClient({ baseURL: 'http://api.example.com' }, logger);
@@ -60,14 +122,15 @@ describe('outbound request logging', () => {
         expect(message).toBe('Request completed');
         expect(meta).toMatchObject({ provider: 'api', method: 'GET', url: '/things', status: 200 });
         expect(meta['duration']).toBeTypeOf('number');
-        expect(meta['query']).toBe('{"page":2}');
-        expect(meta['response']).toBe('{"ok":true}');
         mock.restore();
     });
 
-    it('redacts the authorization header by default', async () => {
+    it('redacts the authorization header when headers logging is explicitly enabled', async () => {
         const logger = buildLogger();
-        const instance = buildClient({ baseURL: 'http://api.example.com' }, logger);
+        const instance = buildClient({
+            baseURL: 'http://api.example.com',
+            logging: { headers: { enabled: true, redactPaths: [...DEFAULT_HEADER_REDACT_PATHS] } }
+        }, logger);
         const mock = new MockAdapter(instance);
         mock.onGet('/secure').reply(200, {});
 
@@ -83,7 +146,7 @@ describe('outbound request logging', () => {
         const logger = buildLogger();
         const instance = buildClient({
             baseURL: 'http://api.example.com',
-            logging: { request: { redactPaths: ['password'] } }
+            logging: { request: { enabled: true, redactPaths: ['password'] } }
         }, logger);
         const mock = new MockAdapter(instance);
         mock.onPost('/login').reply(200, {});
@@ -98,7 +161,10 @@ describe('outbound request logging', () => {
 
     it('never dumps a binary response body', async () => {
         const logger = buildLogger();
-        const instance = buildClient({ baseURL: 'http://api.example.com' }, logger);
+        const instance = buildClient({
+            baseURL: 'http://api.example.com',
+            logging: { response: { enabled: true } }
+        }, logger);
         const mock = new MockAdapter(instance);
         mock.onGet('/image').reply(200, Buffer.from('binary-payload'), { 'content-type': 'image/png' });
 
@@ -111,7 +177,10 @@ describe('outbound request logging', () => {
 
     it('detects a binary body from a capitalised Content-Type header', async () => {
         const logger = buildLogger();
-        const instance = buildClient({ baseURL: 'http://api.example.com' }, logger);
+        const instance = buildClient({
+            baseURL: 'http://api.example.com',
+            logging: { response: { enabled: true } }
+        }, logger);
 
         instance.defaults.adapter = (async (config) => ({
             config,
@@ -192,6 +261,23 @@ describe('outbound request logging', () => {
         mock.restore();
     });
 
+    it('includes the stack when stack logging is explicitly enabled', async () => {
+        const logger = buildLogger();
+        const instance = buildClient({
+            baseURL: 'http://api.example.com',
+            logging: { stack: true }
+        }, logger);
+        const mock = new MockAdapter(instance);
+        mock.onGet('/boom').reply(500);
+
+        await expect(instance.get('/boom')).rejects.toThrow();
+
+        const [, meta] = logger.error.mock.calls[0] as [string, Record<string, unknown>];
+        expect(meta).toHaveProperty('error_stack');
+        expect(meta['error_stack']).toBeTypeOf('string');
+        mock.restore();
+    });
+
     it('logs nothing when logging is disabled for the entry', async () => {
         const logger = buildLogger();
         const instance = buildClient({
@@ -220,12 +306,17 @@ describe('outbound request logging', () => {
         const logger = buildLogger();
         const instance = buildClient({
             baseURL: 'http://api.example.com',
-            logging: { headers: { enabled: false }, response: { enabled: false } }
+            logging: {
+                query: { enabled: true },
+                request: { enabled: true },
+                headers: { enabled: false },
+                response: { enabled: false }
+            }
         }, logger);
         const mock = new MockAdapter(instance);
         mock.onGet('/partial').reply(200, { secret: 'value' });
 
-        await instance.get('/partial');
+        await instance.get('/partial', { params: { page: 1 } });
 
         const [, meta] = logger.info.mock.calls[0] as [string, Record<string, unknown>];
         expect(meta).not.toHaveProperty('headers');
@@ -238,7 +329,12 @@ describe('outbound request logging', () => {
         const logger = buildLogger();
         const instance = buildClient({
             baseURL: 'http://api.example.com',
-            logging: { query: { enabled: false }, request: { enabled: false } }
+            logging: {
+                headers: { enabled: true },
+                response: { enabled: true },
+                query: { enabled: false },
+                request: { enabled: false }
+            }
         }, logger);
         const mock = new MockAdapter(instance);
         mock.onPost('/partial').reply(200, { ok: true });

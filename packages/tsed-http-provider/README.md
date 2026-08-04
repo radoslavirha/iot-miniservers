@@ -189,11 +189,11 @@ Since `HttpInstrumentation` is enabled via `@radoslavirha/otel`, these lines car
 | Field | Default | Meaning |
 |---|---|---|
 | `enabled` | `true` | Disable logging for this API. |
-| `headers` | on, auth redacted | Request headers as actually sent. |
-| `query` | on | Query-string parameters. |
-| `request` | on | Outgoing request payload. |
-| `response` | on | Response payload; non-textual bodies log as `[[ BINARY ]]`. |
-| `stack` | `true` | Include `error_stack` on failures. |
+| `headers` | off | Request headers as actually sent. |
+| `query` | off | Query-string parameters. |
+| `request` | off | Outgoing request payload. |
+| `response` | off | Response payload; non-textual bodies log as `[[ BINARY ]]`. |
+| `stack` | `false` | Include `error_stack` on failures. |
 
 Each section takes `{ enabled, redactPaths }` — the shared vocabulary from
 `@radoslavirha/redaction`, identical to `tsed-logger`'s inbound `requests` section. Redactors
@@ -204,8 +204,8 @@ are compiled **once per API**, never per request.
   "auth-api": {
     "baseURL": "https://auth.example.com",
     "logging": {
-      "request": { "redactPaths": ["client_secret"] },
-      "response": { "redactPaths": ["access_token", "refresh_token"] }
+      "request": { "enabled": true, "redactPaths": ["client_secret"] },
+      "response": { "enabled": true, "redactPaths": ["access_token", "refresh_token"] }
     }
   }
 }
@@ -216,10 +216,14 @@ Selectors: `authorization` (root), `user.password` (nested), `items.*.token` (wi
 
 ### What is redacted by default
 
-`headers.redactPaths` defaults to `authorization`, `Authorization`, `cookie`, `Cookie`,
-`["set-cookie"]`, `["proxy-authorization"]`. This deliberately differs from `tsed-logger`'s
-empty default: an **outbound** request carries credentials the provider itself injected, so
-logging them unredacted would leak your own secrets.
+Defaults are metadata-only: headers, query, request, and response sections are disabled until
+explicitly enabled.
+
+When `headers` logging is enabled without custom `redactPaths`, it defaults to
+`authorization`, `Authorization`, `cookie`, `Cookie`, `["set-cookie"]`,
+`["proxy-authorization"]`. This deliberately differs from `tsed-logger`'s empty default: an
+**outbound** request carries credentials the provider itself injected, so logging them unredacted
+would leak your own secrets.
 
 Payloads, query strings and responses are **not** redacted by default — list sensitive paths
 per API.

@@ -12,7 +12,12 @@ describe('ExternalApiEntrySchema', () => {
         expect(parsed.baseURL).toBe('https://example.test');
         expect(parsed.retriableStatusCodes).toEqual([500, 502, 503, 504]);
         expect(parsed.logging.enabled).toBe(true);
-        expect(parsed.logging.headers.redactPaths).toContain('authorization');
+        expect(parsed.logging.headers.enabled).toBe(false);
+        expect(parsed.logging.headers.redactPaths).toEqual([]);
+        expect(parsed.logging.query.enabled).toBe(false);
+        expect(parsed.logging.request.enabled).toBe(false);
+        expect(parsed.logging.response.enabled).toBe(false);
+        expect(parsed.logging.stack).toBe(false);
     });
 
     it('rejects a non-URL base', () => {

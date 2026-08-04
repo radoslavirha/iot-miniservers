@@ -32,21 +32,21 @@ const HttpLogSectionsSchema = createRedactionSchema({
 });
 
 /**
- * Outbound HTTP logging options. Opt-out semantics: everything defaults on.
- * Values are redacted before reaching the logger.
+ * Outbound HTTP logging options. Metadata-only by default; payload sections are
+ * opt-in. Values are redacted before reaching the logger.
  */
 export const HttpLogConfigSchema = HttpLogSectionsSchema.extend({
     /** Disable outbound request/response logging entirely. */
     enabled: z.boolean().default(true),
     /** Include the error stack on failed requests. */
-    stack: z.boolean().default(true)
+    stack: z.boolean().default(false)
 }).default(() => ({
     enabled: true,
-    headers: { enabled: true, redactPaths: [...DEFAULT_HEADER_REDACT_PATHS] },
-    query: { enabled: true, redactPaths: [] },
-    request: { enabled: true, redactPaths: [] },
-    response: { enabled: true, redactPaths: [] },
-    stack: true
+    headers: { enabled: false, redactPaths: [] },
+    query: { enabled: false, redactPaths: [] },
+    request: { enabled: false, redactPaths: [] },
+    response: { enabled: false, redactPaths: [] },
+    stack: false
 }));
 
 export type HttpLogConfig = z.input<typeof HttpLogConfigSchema>;
