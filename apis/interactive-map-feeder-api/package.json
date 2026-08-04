@@ -1,6 +1,6 @@
 {
   "name": "interactive-map-feeder-api",
-  "version": "0.10.1",
+  "version": "0.10.2",
   "private": true,
   "description": "Data Feeder for LaskaKit interactive map of Czech republic",
   "type": "module",

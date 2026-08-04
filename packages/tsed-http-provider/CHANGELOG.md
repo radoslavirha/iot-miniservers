@@ -1,4 +1,4 @@
-# @radoslavirha/http-provider
+# @radoslavirha/tsed-http-provider
 
 ## 0.2.0
 
@@ -67,44 +67,8 @@
   block added to their ConfigMaps before rollout. Logging defaults are metadata-only (`enabled: true`
   with payload sections disabled unless explicitly enabled).
 
-- [#54](https://github.com/radoslavirha/iot-miniservers/pull/54) [`ccb17cc`](https://github.com/radoslavirha/iot-miniservers/commit/ccb17cc3238db60ecd521ce7606bd2687c580603) Thanks [@radoslavirha](https://github.com/radoslavirha)! - Add transport-agnostic resilience (timeout, retry, circuit breaker) with AbortSignal support.
-
-  - `@radoslavirha/resilience`: new package. cockatiel-backed `createResiliencePolicy` /
-    `ResiliencePolicyFactory` wrapping any `(signal) => Promise<T>`, composed as
-    retry → circuit breaker → timeout, plus `combineSignals` and re-exported error guards
-    (`isBrokenCircuitError`, `isTaskCancelledError`).
-  - `@radoslavirha/tsed-resilience`: new package. A `@RequestSignal()` parameter decorator that
-    injects an `AbortSignal` tied to the HTTP request lifecycle, usable from `SINGLETON`
-    controllers, plus `getRequestSignal(ctx)` for middlewares.
-  - `@radoslavirha/http-provider`: **config shape changed** — `axios-retry` and the `retry` entry
-    are replaced by an optional `resilience` section (timeout + retry + circuit breaker). Retry is
-    now **opt-in** (`retry.count` defaults to `0`, previously `3`), and the retriable statuses
-    moved from `retry.statusCodes` to a top-level `retriableStatusCodes` (default
-    `[500, 502, 503, 504]`). The factory parses each entry through `HttpProviderEntrySchema`, so
-    Zod supplies every default.
-  - `qr-manager-api`: wires the redirect path (`RedirectController` → `QrCodeService` →
-    `QrCodeMongoRepository.findBySlug`) through a resilience policy + `maxTimeMS`, cancelled by
-    the request-lifecycle signal.
-
 ### Patch Changes
 
-- Updated dependencies [[`ccb17cc`](https://github.com/radoslavirha/iot-miniservers/commit/ccb17cc3238db60ecd521ce7606bd2687c580603)]:
+- Updated dependencies [[`830cac2`](https://github.com/radoslavirha/iot-miniservers/commit/830cac2c4aac6a671b4ad9b4c80046e2d07b1d0d), [`ccb17cc`](https://github.com/radoslavirha/iot-miniservers/commit/ccb17cc3238db60ecd521ce7606bd2687c580603)]:
+  - @radoslavirha/http-provider@0.2.0
   - @radoslavirha/resilience@0.2.0
-
-## 0.1.3
-
-### Patch Changes
-
-- [`4a34a89`](https://github.com/radoslavirha/iot-miniservers/commit/4a34a892fa02d4d44307e756a9cab77c1e68256a) Thanks [@radoslavirha](https://github.com/radoslavirha)! - Update packages
-
-## 0.1.2
-
-### Patch Changes
-
-- [`422cfcf`](https://github.com/radoslavirha/iot-miniservers/commit/422cfcf17880bbd18b824b20592cac85e007ec88) Thanks [@radoslavirha](https://github.com/radoslavirha)! - Update packages
-
-## 0.1.1
-
-### Patch Changes
-
-- [`8bb6799`](https://github.com/radoslavirha/iot-miniservers/commit/8bb679916e23e64df4dd97643f1494e01ef710c2) Thanks [@radoslavirha](https://github.com/radoslavirha)! - Update packages

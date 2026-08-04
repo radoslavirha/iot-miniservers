@@ -1,6 +1,6 @@
 {
   "name": "qr-manager-api",
-  "version": "0.4.3",
+  "version": "0.4.4",
   "private": true,
   "description": "Generic QR code redirect manager. Maps short slugs to target URLs stored in MongoDB; redirect targets are mutable without reprinting the QR code.",
   "type": "module",
