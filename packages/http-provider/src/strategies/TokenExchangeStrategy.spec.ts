@@ -59,6 +59,64 @@ describe('TokenExchangeStrategy', () => {
         expect(mock.history['post']).toHaveLength(1);
     });
 
+    it('deduplicates concurrent cold credential fetches', async () => {
+        let releaseResponse: (() => void) | undefined;
+        const responseReady = new Promise<void>((resolve) => {
+            releaseResponse = resolve;
+        });
+
+        mock.onPost(TOKEN_URL).reply(async () => {
+            await responseReady;
+            return [200, { access_token: 'tok123' }];
+        });
+
+        const strategy = new TokenExchangeStrategy(POST_CONFIG);
+        const firstPending = strategy.getCredentials();
+        const secondPending = strategy.getCredentials();
+
+        await Promise.resolve();
+        releaseResponse?.();
+
+        const [first, second] = await Promise.all([firstPending, secondPending]);
+
+        expect(first).toEqual({ accessToken: 'tok123' });
+        expect(second).toEqual(first);
+        expect(mock.history['post']).toHaveLength(1);
+    });
+
+    it('starts a fresh fetch after invalidate while an older fetch is in flight', async () => {
+        let releaseFirstResponse: (() => void) | undefined;
+        const firstResponseReady = new Promise<void>((resolve) => {
+            releaseFirstResponse = resolve;
+        });
+        let callCount = 0;
+
+        mock.onPost(TOKEN_URL).reply(async () => {
+            callCount += 1;
+            if (callCount === 1) {
+                await firstResponseReady;
+                return [200, { access_token: 'stale-token' }];
+            }
+            return [200, { access_token: 'fresh-token' }];
+        });
+
+        const strategy = new TokenExchangeStrategy(POST_CONFIG);
+
+        const firstPending = strategy.getCredentials();
+        await Promise.resolve();
+        strategy.invalidate();
+
+        const second = await strategy.getCredentials();
+        expect(second).toEqual({ accessToken: 'fresh-token' });
+
+        releaseFirstResponse?.();
+        await firstPending;
+
+        const third = await strategy.getCredentials();
+        expect(third).toEqual({ accessToken: 'fresh-token' });
+        expect(mock.history['post']).toHaveLength(2);
+    });
+
     it('re-fetches after invalidate()', async () => {
         mock.onPost(TOKEN_URL)
             .replyOnce(200, { access_token: 'tok-v1' })

@@ -42,9 +42,11 @@
         "@radoslavirha/config-eslint": "catalog:",
         "@radoslavirha/config-tsdown": "catalog:",
         "@radoslavirha/config-vitest": "catalog:",
+        "@tsed/testcontainers-mongo": "catalog:tsed",
         "@types/node": "catalog:",
         "@vitest/coverage-v8": "catalog:",
         "eslint": "catalog:",
+        "mongoose": "catalog:",
         "tsdown": "catalog:",
         "typescript-eslint": "catalog:",
         "vitest": "catalog:"

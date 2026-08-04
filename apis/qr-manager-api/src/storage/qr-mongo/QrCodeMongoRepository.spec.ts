@@ -1,12 +1,10 @@
-import type { MongooseModel } from '@tsed/mongoose';
-import { describe, beforeEach, afterEach, expect, it, vi } from 'vitest';
+import { describe, beforeEach, afterEach, expect, it } from 'vitest';
 import { PlatformTest } from '@tsed/platform-http/testing';
 import { TestContainersMongo } from '@tsed/testcontainers-mongo';
 import { isTaskCancelledError } from '@radoslavirha/resilience';
 import { Server } from '../../Server.js';
 import { QrType } from '../../models/QrType.enum.js';
 import { QrCodeMongoRepository } from './QrCodeMongoRepository.js';
-import { QrCodeMongoDTO } from './dto/QrCodeMongoDTO.js';
 
 const buildCreatePayload = (overrides: Record<string, unknown> = {}) => ({
     slug: 'x7k2',
@@ -128,39 +126,6 @@ describe('QrCodeMongoRepository', () => {
             controller.abort();
 
             await expect(repository.findBySlug('x7k2', controller.signal)).rejects.toSatisfy(isTaskCancelledError);
-        });
-
-        it('keeps the shared breaker closed after in-flight caller cancellations', async () => {
-            expect.assertions(51);
-            await repository.create(buildCreatePayload({ slug: 'x7k2' }));
-            const model = PlatformTest.get<MongooseModel<QrCodeMongoDTO>>(QrCodeMongoDTO);
-            const query = model.findOne({ slug: 'x7k2' });
-            const pendingQuery = new Promise<never>(() => {});
-            let notifyQueryStarted: (() => void) | undefined;
-            const exec = vi.spyOn(query, 'exec').mockImplementation(() => {
-                notifyQueryStarted?.();
-                return pendingQuery;
-            });
-            const findOne = vi.spyOn(model, 'findOne').mockReturnValue(query);
-
-            try {
-                for (let attempt = 0; attempt < 50; attempt++) {
-                    const controller = new AbortController();
-                    const queryStarted = new Promise<void>((resolve) => {
-                        notifyQueryStarted = resolve;
-                    });
-                    const pending = repository.findBySlug('x7k2', controller.signal);
-                    await queryStarted;
-                    controller.abort();
-
-                    await expect(pending).rejects.toSatisfy(isTaskCancelledError);
-                }
-            } finally {
-                findOne.mockRestore();
-                exec.mockRestore();
-            }
-
-            await expect(repository.findBySlug('x7k2')).resolves.toMatchObject({ slug: 'x7k2' });
         });
     });
 

@@ -5,6 +5,9 @@ import type { IAuthStrategy } from './IAuthStrategy.js';
 
 export class TokenExchangeStrategy implements IAuthStrategy {
     private cachedCredentials: Record<string, string> | undefined;
+    private inFlightCredentials: Promise<Record<string, string>> | undefined;
+    private inFlightEpoch: number | undefined;
+    private cacheEpoch: number = 0;
     private readonly extractors: TokenExtractorEntry[];
     private readonly client: AxiosInstance;
 
@@ -23,13 +26,35 @@ export class TokenExchangeStrategy implements IAuthStrategy {
     }
 
     public async getCredentials(): Promise<Record<string, string>> {
-        if (!this.cachedCredentials) {
-            this.cachedCredentials = await this.fetchCredentials();
+        if (this.cachedCredentials) {
+            return this.cachedCredentials;
         }
-        return this.cachedCredentials;
+
+        if (this.inFlightCredentials && this.inFlightEpoch === this.cacheEpoch) {
+            return this.inFlightCredentials;
+        }
+
+        const requestEpoch = this.cacheEpoch;
+        this.inFlightEpoch = requestEpoch;
+        this.inFlightCredentials = this.fetchCredentials()
+            .then((credentials) => {
+                if (this.cacheEpoch === requestEpoch) {
+                    this.cachedCredentials = credentials;
+                }
+                return credentials;
+            })
+            .finally(() => {
+                if (this.inFlightEpoch === requestEpoch) {
+                    this.inFlightCredentials = undefined;
+                    this.inFlightEpoch = undefined;
+                }
+            });
+
+        return this.inFlightCredentials;
     }
 
     public invalidate(): void {
+        this.cacheEpoch += 1;
         this.cachedCredentials = undefined;
     }
 

@@ -62,7 +62,7 @@
     "dotenv": "catalog:",
     "express": "catalog:express",
     "method-override": "catalog:express",
-    "mongoose": "^9.9.0",
+    "mongoose": "catalog:",
     "mqtt": "^5.15.2",
     "typescript": "catalog:",
     "zod": "catalog:"
