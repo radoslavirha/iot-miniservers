@@ -162,6 +162,27 @@ describe('HttpProviderFactory', () => {
             mock.restore();
         });
 
+        it('replays a 401 when resilience timeout is configured', async () => {
+            const factory = new HttpProviderFactory({
+                'svc': {
+                    baseURL: 'http://svc.local',
+                    auth: {
+                        transport: {
+                            headers: [{ name: 'X-Api-Key', value: 'static-key' }]
+                        }
+                    },
+                    resilience: { timeout: { ms: 1000 } }
+                }
+            });
+            const instance = factory.get('svc');
+            const mock = new MockAdapter(transport(instance));
+            mock.onGet('/data').replyOnce(401).onGet('/data').replyOnce(200, { data: 'ok' });
+
+            await expect(instance.get('/data')).resolves.toEqual({ data: 'ok' });
+            expect(mock.history['get']).toHaveLength(2);
+            mock.restore();
+        });
+
         it('does not retry a second 401 (no infinite loop)', async () => {
             vi.mocked(readFile).mockResolvedValue('token' as never);
 

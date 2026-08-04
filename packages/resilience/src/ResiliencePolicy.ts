@@ -112,7 +112,10 @@ export function createResiliencePolicy(
 
     let timeoutPolicy: TimeoutPolicy | undefined;
     if (cfg.timeout) {
-        timeoutPolicy = timeout(cfg.timeout.ms, TimeoutStrategy.Aggressive);
+        timeoutPolicy = timeout(cfg.timeout.ms, {
+            strategy: TimeoutStrategy.Aggressive,
+            abortOnReturn: false
+        });
 
         if (hooks?.onTimeout) {
             timeoutPolicy.onTimeout(() => hooks.onTimeout?.());

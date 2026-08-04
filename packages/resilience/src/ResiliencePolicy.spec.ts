@@ -32,6 +32,19 @@ describe('createResiliencePolicy', () => {
     });
 
     describe('timeout', () => {
+        it('keeps the signal usable after successful timeout-backed work returns', async () => {
+            const policy = createResiliencePolicy({ timeout: { ms: 1000 } });
+            let operationSignal: AbortSignal | undefined;
+
+            await expect(policy.execute(async (signal) => {
+                operationSignal = signal;
+                return 'ok';
+            })).resolves.toBe('ok');
+
+            expect(operationSignal).toBeInstanceOf(AbortSignal);
+            expect(operationSignal?.aborted).toBe(false);
+        });
+
         it('rejects with a task-cancelled error and aborts the signal when the work hangs', async () => {
             const policy = createResiliencePolicy({ timeout: { ms: 20 } });
             let captured: AbortSignal | undefined;
