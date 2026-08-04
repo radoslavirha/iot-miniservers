@@ -78,7 +78,7 @@ jobs:
           chmod 600 /tmp/npmrc.auth
       - name: Login to GHCR
         if: ${{ inputs.PUBLISH == true || inputs.PUBLISH == 'true' }}
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
