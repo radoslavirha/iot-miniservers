@@ -1,3 +1,5 @@
+import { getEventListeners } from 'node:events';
+import { CircuitState } from 'cockatiel';
 import { describe, expect, it, vi } from 'vitest';
 import { isBrokenCircuitError, isTaskCancelledError } from './errors.js';
 import { createResiliencePolicy } from './ResiliencePolicy.js';
@@ -17,18 +19,27 @@ describe('createResiliencePolicy', () => {
         expect(policy.breaker).toBeUndefined();
     });
 
-    it('forwards an aborted parent signal', async () => {
+    it('rejects without invoking work when the parent signal is already aborted', async () => {
         const policy = createResiliencePolicy();
         const controller = new AbortController();
         controller.abort();
+        const fn = vi.fn(async () => undefined);
 
-        let aborted = false;
-        await policy.execute(async (signal) => {
-            aborted = signal.aborted;
-            return undefined;
-        }, controller.signal);
+        await expect(policy.execute(fn, controller.signal)).rejects.toSatisfy(isTaskCancelledError);
+        expect(fn).not.toHaveBeenCalled();
+    });
 
-        expect(aborted).toBe(true);
+    it('does not invoke queued work after immediate parent cancellation', async () => {
+        const policy = createResiliencePolicy();
+        const controller = new AbortController();
+        const fn = vi.fn(async () => undefined);
+        const pending = policy.execute(fn, controller.signal);
+
+        controller.abort();
+
+        await expect(pending).rejects.toSatisfy(isTaskCancelledError);
+        await Promise.resolve();
+        expect(fn).not.toHaveBeenCalled();
     });
 
     describe('timeout', () => {
@@ -67,6 +78,44 @@ describe('createResiliencePolicy', () => {
             await expect(policy.execute(() => new Promise<never>(() => {}))).rejects.toBeDefined();
             expect(onTimeout).toHaveBeenCalledOnce();
         });
+
+        it('does not fire the onTimeout hook when the parent signal aborts', async () => {
+            const controller = new AbortController();
+            const onTimeout = vi.fn();
+            let operationSignal: AbortSignal | undefined;
+            let notifyOperationStarted: (() => void) | undefined;
+            const operationStarted = new Promise<void>((resolve) => {
+                notifyOperationStarted = resolve;
+            });
+            const policy = createResiliencePolicy(
+                { timeout: { ms: 1000 } },
+                { hooks: { onTimeout } }
+            );
+
+            const pending = policy.execute((signal) => {
+                operationSignal = signal;
+                notifyOperationStarted?.();
+                return new Promise<never>(() => {});
+            }, controller.signal);
+            await operationStarted;
+            controller.abort();
+
+            await expect(pending).rejects.toSatisfy(isTaskCancelledError);
+            expect(operationSignal?.aborted).toBe(true);
+            expect(onTimeout).not.toHaveBeenCalled();
+        });
+
+        it('removes the parent abort listener when non-settling work times out', async () => {
+            const controller = new AbortController();
+            const policy = createResiliencePolicy({ timeout: { ms: 20 } });
+            const initialListenerCount = getEventListeners(controller.signal, 'abort').length;
+
+            await expect(
+                policy.execute(() => new Promise<never>(() => {}), controller.signal)
+            ).rejects.toSatisfy(isTaskCancelledError);
+
+            expect(getEventListeners(controller.signal, 'abort')).toHaveLength(initialListenerCount);
+        });
     });
 
     describe('retry', () => {
@@ -88,6 +137,70 @@ describe('createResiliencePolicy', () => {
 
             await expect(policy.execute(fn)).rejects.toThrow('boom');
             expect(fn).toHaveBeenCalledTimes(1);
+        });
+
+        it('does not invoke shouldHandle without retry or circuit breaker', async () => {
+            const operationError = new Error('operation failed');
+            const shouldHandle = vi.fn(() => {
+                throw new Error('classifier failed');
+            });
+            const policy = createResiliencePolicy(
+                { timeout: { ms: 1000 } },
+                { shouldHandle }
+            );
+
+            await expect(policy.execute(async () => {
+                throw operationError;
+            })).rejects.toBe(operationError);
+
+            expect(shouldHandle).not.toHaveBeenCalled();
+        });
+
+        it('uses shouldHandle for circuit breaker accounting when retry is disabled', async () => {
+            const shouldHandle = vi.fn(() => false);
+            const policy = createResiliencePolicy(
+                {
+                    circuitBreaker: {
+                        minimumThroughput: 1,
+                        samplingDurationMs: 1000,
+                        threshold: 0.5
+                    }
+                },
+                { shouldHandle }
+            );
+
+            await expect(policy.execute(async () => {
+                throw new Error('dependency failed');
+            })).rejects.toThrow('dependency failed');
+
+            expect(shouldHandle).toHaveBeenCalledOnce();
+            expect(policy.breaker?.state).toBe(CircuitState.Closed);
+        });
+
+        it('cancels an active retry backoff without another attempt', async () => {
+            const controller = new AbortController();
+            const fn = vi.fn(async () => {
+                throw new Error('transient');
+            });
+            let notifyBackoffStarted: (() => void) | undefined;
+            const backoffStarted = new Promise<void>((resolve) => {
+                notifyBackoffStarted = resolve;
+            });
+            const policy = createResiliencePolicy(
+                { retry: { count: 1, backoffMs: 100 } },
+                {
+                    hooks: {
+                        onRetry: () => queueMicrotask(() => notifyBackoffStarted?.())
+                    }
+                }
+            );
+
+            const pending = policy.execute(fn, controller.signal);
+            await backoffStarted;
+            controller.abort();
+
+            await expect(pending).rejects.toSatisfy(isTaskCancelledError);
+            expect(fn).toHaveBeenCalledOnce();
         });
 
         it('only retries errors accepted by shouldHandle', async () => {
@@ -149,6 +262,64 @@ describe('createResiliencePolicy', () => {
         it('executes normally while the breaker is closed', async () => {
             const policy = createResiliencePolicy({ circuitBreaker: {} });
             await expect(policy.execute(async () => 'ok')).resolves.toBe('ok');
+        });
+
+        it('does not open the breaker after parent cancellations', async () => {
+            const policy = createResiliencePolicy({
+                timeout: { ms: 1000 },
+                circuitBreaker: {}
+            });
+
+            for (let attempt = 0; attempt < 50; attempt++) {
+                const controller = new AbortController();
+                let notifyOperationStarted: (() => void) | undefined;
+                const operationStarted = new Promise<void>((resolve) => {
+                    notifyOperationStarted = resolve;
+                });
+                const pending = policy.execute(() => {
+                    notifyOperationStarted?.();
+                    return new Promise<never>(() => {});
+                }, controller.signal);
+                await operationStarted;
+                controller.abort();
+
+                await expect(pending).rejects.toSatisfy(isTaskCancelledError);
+            }
+
+            await expect(policy.execute(async () => 'ok')).resolves.toBe('ok');
+        });
+
+        it('keeps a half-open breaker open after parent cancellation', async () => {
+            const policy = createResiliencePolicy({
+                circuitBreaker: {
+                    halfOpenAfterMs: 0,
+                    minimumThroughput: 1,
+                    samplingDurationMs: 1000,
+                    threshold: 0.5
+                }
+            });
+
+            await expect(policy.execute(async () => {
+                throw new Error('dependency failed');
+            })).rejects.toThrow('dependency failed');
+            expect(policy.breaker?.state).toBe(CircuitState.Open);
+
+            const controller = new AbortController();
+            let notifyProbeStarted: (() => void) | undefined;
+            const probeStarted = new Promise<void>((resolve) => {
+                notifyProbeStarted = resolve;
+            });
+            const probe = policy.execute(() => {
+                notifyProbeStarted?.();
+                return new Promise<never>(() => {});
+            }, controller.signal);
+            await probeStarted;
+            expect(policy.breaker?.state).toBe(CircuitState.HalfOpen);
+
+            controller.abort();
+
+            await expect(probe).rejects.toSatisfy(isTaskCancelledError);
+            expect(policy.breaker?.state).toBe(CircuitState.Open);
         });
     });
 

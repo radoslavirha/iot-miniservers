@@ -64,7 +64,8 @@ Consequences worth knowing:
 ### `shouldHandle` — the transport seam
 
 `shouldHandle` decides which errors count as failures for **both** retry and the breaker. It
-defaults to handling every error. This is the seam that keeps the package transport-agnostic:
+defaults to handling every error. It remains active for breaker accounting when retry is disabled.
+This is the seam that keeps the package transport-agnostic:
 
 ```ts
 import axios from 'axios';
@@ -111,9 +112,9 @@ Policies are created lazily and cached per key. `get()` throws for an unconfigur
 
 ## Cancellation
 
-`execute(fn, parentSignal?)` threads cancellation in one direction: the signal handed to `fn`
-is **derived from** `parentSignal`, so it aborts when the timeout fires *or* when the parent
-aborts. Forward that inner signal — and only that one — to the transport:
+`execute(fn, parentSignal?)` gives `fn` a signal combining the per-attempt timeout and
+`parentSignal`, so it aborts when either does. Forward that inner signal — and only that one —
+to the transport:
 
 ```ts
 await policy.execute(
@@ -122,7 +123,12 @@ await policy.execute(
 );
 ```
 
-Retry also observes the parent: once `parentSignal` aborts, no further attempts are made.
+An already-aborted parent skips `fn` and rejects with `TaskCancelledError`. If the parent aborts
+in flight or during retry backoff, execution rejects immediately and no later attempt starts.
+Parent cancellation is request control flow: it is not retried, does not count toward the circuit
+breaker while closed, and does not invoke `onTimeout`. A cancelled half-open probe leaves the
+breaker open because it cannot establish dependency recovery. A policy deadline remains a timeout,
+so it continues to follow the configured retry and breaker rules.
 
 ### `combineSignals`
 
