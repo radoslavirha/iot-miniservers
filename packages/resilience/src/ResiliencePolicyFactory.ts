@@ -1,4 +1,4 @@
-import { ResilienceConfig } from './schemas/resilience.schema.js';
+import type { ResilienceConfig } from './schemas/resilience.schema.js';
 import {
     createResiliencePolicy,
     type ResiliencePolicy,

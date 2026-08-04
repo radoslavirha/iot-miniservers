@@ -12,7 +12,7 @@ import {
     type TimeoutPolicy
 } from 'cockatiel';
 import { TaskCancelledError } from './errors.js';
-import { ResilienceConfig, ResilienceConfigSchema } from './schemas/resilience.schema.js';
+import { ResilienceConfigSchema, type ResilienceConfig } from './schemas/resilience.schema.js';
 import { combineSignals } from './signals.js';
 
 /**

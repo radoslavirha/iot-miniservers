@@ -1,8 +1,8 @@
 import { ProviderScope, Scope, Service } from '@tsed/di';
 import { CommonUtils, ObjectUtils } from '@radoslavirha/utils';
 import { CITIES } from '../Cities.js';
+import { ChmiRadarEndpoint } from '../endpoints/chmi/index.js';
 import { BBox, CityLED, Coordinates, RGB } from '../models/index.js';
-import { CHMIRadarService } from './CHMIRadarService.js';
 import { RasterService } from './RasterService.js';
 
 @Service()
@@ -22,11 +22,11 @@ export class RadarService {
 
     constructor (
         private rasterService: RasterService,
-        private chmiRadarService: CHMIRadarService
+        private chmiRadarEndpoint: ChmiRadarEndpoint
     ) {}
 
     public async getCitiesFromRadar(radius?: number): Promise<CityLED[]> {
-        const buffer = await this.chmiRadarService.getCurrentRadarSituation();
+        const buffer = await this.chmiRadarEndpoint.getCurrentRadarSituation();
         const image = this.rasterService.createImage(buffer);
 
         const cities = ObjectUtils.cloneDeep(CITIES);

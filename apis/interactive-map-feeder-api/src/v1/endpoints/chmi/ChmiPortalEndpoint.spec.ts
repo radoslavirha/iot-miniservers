@@ -3,10 +3,10 @@ import AxiosMockAdapter from 'axios-mock-adapter';
 import { PlatformTest } from '@tsed/platform-http/testing';
 import { HttpProviderService } from '@radoslavirha/tsed-http-provider';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { ExternalApi } from '../../global/models/ExternalApi.enum.js';
+import { ExternalApi } from '../../../global/models/ExternalApi.enum.js';
 // registers the HttpProviderService override bound to this API's config
-import '../../global/providers/HttpProviderProvider.js';
-import { CHMIService } from './CHMIService.js';
+import '../../../global/providers/HttpProviderProvider.js';
+import { ChmiPortalEndpoint } from './ChmiPortalEndpoint.js';
 
 const MockAdapter = AxiosMockAdapter as unknown as new (
     instance: AxiosInstance,
@@ -18,13 +18,13 @@ const transportOf = (client: { raw: unknown }): AxiosInstance => client.raw as A
 
 const BASE_URL = 'https://intranet.chmi.cz';
 
-describe('CHMIService', () => {
-    let service: CHMIService;
+describe('ChmiPortalEndpoint', () => {
+    let endpoint: ChmiPortalEndpoint;
     let mock: AxiosMockAdapter;
 
     beforeEach(PlatformTest.create);
     beforeEach(() => {
-        service = PlatformTest.get<CHMIService>(CHMIService);
+        endpoint = PlatformTest.get<ChmiPortalEndpoint>(ChmiPortalEndpoint);
         const httpProvider = PlatformTest.get<HttpProviderService<ExternalApi>>(HttpProviderService);
         mock = new MockAdapter(transportOf(httpProvider.get(ExternalApi.ChmiPortal)));
     });
@@ -38,7 +38,7 @@ describe('CHMIService', () => {
         expect.assertions(3);
         mock.onGet(new RegExp(filename.replace(/\./g, '\\.'))).reply(200, Buffer.from('image-bytes'));
 
-        const result = await service[method]();
+        const result = await endpoint[method]();
 
         expect(Buffer.from(result).toString()).toBe('image-bytes');
         expect(mock.history['get']?.[0]?.url).toContain(filename);
@@ -50,6 +50,6 @@ describe('CHMIService', () => {
         expect.assertions(1);
         mock.onGet(/oro_col/).reply(503);
 
-        await expect(service.getSurfaceMap()).rejects.toThrow();
+        await expect(endpoint.getSurfaceMap()).rejects.toThrow();
     });
 });

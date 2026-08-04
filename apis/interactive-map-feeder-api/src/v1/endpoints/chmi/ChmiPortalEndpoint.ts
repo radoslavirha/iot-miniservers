@@ -1,15 +1,15 @@
 import { InjectHttpClient, type HttpClient } from '@radoslavirha/tsed-http-provider';
 import { ProviderScope, Scope, Service } from '@tsed/di';
-import { ExternalApi } from '../../global/models/ExternalApi.enum.js';
+import { ExternalApi } from '../../../global/models/ExternalApi.enum.js';
 
 /**
- * Static basemap layers published by ČHMÚ.
+ * Static basemap layers published by CHMI.
  *
  * @see https://opendata.chmi.cz/meteorology/weather/radar/radar_popis_cz.pdf
  */
 @Service()
 @Scope(ProviderScope.SINGLETON)
-export class CHMIService {
+export class ChmiPortalEndpoint {
     @InjectHttpClient(ExternalApi.ChmiPortal)
     private readonly client!: HttpClient;
 

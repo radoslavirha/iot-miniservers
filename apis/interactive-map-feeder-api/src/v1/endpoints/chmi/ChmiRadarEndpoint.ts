@@ -1,16 +1,16 @@
 import { InjectHttpClient, type HttpClient } from '@radoslavirha/tsed-http-provider';
 import { NumberUtils } from '@radoslavirha/utils';
 import { ProviderScope, Scope, Service } from '@tsed/di';
-import { ExternalApi } from '../../global/models/ExternalApi.enum.js';
+import { ExternalApi } from '../../../global/models/ExternalApi.enum.js';
 
 /**
- * Precipitation radar composite published on ČHMÚ open data.
+ * Precipitation radar composite published on CHMI open data.
  *
  * @see https://opendata.chmi.cz/meteorology/weather/radar/radar_popis_cz.pdf
  */
 @Service()
 @Scope(ProviderScope.SINGLETON)
-export class CHMIRadarService {
+export class ChmiRadarEndpoint {
     @InjectHttpClient(ExternalApi.ChmiOpendata)
     private readonly client!: HttpClient;
 
@@ -29,7 +29,7 @@ export class CHMIRadarService {
     private getCurrentDate(): string {
         const date = new Date();
         const year = date.getUTCFullYear();
-        const month = String(date.getUTCMonth() + 1).padStart(2, '0'); // Month is 0-based
+        const month = String(date.getUTCMonth() + 1).padStart(2, '0');
         const day = String(date.getUTCDate()).padStart(2, '0');
         const hour = String(date.getUTCHours()).padStart(2, '0');
         const minute = String(NumberUtils.floor(date.getUTCMinutes() / 5) * 5).padStart(2, '0');
