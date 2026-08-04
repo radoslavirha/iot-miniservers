@@ -12,6 +12,7 @@ Deliberately has **no logging** — see [`@radoslavirha/tsed-http-provider`](../
 - **Static values**: API keys, bearer tokens, or any fixed header/query param go directly in `transport`
 - **Resilience policy** integration (timeout, retry, circuit breaker) with configurable retriable statuses
 - **401 retry** — on a 401 response, credentials are invalidated and one retry is attempted automatically
+- **Credential single-flight** — concurrent cold/expired auth fetches share one in-flight acquisition per strategy
 - **Transport-neutral client** — `HttpClient` is this package's own contract, not a third-party client's API
 - **Zero framework dependency** — works in any Node.js 24+ project
 
@@ -383,6 +384,10 @@ const response = await client.get('/resource', {
 | `AuthStrategy.KubernetesServiceAccount` | `"kubernetes-service-account"` | Reads SA token from file; re-reads on invalidation |
 | `AuthStrategy.TokenExchange` | `"token-exchange"` | Calls an auth endpoint (GET/POST); caches response |
 | `AuthStrategy.JwtSelfSigned` | `"jwt-self-signed"` | Generates a signed JWT locally using `jose`; caches until near expiry |
+
+`TokenExchange` and `JwtSelfSigned` use single-flight acquisition: when credentials are missing
+or expired, concurrent calls share one in-flight refresh. `invalidate()` clears the cache and
+starts a new cache epoch so stale in-flight completions cannot overwrite newer refresh cycles.
 
 ## Transport Placeholder Interpolation
 

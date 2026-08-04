@@ -2,7 +2,7 @@
 
 Ts.ED wiring for [`@radoslavirha/http-provider`](../http-provider): one injectable
 `HttpProviderService` that turns the `externalApis` block of your configuration into
-auth-aware, resilient, **logged** `AxiosInstance` objects.
+auth-aware, resilient, **logged** `HttpClient` instances.
 
 The core package is framework-free and has no logging. This package adds it, using the API's
 `Logger` and [`@radoslavirha/redaction`](https://github.com/radoslavirha/toolkit-hub/tree/main/packages/redaction)
@@ -86,6 +86,10 @@ Export it from `providers/index.ts` so Ts.ED registers it. Do **not** also add a
         "timeout": { "ms": 10000 },
         "retry": { "count": 2, "backoffMs": 500 },
         "circuitBreaker": {}
+      },
+      "logging": {
+        "enabled": true,
+        "stack": false
       },
       "retriableStatusCodes": [500, 502, 503, 504, 429, 408]
     }
@@ -245,7 +249,7 @@ per API.
 | `InjectHttpClient(key)` | Property decorator injecting the `HttpClient` for one configured API. |
 | `HttpProviderService<K>` | Injectable factory wrapper. `get(key)` returns the cached `HttpClient`; throws for an unconfigured key. |
 | `attachErrorTranslation` | The failure-translation interceptor, for wiring outside the service. |
-| `createExternalApisSchema(keys)` | Zod schema for the `externalApis` config block, constrained to your enum. |
+| `createExternalApisSchema(keys)` | Zod schema for the `externalApis` config block: listed enum keys are required; unknown extra keys are tolerated/stripped for rollout compatibility. |
 | `ExternalApiEntrySchema` | One entry: core provider fields plus `logging`. |
 | `attachRequestLogging` | The interceptor itself, for wiring outside the service. |
 | `HttpLogConfigSchema` | The `logging` section schema. |

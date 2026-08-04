@@ -11,6 +11,71 @@ All configuration changes must be backward compatible for rolling deployments.
 - Do not require strict rejection of unknown future keys at runtime if that would block old pods.
 - Additive changes are preferred; remove legacy keys only after all workloads run a compatible version.
 
+## Required externalApis ConfigMap shape
+
+Update deployment ConfigMaps before rolling new application images. During rollout, old and new
+pods run together and must both parse the same config.
+
+`interactive-map-feeder-api`:
+
+```json
+{
+  "externalApis": {
+    "CHMI_PORTAL": {
+      "baseURL": "https://intranet.chmi.cz",
+      "resilience": {
+        "timeout": { "ms": 10000 },
+        "retry": { "count": 2, "backoffMs": 500 },
+        "circuitBreaker": {}
+      },
+      "logging": {
+        "enabled": true,
+        "stack": false
+      },
+      "retriableStatusCodes": [500, 502, 503, 504, 429, 408]
+    },
+    "CHMI_OPENDATA": {
+      "baseURL": "https://opendata.chmi.cz",
+      "resilience": {
+        "timeout": { "ms": 10000 },
+        "retry": { "count": 2, "backoffMs": 500 },
+        "circuitBreaker": {}
+      },
+      "logging": {
+        "enabled": true,
+        "stack": false
+      },
+      "retriableStatusCodes": [500, 502, 503, 504, 429, 408]
+    }
+  }
+}
+```
+
+`miot-bridge-api`:
+
+```json
+{
+  "externalApis": {
+    "MIOT_SPEC": {
+      "baseURL": "https://miot-spec.org/miot-spec-v2",
+      "resilience": {
+        "timeout": { "ms": 10000 },
+        "retry": { "count": 2, "backoffMs": 500 },
+        "circuitBreaker": {}
+      },
+      "logging": {
+        "enabled": true,
+        "stack": false
+      },
+      "retriableStatusCodes": [500, 502, 503, 504, 429, 408]
+    }
+  }
+}
+```
+
+Known enum keys are required. Unknown extra keys are tolerated and stripped at runtime for
+rolling-deployment compatibility.
+
 ---
 
 ## App: <app-name>

@@ -44,6 +44,9 @@ what the framework-agnostic core leaves out:
 - **Client resolution** — an `@InjectHttpClient(key)` property decorator, built on Ts.ED's
   `@Inject(token, transform)`.
 
+`externalApis` parsing requires listed enum keys and intentionally tolerates unknown extra keys
+at runtime for rolling-deployment compatibility (extra keys are stripped after parsing).
+
 `Logger` is resolved from the DI container, so subclasses pass only configuration. Endpoint
 services therefore need no base class, no constructor and no try/catch, and never name an HTTP
 library. Deserialization stays a separate concern — endpoints call `Serializer` from
@@ -52,14 +55,15 @@ library. Deserialization stays a separate concern — endpoints call `Serializer
 **APIs**
 
 - `interactive-map-feeder-api`: ČHMÚ base URLs moved from hardcoded strings into `externalApis`
-  (`chmi-portal`, `chmi-opendata` — two distinct hosts). `CHMIService` is now an injectable
-  service composed into `RadarService`/`RadarImageService` rather than an abstract base class,
-  and the radar fetch moved out of `RadarService` into its own `CHMIRadarService` endpoint so
-  business logic no longer makes HTTP calls directly.
-- `miot-bridge-api`: `MiotSpecV2Endpoint` reads its base URL from `externalApis.miot-spec`;
+  (`CHMI_PORTAL`, `CHMI_OPENDATA` — two distinct hosts). Transport wrappers now live under
+  `src/v1/endpoints/chmi` as `ChmiPortalEndpoint` and `ChmiRadarEndpoint`, and
+  `RadarService`/`RadarImageService` depend on those endpoint wrappers instead of transport-owning
+  services.
+- `miot-bridge-api`: `MiotSpecV2Endpoint` reads its base URL from `externalApis.MIOT_SPEC`;
   `specUrl()` still returns an absolute URL, now composed from the client's configured `baseURL`.
   The pre-existing `http` config section keeps its original meaning (notification settings) and
   is untouched.
 
 Deployment note: `interactive-map-feeder-api` and `miot-bridge-api` need the new `externalApis`
-block added to their ConfigMaps before rollout.
+block added to their ConfigMaps before rollout. Logging defaults are metadata-only (`enabled: true`
+with payload sections disabled unless explicitly enabled).

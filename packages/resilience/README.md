@@ -131,6 +131,8 @@ Parent cancellation is request control flow: it is not retried, does not count t
 breaker while closed, and does not invoke `onTimeout`. A cancelled half-open probe leaves the
 breaker open because it cannot establish dependency recovery. A policy deadline remains a timeout,
 so it continues to follow the configured retry and breaker rules.
+The timeout policy keeps `abortOnReturn: false`, so a successful call does not mark the attempt
+signal as aborted after `fn` resolves.
 
 ### `combineSignals`
 
