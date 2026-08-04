@@ -3,5 +3,13 @@
         "httpPort": 4000
     },
     "publicURL": "http://sandbox.api.server.home/iot/interactive-map-feeder",
+    "externalApis": {
+        "CHMI_PORTAL": {
+            "baseURL": "https://intranet.chmi.cz"
+        },
+        "CHMI_OPENDATA": {
+            "baseURL": "https://opendata.chmi.cz"
+        }
+    },
     "logger": {}
 }

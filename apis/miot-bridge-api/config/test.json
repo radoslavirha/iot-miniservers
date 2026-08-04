@@ -6,5 +6,10 @@
     "logger": {},
     "mqtt": {
         "enabled": false
+    },
+    "externalApis": {
+        "MIOT_SPEC": {
+            "baseURL": "https://miot-spec.org/miot-spec-v2"
+        }
     }
 }

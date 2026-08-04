@@ -10,7 +10,46 @@ Fetches precipitation radar data from ČHMÚ (Czech Hydrometeorological Institut
 
 | System | Protocol | Purpose |
 |--------|----------|---------|
-| ČHMÚ (`www.chmi.cz`) | HTTPS GET | Surface map, cities overlay, borders overlay, radar PNG |
+| ČHMÚ Portal (`intranet.chmi.cz`) | HTTPS GET | Surface map, cities overlay, borders overlay |
+| ČHMÚ OpenData (`opendata.chmi.cz`) | HTTPS GET | Radar PNG |
+
+## Configuration (externalApis)
+
+The API reads ČHMÚ hosts from `externalApis` (no hardcoded base URLs in services/endpoints).
+Update the ConfigMap first, then roll image updates.
+
+```json
+{
+  "externalApis": {
+    "CHMI_PORTAL": {
+      "baseURL": "https://intranet.chmi.cz",
+      "resilience": {
+        "timeout": { "ms": 10000 },
+        "retry": { "count": 2, "backoffMs": 500 },
+        "circuitBreaker": {}
+      },
+      "logging": {
+        "enabled": true,
+        "stack": false
+      },
+      "retriableStatusCodes": [500, 502, 503, 504, 429, 408]
+    },
+    "CHMI_OPENDATA": {
+      "baseURL": "https://opendata.chmi.cz",
+      "resilience": {
+        "timeout": { "ms": 10000 },
+        "retry": { "count": 2, "backoffMs": 500 },
+        "circuitBreaker": {}
+      },
+      "logging": {
+        "enabled": true,
+        "stack": false
+      },
+      "retriableStatusCodes": [500, 502, 503, 504, 429, 408]
+    }
+  }
+}
+```
 
 ## REST API
 

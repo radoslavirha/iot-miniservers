@@ -102,6 +102,27 @@ ui/<ui-name>/
 - Endpoint request/response models follow CamelCase `{Resource}{HTTP Method}{Request/Response}` convention
 - always build models using `CommonUtils.buildModelStrict` / `CommonUtils.buildModelPartial` / `CommonUtils.buildModelCore` from `@radoslavirha/utils` (`buildModelStrict` for fully-defined models, `buildModelPartial` for partial/patch-like data, `buildModelCore` only for shared low-level model-building helpers)
 
+### Enums
+
+- Enum **values are always `UPPER_SNAKE_CASE`**. Members and the type stay `PascalCase`:
+
+  ```ts
+  export enum ExternalApi {
+      ChmiPortal = 'CHMI_PORTAL',
+      ChmiOpendata = 'CHMI_OPENDATA'
+  }
+  ```
+
+- One enum per file, named `<Name>.enum.ts`.
+- **Exception — DTO enums.** Enums under `endpoints/*/dto/` and `storage/*/dto/` mirror an
+  external wire format, so their values must match that format exactly, whatever its casing
+  (e.g. `MiotSpecV2PropertyAccessDTO.Read = 'read'`, because miot-spec.org sends `read`).
+  The internal model enum it maps to still uses `UPPER_SNAKE_CASE`
+  (`MiotSpecV2PropertyAccess.Read = 'READ'`).
+- A few older enums still carry lowercase values (e.g. `DataSources.Radar = 'radar'`,
+  `SwaggerDocs.API = 'api'`); they predate this rule and are migrated opportunistically, not in
+  bulk, since values are part of the external contract (routes, config keys, stored data).
+
 ### Mappers
 
 - Always do bi-directional mapping between DTO <-> Model.
@@ -182,6 +203,15 @@ ui/<ui-name>/
   - `config/test.json` exists for tests as testing frameworks usually set `NODE_ENV=test`
   - `config/custom-environment-variables.json` is not mandatory, it's only for advanced usage when [config](https://www.npmjs.com/package/config) can use/replace environment variable in json file during runtime.
 - uses `@radoslavirha/tsed-configuration` for loading server configuration.
+
+### Configuration backward compatibility (repository-wide rule)
+
+- Treat configuration as a versioned contract across all apps and packages.
+- All config changes must be backward compatible for rolling deployments.
+- Assume a new ConfigMap can be applied before all old pods are replaced.
+- During rollout, old and new versions may run concurrently.
+- Prefer additive config changes; remove legacy keys only after all workloads run a compatible version.
+- Do not enforce runtime strict rejection of unknown future keys when it can block older running versions.
 
 ## Versioning & Changesets
 

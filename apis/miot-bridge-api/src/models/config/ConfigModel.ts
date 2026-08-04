@@ -1,5 +1,7 @@
 import { BaseConfig } from '@radoslavirha/tsed-configuration';
+import { createExternalApisSchema } from '@radoslavirha/tsed-http-provider';
 import { z } from 'zod';
+import { ExternalApi } from './ExternalApi.enum.js';
 import { HttpConfigSchema } from './HttpConfig.js';
 import { MongoConfigSchema } from '@radoslavirha/tsed-mongoose';
 import { MqttConfigSchema } from './MqttConfig.js';
@@ -14,6 +16,7 @@ export const ConfigSchema = BaseConfig.extend({
     udp: UdpConfigSchema.optional().describe('UDP listener configuration. When udp.enabled is true, the server accepts commands over UDP.'),
     polling: PollingConfigSchema.optional().describe('Device property polling configuration. When polling.enabled is true, subscribed properties are polled at the configured interval.'),
     http: HttpConfigSchema.optional().describe('HTTP notification configuration.'),
+    externalApis: createExternalApisSchema(Object.values(ExternalApi)).describe('External APIs this service calls — base URL, auth, resilience and logging per API.'),
     mqtt: MqttConfigSchema.optional().describe('MQTT client configuration. Connection is shared by the inbound command subscriber and outbound notification publisher.'),
     logger: LoggerOptionsSchema.optional(),
     otel: OtelConfigSchema.optional().describe('OpenTelemetry configuration.')

@@ -10,12 +10,12 @@ export const HttpProvidersConfigSchema = z.record(z.string(), HttpProviderEntryS
 /**
  * Creates a Zod schema for a providers map constrained to the given enum keys.
  * Use this to tie the Zod schema to your project-specific enum so that
- * `z.infer<typeof ProvidersSchema>` produces `Record<YourApiKey, HttpProviderEntry>`.
+ * `z.infer<typeof ProvidersSchema>` produces `Record<YourExternalApi, HttpProviderEntry>`.
  *
  * @example
  * ```ts
- * enum ApiKey { QRManager = 'qr-manager', MiotSpec = 'miot-spec' }
- * const ProvidersSchema = createProvidersSchema(Object.values(ApiKey));
+ * enum ExternalApi { QRManager = 'QR_MANAGER', MiotSpec = 'MIOT_SPEC' }
+ * const ProvidersSchema = createProvidersSchema(Object.values(ExternalApi));
  * const ConfigSchema = BaseConfig.extend({
  *   http: z.object({ providers: ProvidersSchema }).optional()
  * });

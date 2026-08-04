@@ -1,6 +1,6 @@
 # IoT Miniservers — Knowledge Base
 
-> Maintained by `/update-docs` skill. Last updated: 2026-04-30.
+> Maintained by `/update-docs` skill. Last updated: 2026-08-01.
 
 pnpm monorepo of small independent Node.js APIs and UIs (Ts.ED, TypeScript ESM).
 
@@ -12,13 +12,19 @@ pnpm monorepo of small independent Node.js APIs and UIs (Ts.ED, TypeScript ESM).
 | `miot-bridge-api` | API | Gateway between home automation controllers and Xiaomi MIoT devices. Manages device registry, translates commands, polls properties, dispatches change notifications |
 | `qr-manager-api` | API | QR code redirect manager: allocates slugs, stores slug→URL, resolves via 302 redirect, renders QR images |
 | `qr-manager-ui` | UI | Admin UI for `qr-manager-api`: create/edit/deactivate QR records, download images |
+| `homelab-dashboard-ui` | UI | Dashboard UI for homelab services, driven by Unifi DNS records |
 
 ## Shared Packages
 
 | Package | Purpose |
 |---------|---------|
+| `@radoslavirha/http-provider` | Auth-aware axios factory from Zod config: auth strategies, transport interpolation, resilience policy. Framework-free, no logging |
 | `@radoslavirha/miot-device` | Stateful MIoT device client: UDP transport, per-device stamp/handshake lifecycle |
 | `@radoslavirha/otel` | OpenTelemetry bootstrap — traces + custom metrics via OTLP; logs via stdout JSON (no OTLP log export) |
+| `@radoslavirha/resilience` | Transport-agnostic timeout / retry / circuit breaker over `AbortSignal`, backed by cockatiel |
+| `@radoslavirha/tsed-http-provider` | Ts.ED wiring for `http-provider` — builds clients from `externalApis` config and adds redacted outbound request/response logging |
+| `@radoslavirha/tsed-resilience` | Ts.ED `@RequestSignal()` decorator — an `AbortSignal` tied to the HTTP request lifecycle |
+| `@radoslavirha/ui-kit` | Shared design system and UI components for the UIs |
 
 ## Observability (OTel signal routing)
 

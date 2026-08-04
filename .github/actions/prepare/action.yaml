@@ -33,11 +33,14 @@ runs:
       if: "${{ inputs.TARGET_APP != '' }}"
       run: pnpm install --frozen-lockfile --filter "./${{ inputs.TARGET_APP }}" --filter "./packages/**"
       shell: bash
-    - name: Build workspace packages
-      if: "${{ inputs.TARGET_APP != '' }}"
-      run: pnpm --filter './packages/**' run build
-      shell: bash
     - name: Install dependencies
       if: "${{ inputs.TARGET_APP == '' }}"
       run: pnpm install --frozen-lockfile
+      shell: bash
+    # Packages may depend on sibling packages (workspace:*) that need their
+    # dist/ built first — required for both app jobs and package-only jobs,
+    # since package-only jobs (lint/build/test a single packages/* entry)
+    # skip straight to that package without building the rest of the workspace.
+    - name: Build workspace packages
+      run: pnpm --filter './packages/**' run build
       shell: bash

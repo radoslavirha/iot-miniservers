@@ -3,6 +3,7 @@ import { Context, PathParams } from '@tsed/platform-params';
 import { PlatformContext } from '@tsed/platform-http';
 import { Description, Get, Pattern, Returns } from '@tsed/schema';
 import { Docs } from '@tsed/swagger';
+import { RequestSignal } from '@radoslavirha/tsed-resilience';
 import { SLUG_PATTERN } from '../constants.js';
 import { RedirectHandler } from '../handlers/RedirectHandler.js';
 import { SwaggerDocs } from '../models/SwaggerDocs.enum.js';
@@ -29,9 +30,12 @@ export class RedirectController {
     @Returns(400)
     public async redirect(
         @PathParams('slug') @Pattern(SLUG_PATTERN) slug: string,
+        @RequestSignal() signal: AbortSignal,
         @Context() ctx: PlatformContext
     ): Promise<void> {
-        const { targetURL } = await this.redirectHandler.execute(slug);
+        // The signal aborts if the client disconnects, so a scan that is
+        // abandoned mid-flight cancels the DB lookup instead of completing it.
+        const { targetURL } = await this.redirectHandler.execute(slug, signal);
         ctx.response.redirect(302, targetURL);
     }
 }

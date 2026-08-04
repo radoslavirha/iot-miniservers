@@ -8,6 +8,9 @@ const EXPIRY_BUFFER_SECONDS = 30;
 export class JwtSelfSignedStrategy implements IAuthStrategy {
     private cachedToken: string | undefined;
     private expiresAt: number | undefined;
+    private inFlightToken: Promise<string> | undefined;
+    private inFlightEpoch: number | undefined;
+    private cacheEpoch: number = 0;
 
     public constructor(private readonly config: JwtSelfSignedAuth) {}
 
@@ -15,14 +18,38 @@ export class JwtSelfSignedStrategy implements IAuthStrategy {
         const nowSeconds = Math.floor(Date.now() / 1000);
         const isExpired = this.expiresAt !== undefined && nowSeconds >= this.expiresAt - EXPIRY_BUFFER_SECONDS;
 
-        if (!this.cachedToken || isExpired) {
-            this.cachedToken = await this.generateToken();
-            this.expiresAt = nowSeconds + this.config.claims.exp;
+        if (this.cachedToken && !isExpired) {
+            return { value: this.cachedToken };
         }
-        return { value: this.cachedToken };
+
+        if (this.inFlightToken && this.inFlightEpoch === this.cacheEpoch) {
+            const token = await this.inFlightToken;
+            return { value: token };
+        }
+
+        const requestEpoch = this.cacheEpoch;
+        this.inFlightEpoch = requestEpoch;
+        this.inFlightToken = this.generateToken()
+            .then((token) => {
+                if (this.cacheEpoch === requestEpoch) {
+                    this.cachedToken = token;
+                    this.expiresAt = Math.floor(Date.now() / 1000) + this.config.claims.exp;
+                }
+                return token;
+            })
+            .finally(() => {
+                if (this.inFlightEpoch === requestEpoch) {
+                    this.inFlightToken = undefined;
+                    this.inFlightEpoch = undefined;
+                }
+            });
+
+        const token = await this.inFlightToken;
+        return { value: token };
     }
 
     public invalidate(): void {
+        this.cacheEpoch += 1;
         this.cachedToken = undefined;
         this.expiresAt = undefined;
     }

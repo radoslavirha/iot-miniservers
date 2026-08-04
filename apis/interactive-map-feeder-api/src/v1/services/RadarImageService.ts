@@ -1,4 +1,5 @@
 import { ProviderScope, Scope, Service } from '@tsed/di';
+import { ChmiPortalEndpoint, ChmiRadarEndpoint } from '../endpoints/chmi/index.js';
 import { RadarService } from './RadarService.js';
 import { RasterService } from './RasterService.js';
 
@@ -7,15 +8,17 @@ import { RasterService } from './RasterService.js';
 export class RadarImageService {
     constructor (
         private radarService: RadarService,
+        private chmiPortalEndpoint: ChmiPortalEndpoint,
+        private chmiRadarEndpoint: ChmiRadarEndpoint,
         private rasterService: RasterService
     ) {
     }
 
     public async getCurrentRadarImage(): Promise<Buffer> {
-        const radarBuffer = await this.radarService.getCurrentRadarSituation();
-        const surfaceBuffer = await this.radarService.getSurfaceMap();
-        const citiesBuffer = await this.radarService.getCitiesMap();
-        const bordersBuffer = await this.radarService.getBordersMap();
+        const radarBuffer = await this.chmiRadarEndpoint.getCurrentRadarSituation();
+        const surfaceBuffer = await this.chmiPortalEndpoint.getSurfaceMap();
+        const citiesBuffer = await this.chmiPortalEndpoint.getCitiesMap();
+        const bordersBuffer = await this.chmiPortalEndpoint.getBordersMap();
 
         const surface = this.rasterService.createImage(surfaceBuffer);
         const surfaceMetadata = await surface.metadata();

@@ -1,9 +1,13 @@
 import { BaseConfig } from '@radoslavirha/tsed-configuration';
+import { createExternalApisSchema } from '@radoslavirha/tsed-http-provider';
 import { LoggerOptionsSchema } from '@radoslavirha/tsed-logger';
 import { OtelConfigSchema } from '@radoslavirha/otel';
 import z from 'zod';
+import { ExternalApi } from './ExternalApi.enum.js';
 
 export const ConfigSchema = BaseConfig.extend({
+    externalApis: createExternalApisSchema(Object.values(ExternalApi))
+        .describe('External APIs this service calls — base URL, auth, resilience and logging per API.'),
     logger: LoggerOptionsSchema.optional(),
     otel: OtelConfigSchema.optional().describe('OpenTelemetry configuration.')
 });

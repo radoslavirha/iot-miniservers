@@ -1,8 +1,12 @@
 import { Injectable, Scope, ProviderScope } from '@tsed/di';
-import axios from 'axios';
+import { InjectHttpClient, type HttpClient } from '@radoslavirha/tsed-http-provider';
 import { Serializer } from '@radoslavirha/tsed-common';
+import { ExternalApi } from '../../models/config/ExternalApi.enum.js';
 import { MiotSpecV2InstanceDTO } from './dto/MiotSpecV2InstanceDTO.js';
 import { MiotSpecV2DTO } from './dto/MiotSpecV2DTO.js';
+
+const INSTANCES_PATH = '/instances';
+const INSTANCE_PATH = '/instance';
 
 /**
  * Service for interacting with the miot-spec.org API.
@@ -10,10 +14,16 @@ import { MiotSpecV2DTO } from './dto/MiotSpecV2DTO.js';
 @Injectable()
 @Scope(ProviderScope.SINGLETON)
 export class MiotSpecV2Endpoint {
-    private readonly BASE_URL = 'https://miot-spec.org/miot-spec-v2';
+    @InjectHttpClient(ExternalApi.MiotSpec)
+    private readonly client!: HttpClient;
 
+    /**
+     * Absolute URL of a model's spec document. It is persisted on the device
+     * record, so it is composed from the configured base URL rather than left
+     * relative.
+     */
     public specUrl(type: string): string {
-        return `${this.BASE_URL}/instance?type=${type}`;
+        return `${this.client.baseURL ?? ''}${INSTANCE_PATH}?type=${type}`;
     }
 
     /**
@@ -21,16 +31,24 @@ export class MiotSpecV2Endpoint {
      * The result can be stored in cache and later parsed with `parseSpec`.
      * @param model Device model (e.g. 'xiaomi.vacuum.c102gl')
      */
-    async fetchRaw(model: string): Promise<MiotSpecV2DTO> {
-        const instancesResponse = await axios.get<{ instances: MiotSpecV2InstanceDTO[] }>(`${this.BASE_URL}/instances?status=released`);
-        const instances = Serializer.deserializeArray(instancesResponse.data.instances, MiotSpecV2InstanceDTO);
-        const instance = instances.sort((a, b) => (b.ts - a.ts)).find(i => i.model === model);
+    public async fetchRaw(model: string): Promise<MiotSpecV2DTO> {
+        const { instances } = await this.client.get<{ instances: MiotSpecV2InstanceDTO[] }>(
+            INSTANCES_PATH,
+            { params: { status: 'released' } }
+        );
+
+        const instance = Serializer.deserializeArray(instances, MiotSpecV2InstanceDTO)
+            .sort((a, b) => (b.ts - a.ts))
+            .find(i => i.model === model);
 
         if (!instance) {
             throw new Error(`Model ${model} not found in MIoT spec`);
         }
 
-        const specResponse = await axios.get<MiotSpecV2DTO>(this.specUrl(instance.type));
-        return Serializer.deserialize(specResponse.data, MiotSpecV2DTO);
+        const spec = await this.client.get<object>(INSTANCE_PATH, {
+            params: { type: instance.type }
+        });
+
+        return Serializer.deserialize(spec, MiotSpecV2DTO);
     }
 }

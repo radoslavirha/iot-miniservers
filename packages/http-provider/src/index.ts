@@ -1,12 +1,13 @@
 export { HttpProviderFactory } from './HttpProviderFactory.js';
+export type { HttpClient, HttpMethod, HttpRequest, HttpRequestOptions, HttpResponseType } from './client/HttpClient.js';
+export type { HttpProviderFactoryOptions, HttpInstanceRole } from './HttpProviderFactory.js';
 export { AuthStrategy } from './schemas/auth.schema.js';
 export { HttpProvidersConfigSchema, createProvidersSchema } from './schemas/providers.schema.js';
-export { HttpProviderEntrySchema } from './schemas/provider.schema.js';
-export { RetryConfigSchema } from './schemas/retry.schema.js';
+export { HttpProviderEntrySchema, DEFAULT_RETRIABLE_STATUS_CODES } from './schemas/provider.schema.js';
 export { TransportSchema } from './schemas/transport.schema.js';
+export type { ResilienceConfig } from '@radoslavirha/resilience';
 export type { AuthConfig, KubernetesServiceAccountAuth, TokenExchangeAuth, TokenExchangeRequest, TokenExtractorEntry, JwtSelfSignedAuth, JwtKey, JwtClaims } from './schemas/auth.schema.js';
-export type { HttpProviderEntry } from './schemas/provider.schema.js';
+export type { HttpProviderEntry, ResolvedHttpProviderEntry } from './schemas/provider.schema.js';
 export type { HttpProvidersConfig } from './schemas/providers.schema.js';
-export type { RetryConfig } from './schemas/retry.schema.js';
 export type { TransportConfig, TransportHeader, TransportQueryParam } from './schemas/transport.schema.js';
 export type { IAuthStrategy } from './strategies/IAuthStrategy.js';

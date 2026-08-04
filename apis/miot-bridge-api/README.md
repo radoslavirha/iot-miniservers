@@ -20,6 +20,31 @@ Responsibilities:
 | MQTT broker | MQTT pub/sub | `mqtt.enabled` | Inbound commands + outbound notifications |
 | MongoDB | TCP | `mongodb.enabled` | Device registry + notification subscriptions (fallback: local JSON cache) |
 
+## Configuration (externalApis)
+
+`MiotSpecV2Endpoint` resolves its base URL from `externalApis.MIOT_SPEC`.
+Apply ConfigMap changes before rolling application images.
+
+```json
+{
+	"externalApis": {
+		"MIOT_SPEC": {
+			"baseURL": "https://miot-spec.org/miot-spec-v2",
+			"resilience": {
+				"timeout": { "ms": 10000 },
+				"retry": { "count": 2, "backoffMs": 500 },
+				"circuitBreaker": {}
+			},
+			"logging": {
+				"enabled": true,
+				"stack": false
+			},
+			"retriableStatusCodes": [500, 502, 503, 504, 429, 408]
+		}
+	}
+}
+```
+
 ## REST API
 
 | Method | Path | Description |

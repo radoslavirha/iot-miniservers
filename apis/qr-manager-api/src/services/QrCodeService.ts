@@ -38,8 +38,8 @@ export class QrCodeService {
         return CommonUtils.isNil(dto) ? undefined : this.mapper.mongoToModel(dto);
     }
 
-    public async getBySlug(slug: string): Promise<QrCode | undefined> {
-        const dto = await this.repository.findBySlug(slug);
+    public async getBySlug(slug: string, signal?: AbortSignal): Promise<QrCode | undefined> {
+        const dto = await this.repository.findBySlug(slug, signal);
         return CommonUtils.isNil(dto) ? undefined : this.mapper.mongoToModel(dto);
     }
 

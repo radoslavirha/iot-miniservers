@@ -79,6 +79,59 @@ describe('JwtSelfSignedStrategy', () => {
         expect(vi.mocked(SignJWT)).toHaveBeenCalledTimes(1);
     });
 
+    it('deduplicates concurrent cold token generation for file keys', async () => {
+        let releaseReadFile!: (value: string) => void;
+        const pendingRead = new Promise<string>((resolve) => {
+            releaseReadFile = resolve;
+        });
+        vi.mocked(readFile).mockImplementation(() => pendingRead as never);
+
+        const strategy = new JwtSelfSignedStrategy(RS256_FILE_CONFIG);
+        const firstPending = strategy.getCredentials();
+        const secondPending = strategy.getCredentials();
+
+        await Promise.resolve();
+        releaseReadFile('-----BEGIN PRIVATE KEY-----');
+
+        const [first, second] = await Promise.all([firstPending, secondPending]);
+
+        expect(first).toEqual({ value: 'mock-jwt-token' });
+        expect(second).toEqual(first);
+        expect(readFile).toHaveBeenCalledTimes(1);
+    });
+
+    it('starts a fresh token generation after invalidate while an older generation is in flight', async () => {
+        let releaseFirstRead!: (value: string) => void;
+        const firstReadPending = new Promise<string>((resolve) => {
+            releaseFirstRead = resolve;
+        });
+        let readCount = 0;
+
+        vi.mocked(readFile).mockImplementation(() => {
+            readCount += 1;
+            if (readCount === 1) {
+                return firstReadPending as never;
+            }
+            return Promise.resolve('-----BEGIN PRIVATE KEY-----') as never;
+        });
+
+        const strategy = new JwtSelfSignedStrategy(RS256_FILE_CONFIG);
+
+        const firstPending = strategy.getCredentials();
+        await Promise.resolve();
+        strategy.invalidate();
+
+        const second = await strategy.getCredentials();
+        expect(second).toEqual({ value: 'mock-jwt-token' });
+
+        releaseFirstRead('-----BEGIN PRIVATE KEY-----');
+        await firstPending;
+
+        const third = await strategy.getCredentials();
+        expect(third).toEqual({ value: 'mock-jwt-token' });
+        expect(readFile).toHaveBeenCalledTimes(2);
+    });
+
     it('re-generates after invalidate()', async () => {
         vi.mocked(readFile).mockResolvedValue('key' as never);
         const strategy = new JwtSelfSignedStrategy(RS256_FILE_CONFIG);

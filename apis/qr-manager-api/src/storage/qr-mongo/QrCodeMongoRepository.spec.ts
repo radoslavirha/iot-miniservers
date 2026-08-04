@@ -1,6 +1,7 @@
 import { describe, beforeEach, afterEach, expect, it } from 'vitest';
 import { PlatformTest } from '@tsed/platform-http/testing';
 import { TestContainersMongo } from '@tsed/testcontainers-mongo';
+import { isTaskCancelledError } from '@radoslavirha/resilience';
 import { Server } from '../../Server.js';
 import { QrType } from '../../models/QrType.enum.js';
 import { QrCodeMongoRepository } from './QrCodeMongoRepository.js';
@@ -116,6 +117,15 @@ describe('QrCodeMongoRepository', () => {
             expect.assertions(1);
             const result = await repository.findBySlug('zzzz');
             expect(result).toBeNull();
+        });
+
+        it('rejects before querying when the caller signal is already aborted', async () => {
+            expect.assertions(1);
+            await repository.create(buildCreatePayload({ slug: 'x7k2' }));
+            const controller = new AbortController();
+            controller.abort();
+
+            await expect(repository.findBySlug('x7k2', controller.signal)).rejects.toSatisfy(isTaskCancelledError);
         });
     });
 

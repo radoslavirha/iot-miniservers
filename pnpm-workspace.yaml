@@ -8,9 +8,10 @@ catalog:
   '@radoslavirha/config-tsdown': 0.2.2
   '@radoslavirha/config-typescript': ^1.1.3
   '@radoslavirha/config-vitest': ^0.4.3
+  '@radoslavirha/redaction': ^0.2.0
   '@radoslavirha/tsed-common': ^0.5.4
   '@radoslavirha/tsed-configuration': ^0.7.4
-  '@radoslavirha/tsed-logger': ^0.5.4
+  '@radoslavirha/tsed-logger': ^0.5.5
   '@radoslavirha/tsed-platform': ^3.0.4
   '@radoslavirha/tsed-swagger': ^7.0.4
   '@radoslavirha/utils': ^0.8.4
@@ -19,11 +20,12 @@ catalog:
   '@types/supertest': ^7.2.1
   '@vitest/coverage-v8': ^4.1.10
   axios: ^1.19.0
-  axios-retry: ^4.5.0
+  cockatiel: ^4.0.0
   cross-env: ^10.1.0
   dotenv: ^17.4.2
   eslint: ^10.8.0
   jose: ^6.2.5
+  mongoose: ^9.9.0
   nodemon: ^3.1.14
   supertest: ^7.2.2
   tsdown: 0.22.14
