@@ -18,7 +18,7 @@ jobs:
       pull-requests: write
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: Prepare repository
         uses: ./.github/actions/prepare
         with:
@@ -91,7 +91,7 @@ jobs:
       contents: read
     steps:
       - name: Checkout iot-miniservers
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: Deploy
         uses: ./.github/actions/deploy
         with:
@@ -111,7 +111,7 @@ jobs:
       contents: read
     steps:
       - name: Checkout iot-miniservers
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: Deploy
         uses: ./.github/actions/deploy
         with:

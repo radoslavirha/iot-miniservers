@@ -21,7 +21,7 @@ jobs:
       packages: ${{ steps.filter-packages.outputs.changes }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: 📂 Detect changed apps
         uses: dorny/paths-filter@v3
         id: filter-apps
@@ -59,7 +59,7 @@ jobs:
         package: ${{ fromJSON(needs.changes.outputs.packages) }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: Prepare repository
         uses: ./.github/actions/prepare
         with:

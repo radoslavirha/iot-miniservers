@@ -38,7 +38,7 @@ jobs:
       date: ${{ steps.set_date.outputs.date }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: Get image informations
         id: information
         shell: bash
@@ -65,7 +65,7 @@ jobs:
       packages: write
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: Prepare npm auth file
         shell: bash
         env:
