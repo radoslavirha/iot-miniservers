@@ -91,7 +91,14 @@ FROM node:24-alpine AS homelab-dashboard-ui-config-validator
 COPY --from=build-homelab-dashboard-ui-validator \
      /usr/src/app/ui/homelab-dashboard-ui/dist-validator/validate-config.js /app/validate-config.js
 # Reads one file and exits — nothing here needs root.
-USER node
+#
+# Numeric UID, NOT `node`. Kubernetes verifies runAsNonRoot against the image's
+# configured user, and cannot map a username to a UID — that mapping lives in
+# the image's /etc/passwd, which the kubelet does not read. With `USER node` it
+# fails closed: CreateContainerConfigError "container has runAsNonRoot and image
+# has non-numeric user (node), cannot verify user is non-root", and the pod never
+# leaves Init. 1000 is the node user in node:*-alpine.
+USER 1000
 ENTRYPOINT ["node", "/app/validate-config.js"]
 # Local-run convenience only. In-cluster the chart supplies the path as an arg,
 # derived from templates.<name>.file — never hardcode a filename here.
@@ -131,7 +138,14 @@ FROM node:24-alpine AS qr-manager-ui-config-validator
 COPY --from=build-qr-manager-ui-validator \
      /usr/src/app/ui/qr-manager-ui/dist-validator/validate-config.js /app/validate-config.js
 # Reads one file and exits — nothing here needs root.
-USER node
+#
+# Numeric UID, NOT `node`. Kubernetes verifies runAsNonRoot against the image's
+# configured user, and cannot map a username to a UID — that mapping lives in
+# the image's /etc/passwd, which the kubelet does not read. With `USER node` it
+# fails closed: CreateContainerConfigError "container has runAsNonRoot and image
+# has non-numeric user (node), cannot verify user is non-root", and the pod never
+# leaves Init. 1000 is the node user in node:*-alpine.
+USER 1000
 ENTRYPOINT ["node", "/app/validate-config.js"]
 # Local-run convenience only. In-cluster the chart supplies the path as an arg,
 # derived from templates.<name>.file — never hardcode a filename here.

@@ -544,7 +544,8 @@ FROM node:24-alpine AS qr-manager-ui-config-validator
 
 COPY --from=build-qr-manager-ui-validator \
      /usr/src/app/ui/qr-manager-ui/dist-validator/validate-config.js /app/validate-config.js
-USER node
+# Numeric UID, NOT `node` — see below. 1000 is the node user in node:*-alpine.
+USER 1000
 ENTRYPOINT ["node", "/app/validate-config.js"]
 # Local-run convenience only. In-cluster the chart always supplies the path as
 # an arg, derived from templates.<name>.file — never hardcode a filename here.
@@ -552,7 +553,14 @@ CMD ["/config/config.json"]
 ```
 
   - The bundle is self-contained (zod inlined by esbuild), so the image needs no `node_modules` and no `pnpm install` — base image plus one file. ~350 KB minified.
-  - `USER node`: it only reads a file. Nothing here needs root, and it is the cheapest place in the plan to get that right.
+  - **`USER 1000`, not `USER node`.** It only reads a file, so nothing here needs root — and this is the cheapest place in the plan to get that right. But the UID must be **numeric**: Kubernetes verifies `runAsNonRoot: true` against the image's configured user and cannot map a username to a UID, because that mapping lives in the image's `/etc/passwd`, which the kubelet does not read. With `USER node` it fails closed and the pod never leaves Init:
+
+    ```text
+    CreateContainerConfigError: container has runAsNonRoot and image has
+    non-numeric user (node), cannot verify user is non-root
+    ```
+
+    Found the hard way — it blocked the first `validate: true` sync on both sandbox clusters (`plans/2026-08-08-validator-uid-and-ipv6-listener.md`). The chart carries a defensive `runAsUser: 1000`, but the image is the right place to state who it runs as: any other consumer applying a restricted securityContext would otherwise rediscover the same failure.
   - Same stage for `homelab-dashboard-ui`, importing `AppConfigSchema`.
 - [ ] Add `build:validator` to both UIs' `package.json` (esbuild → `dist-validator/validate-config.js`) and make `build` run it, so a UI can never be published without its validator.
 - [ ] **Publish the validators from the same workflow run as their app.** `.github/workflows/docker-build-app.yaml` builds one image per app directory, deriving `target` from the directory name and `image` from `package.json`'s `name`; the `-config-validator` stages would otherwise never be pushed, and `validate: true` in the chart would give `ImagePullBackOff`.
