@@ -1,54 +1,54 @@
-import type { AppConfig } from '../types.js';
-
-export type { AppConfig };
-
-/**
- * Resolves config.json relative to document origin. Falls back to
- * '/config.json' for development (Vite dev server, no nginx).
- */
-const resolveConfigUrl = (): string => {
-    if (typeof window !== 'undefined') {
-        return `${window.location.origin}/config.json`;
-    }
-    return '/config.json';
-};
-
-const validateConfig = (cfg: AppConfig): AppConfig => {
-    if (!cfg.unifi?.host) throw new Error('config.json: unifi.host is required.');
-    if (!cfg.unifi?.apiKey) throw new Error('config.json: unifi.apiKey is required.');
-    return cfg;
-};
+import { z } from 'zod';
+import { httpUrl, loadRuntimeConfig } from '@radoslavirha/ui-runtime';
 
 /**
- * Fetches /config.json with no-cache so a k8s ConfigMap update is picked up
- * on the next page load without a CDN bust. Throws a descriptive Error if the
- * file is missing or malformed — the error is caught in main.tsx before React
- * mounts.
+ * The dashboard's runtime configuration contract.
+ *
+ * Single source of truth: Vite bundles it for the browser, and esbuild bundles
+ * it into the homelab-dashboard-ui-config-validator image the chart runs as an
+ * initContainer before nginx starts.
  */
-export const loadRuntimeConfig = async (): Promise<AppConfig> => {
-    const url = resolveConfigUrl();
+export const AppConfigSchema = z.object({
+    title: z.string().optional(),
+    unifi: z.object({
+        /**
+         * Absolute URL — nginx proxy_passes to it, and the entrypoint derives
+         * UNIFI_HOST from this exact value.
+         */
+        host: httpUrl(),
+        /**
+         * Rendered from the homelab-dashboard-ui-unifi-credentials secret. The
+         * old entrypoint checked only `host`, so an empty substitution here
+         * booted a pod where every Unifi request 401s.
+         */
+        apiKey: z.string().min(1),
+        site: z.string().min(1).default('default')
+    }),
+    /** Capture group 1 must be the numeric server index. */
+    serverPattern: z.string()
+        .refine(
+            value => {
+                try {
+                    // parseDns.ts compiles this; a malformed pattern currently
+                    // throws mid-render instead of failing the config.
+                    new RegExp(value);
+                    return true;
+                } catch {
+                    return false;
+                }
+            },
+            { error: 'must be a valid regular expression' }
+        )
+        .default('^server(\\d+)\\.home$'),
+    /** Protocol used when building tile URLs from hostnames. */
+    scheme: z.enum(['http', 'https']).default('http'),
+    /** Hostnames to hide, matched against the full DNS key, case-insensitive. */
+    exclude: z.array(z.string()).default([]),
+    /** Path suffixes appended to tile URLs, keyed by hostname or service name. */
+    paths: z.record(z.string(), z.string()).default({})
+});
 
-    let res: Response;
-    try {
-        res = await fetch(url, { cache: 'no-store' });
-    } catch (e) {
-        throw new Error(`Network error loading config.json: ${e instanceof Error ? e.message : String(e)}`);
-    }
+export type AppConfig = z.infer<typeof AppConfigSchema>;
 
-    if (!res.ok) {
-        throw new Error(
-            `config.json not found (HTTP ${res.status}). ` +
-            `Create public/config.json or mount it as a ConfigMap at ` +
-            `/usr/share/nginx/html/config.json.`
-        );
-    }
-
-    let cfg: unknown;
-    try {
-        cfg = await res.json();
-    } catch {
-        throw new Error('config.json is not valid JSON.');
-    }
-
-    return validateConfig(cfg as AppConfig);
-};
+export const loadConfig = (): Promise<AppConfig> =>
+    loadRuntimeConfig({ schema: AppConfigSchema });

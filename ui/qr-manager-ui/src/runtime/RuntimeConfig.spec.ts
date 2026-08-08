@@ -1,94 +1,44 @@
-import { describe, expect, it, vi, afterEach } from 'vitest';
-import { loadRuntimeConfig, validateRuntimeConfig } from './RuntimeConfig.js';
+import { describe, expect, it } from 'vitest';
+import { RuntimeConfigSchema } from './RuntimeConfig.js';
 
-const okJson = (body: unknown) => new Response(JSON.stringify(body), {
-    status: 200,
-    headers: { 'Content-Type': 'application/json' }
-});
+describe('RuntimeConfigSchema', () => {
+    it('accepts a minimal config and defaults basePath', () => {
+        const result = RuntimeConfigSchema.parse({ apiBaseURL: 'https://api.server.home/qr' });
 
-const setBase = (href: string) => {
-    const base = document.createElement('base');
-    base.href = href;
-    document.head.appendChild(base);
-};
-
-describe('validateRuntimeConfig', () => {
-    it('strips trailing slashes from apiBaseURL', () => {
-        const config = validateRuntimeConfig({ apiBaseURL: 'https://api.server.home/qr///' });
-        expect(config.apiBaseURL).toBe('https://api.server.home/qr');
+        expect(result).toEqual({ apiBaseURL: 'https://api.server.home/qr', basePath: '/' });
     });
 
-    it('defaults basePath to "/" when omitted', () => {
-        const config = validateRuntimeConfig({ apiBaseURL: 'https://api.server.home/qr' });
-        expect(config.basePath).toBe('/');
+    it('strips trailing slashes from apiBaseURL so paths do not double up', () => {
+        const result = RuntimeConfigSchema.parse({ apiBaseURL: 'https://api.server.home/qr///' });
+
+        expect(result.apiBaseURL).toBe('https://api.server.home/qr');
     });
 
     it('keeps an explicit basePath', () => {
-        const config = validateRuntimeConfig({ apiBaseURL: 'https://api.server.home/qr', basePath: '/qr-manager/' });
-        expect(config.basePath).toBe('/qr-manager/');
+        const result = RuntimeConfigSchema.parse({
+            apiBaseURL: 'https://api.server.home/qr',
+            basePath: '/qr-manager'
+        });
+
+        expect(result.basePath).toBe('/qr-manager');
     });
 
-    it('prepends leading slash to basePath if missing', () => {
-        const config = validateRuntimeConfig({ apiBaseURL: 'https://api.server.home/qr', basePath: 'qr-manager' });
-        expect(config.basePath).toBe('/qr-manager');
+    it.each([
+        ['absent', {}],
+        ['empty — the empty-Jinja2-substitution case', { apiBaseURL: '' }],
+        ['not a URL', { apiBaseURL: 'nope' }],
+        ['scheme-less, which plain z.url() would accept', { apiBaseURL: 'localhost:4002' }],
+        ['a non-http scheme', { apiBaseURL: 'ftp://api.server.home' }]
+    ])('rejects apiBaseURL %s', (_name, input) => {
+        expect(RuntimeConfigSchema.safeParse(input).success).toBe(false);
     });
 
-    it('throws when apiBaseURL is missing', () => {
-        expect(() => validateRuntimeConfig({})).toThrow(/apiBaseURL/);
-    });
+    it('rejects a basePath that is not absolute', () => {
+        const result = RuntimeConfigSchema.safeParse({
+            apiBaseURL: 'https://api.server.home/qr',
+            basePath: 'qr-manager'
+        });
 
-    it('throws when apiBaseURL is empty', () => {
-        expect(() => validateRuntimeConfig({ apiBaseURL: '' })).toThrow(/apiBaseURL/);
-    });
-
-    it('throws when input is not an object', () => {
-        expect(() => validateRuntimeConfig(null)).toThrow(/JSON object/);
-        expect(() => validateRuntimeConfig('http://x')).toThrow(/JSON object/);
-    });
-});
-
-describe('loadRuntimeConfig', () => {
-    afterEach(() => {
-        vi.restoreAllMocks();
-        document.querySelectorAll('base').forEach(el => el.remove());
-    });
-
-    it('resolves config.json relative to <base href> when present', async () => {
-        setBase('http://apps.server2.home/qr-manager/');
-        const fetchMock = vi.fn().mockResolvedValue(okJson({
-            apiBaseURL: 'http://api.server2.home/iot/qr-manager',
-            basePath: '/qr-manager/'
-        }));
-        Object.assign(globalThis, { fetch: fetchMock });
-
-        const config = await loadRuntimeConfig();
-        expect(fetchMock).toHaveBeenCalledWith('http://apps.server2.home/qr-manager/config.json', { cache: 'no-store' });
-        expect(config.basePath).toBe('/qr-manager/');
-    });
-
-    it('falls back to origin-relative /config.json when no <base> exists (dev)', async () => {
-        const fetchMock = vi.fn().mockResolvedValue(okJson({ apiBaseURL: 'http://localhost:4011/', basePath: '/' }));
-        Object.assign(globalThis, { fetch: fetchMock });
-
-        const config = await loadRuntimeConfig();
-        expect(fetchMock.mock.calls[0][0]).toMatch(/\/config\.json$/);
-        expect(config.apiBaseURL).toBe('http://localhost:4011');
-    });
-
-    it('throws a helpful error when the response is HTML (SPA fallback)', async () => {
-        const fetchMock = vi.fn().mockResolvedValue(new Response('<!doctype html><html></html>', {
-            status: 200,
-            headers: { 'Content-Type': 'text/html' }
-        }));
-        Object.assign(globalThis, { fetch: fetchMock });
-
-        await expect(loadRuntimeConfig()).rejects.toThrow(/SPA fallback/);
-    });
-
-    it('throws when the response status is not ok', async () => {
-        const fetchMock = vi.fn().mockResolvedValue(new Response('nope', { status: 404 }));
-        Object.assign(globalThis, { fetch: fetchMock });
-
-        await expect(loadRuntimeConfig()).rejects.toThrow(/404/);
+        expect(result.success).toBe(false);
     });
 });

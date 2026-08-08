@@ -1,77 +1,52 @@
-import { describe, expect, it, vi, afterEach } from 'vitest';
-import { loadRuntimeConfig } from './RuntimeConfig.js';
+import { describe, expect, it } from 'vitest';
+import { AppConfigSchema } from './RuntimeConfig.js';
 
-afterEach(() => {
-    vi.restoreAllMocks();
-});
+const minimal = { unifi: { host: 'https://192.168.1.1', apiKey: 'test-key' } };
 
-describe('loadRuntimeConfig', () => {
-    it('returns parsed config when config.json is valid', async () => {
-        const mockConfig = {
-            unifi: { host: 'https://192.168.1.1', apiKey: 'test-key' }
-        };
-        const fetchMock = vi.fn().mockResolvedValue(
-            new Response(JSON.stringify(mockConfig), {
-                status: 200,
-                headers: { 'Content-Type': 'application/json' }
-            })
-        );
-        Object.assign(globalThis, { fetch: fetchMock });
+describe('AppConfigSchema', () => {
+    it('accepts a minimal config and applies defaults', () => {
+        const config = AppConfigSchema.parse(minimal);
 
-        const config = await loadRuntimeConfig();
-        expect(config.unifi.host).toBe('https://192.168.1.1');
-        expect(config.unifi.apiKey).toBe('test-key');
+        expect(config.unifi).toEqual({ host: 'https://192.168.1.1', apiKey: 'test-key', site: 'default' });
+        expect(config.serverPattern).toBe('^server(\\d+)\\.home$');
+        expect(config.scheme).toBe('http');
+        expect(config.exclude).toEqual([]);
+        expect(config.paths).toEqual({});
     });
 
-    it('throws when config.json returns non-2xx status', async () => {
-        const fetchMock = vi.fn().mockResolvedValue(new Response(null, { status: 404 }));
-        Object.assign(globalThis, { fetch: fetchMock });
-
-        await expect(loadRuntimeConfig()).rejects.toThrow('HTTP 404');
+    it('rejects a missing unifi.host', () => {
+        expect(AppConfigSchema.safeParse({ unifi: { apiKey: 'key' } }).success).toBe(false);
     });
 
-    it('throws when config.json is not valid JSON', async () => {
-        const fetchMock = vi.fn().mockResolvedValue(
-            new Response('not json', {
-                status: 200,
-                headers: { 'Content-Type': 'text/plain' }
-            })
-        );
-        Object.assign(globalThis, { fetch: fetchMock });
-
-        await expect(loadRuntimeConfig()).rejects.toThrow('not valid JSON');
+    it('rejects a missing unifi.apiKey', () => {
+        expect(AppConfigSchema.safeParse({ unifi: { host: 'https://192.168.1.1' } }).success).toBe(false);
     });
 
-    it('throws when unifi.host is missing', async () => {
-        const mockConfig = { unifi: { apiKey: 'key' } };
-        const fetchMock = vi.fn().mockResolvedValue(
-            new Response(JSON.stringify(mockConfig), {
-                status: 200,
-                headers: { 'Content-Type': 'application/json' }
-            })
-        );
-        Object.assign(globalThis, { fetch: fetchMock });
+    it('rejects an empty unifi.apiKey — the old entrypoint never checked this', () => {
+        const result = AppConfigSchema.safeParse({ unifi: { host: 'https://192.168.1.1', apiKey: '' } });
 
-        await expect(loadRuntimeConfig()).rejects.toThrow('unifi.host is required');
+        expect(result.success).toBe(false);
     });
 
-    it('throws when unifi.apiKey is missing', async () => {
-        const mockConfig = { unifi: { host: 'https://192.168.1.1' } };
-        const fetchMock = vi.fn().mockResolvedValue(
-            new Response(JSON.stringify(mockConfig), {
-                status: 200,
-                headers: { 'Content-Type': 'application/json' }
-            })
-        );
-        Object.assign(globalThis, { fetch: fetchMock });
-
-        await expect(loadRuntimeConfig()).rejects.toThrow('unifi.apiKey is required');
+    it('rejects a unifi.host that is not an absolute http(s) URL', () => {
+        expect(AppConfigSchema.safeParse({ unifi: { host: '192.168.1.1', apiKey: 'k' } }).success).toBe(false);
     });
 
-    it('throws on network error', async () => {
-        const fetchMock = vi.fn().mockRejectedValue(new Error('Network failure'));
-        Object.assign(globalThis, { fetch: fetchMock });
+    it('rejects a serverPattern that is not a valid regex', () => {
+        const result = AppConfigSchema.safeParse({ ...minimal, serverPattern: '^server(\\d+' });
 
-        await expect(loadRuntimeConfig()).rejects.toThrow('Network error loading config.json: Network failure');
+        expect(result.success).toBe(false);
+    });
+
+    it('rejects an unknown scheme', () => {
+        expect(AppConfigSchema.safeParse({ ...minimal, scheme: 'gopher' }).success).toBe(false);
+    });
+
+    it('never puts a config value in the error output', () => {
+        const sentinel = 'sup3r-s3cret-sentinel';
+        const result = AppConfigSchema.safeParse({ unifi: { host: sentinel, apiKey: '' } });
+
+        expect(result.success).toBe(false);
+        expect(JSON.stringify(result.error?.issues)).not.toContain(sentinel);
     });
 });

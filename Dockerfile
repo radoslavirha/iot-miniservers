@@ -66,14 +66,36 @@ FROM nginx:1.29-alpine AS homelab-dashboard-ui
 
 RUN apk add --no-cache jq=1.8.1-r0
 
+# dist/ carries no config.json: vite.config.ts sets build.copyPublicDir false so
+# the development config — placeholder API key included — never enters the image.
 COPY --from=build-homelab-dashboard-ui /usr/src/app/ui/homelab-dashboard-ui/dist /usr/share/nginx/html
-COPY ui/homelab-dashboard-ui/nginx.conf.template /etc/nginx/nginx.conf.template
-COPY ui/homelab-dashboard-ui/docker-entrypoint.sh /docker-entrypoint.sh
-# Remove the default stub so nothing starts if config.json is absent.
-RUN chmod +x /docker-entrypoint.sh && \
-    rm -f /etc/nginx/conf.d/default.conf
+COPY packages/nginx-runtime/conf.d/healthz.conf /etc/nginx/snippets/healthz.conf
+COPY packages/nginx-runtime/docker-entrypoint.d/05-validate-runtime-config.sh /docker-entrypoint.d/
+COPY ui/homelab-dashboard-ui/docker-entrypoint.d/10-derive-unifi-host.envsh /docker-entrypoint.d/
+# The stock entrypoint renders /etc/nginx/templates/*.template into conf.d.
+COPY ui/homelab-dashboard-ui/nginx.conf.template /etc/nginx/templates/default.conf.template
+RUN chmod +x /docker-entrypoint.d/05-validate-runtime-config.sh /docker-entrypoint.d/10-derive-unifi-host.envsh
 EXPOSE 80
-ENTRYPOINT ["/docker-entrypoint.sh"]
+# ENTRYPOINT / CMD / STOPSIGNAL are inherited from the base image on purpose:
+# STOPSIGNAL SIGQUIT is what makes nginx shut down gracefully instead of
+# dropping in-flight requests, and the stock entrypoint keeps nginx as PID 1.
+# See rule F4 in docs/superpowers/specs/2026-08-06-iot-app-health-checks-frontend.md.
+
+# ─── homelab-dashboard-ui-config-validator ─────────────────────────────────────
+FROM deps AS build-homelab-dashboard-ui-validator
+
+RUN pnpm --filter=homelab-dashboard-ui run build:validator
+
+FROM node:24-alpine AS homelab-dashboard-ui-config-validator
+
+COPY --from=build-homelab-dashboard-ui-validator \
+     /usr/src/app/ui/homelab-dashboard-ui/dist-validator/validate-config.js /app/validate-config.js
+# Reads one file and exits — nothing here needs root.
+USER node
+ENTRYPOINT ["node", "/app/validate-config.js"]
+# Local-run convenience only. In-cluster the chart supplies the path as an arg,
+# derived from templates.<name>.file — never hardcode a filename here.
+CMD ["/config/config.json"]
 
 # ─── qr-manager-ui ─────────────────────────────────────────────────────────────
 FROM deps AS build-qr-manager-ui
@@ -82,11 +104,35 @@ RUN pnpm --filter=qr-manager-ui run build
 
 FROM nginx:1.29-alpine AS qr-manager-ui
 
+RUN apk add --no-cache jq=1.8.1-r0
+
+# dist/ carries no config.json: vite.config.ts sets build.copyPublicDir false so
+# the development config never enters the image. A ConfigMap that fails to mount
+# is therefore a hard failure, not a pod quietly serving localhost defaults.
 COPY --from=build-qr-manager-ui /usr/src/app/ui/qr-manager-ui/dist /usr/share/nginx/html
+COPY packages/nginx-runtime/conf.d/healthz.conf /etc/nginx/snippets/healthz.conf
+COPY packages/nginx-runtime/docker-entrypoint.d/05-validate-runtime-config.sh /docker-entrypoint.d/
 # Template is processed at container start by the nginx image's built-in
 # envsubst entrypoint. Set NGINX_BASE_PATH env var in the deployment
 # (e.g. /qr-manager or /) to configure the sub-path at runtime.
 COPY ui/qr-manager-ui/nginx.conf.template /etc/nginx/templates/default.conf.template
+RUN chmod +x /docker-entrypoint.d/05-validate-runtime-config.sh
 EXPOSE 80
 ENV NGINX_BASE_PATH=/
-CMD ["nginx", "-g", "daemon off;"]
+# ENTRYPOINT / CMD / STOPSIGNAL inherited from the base image — rule F4.
+
+# ─── qr-manager-ui-config-validator ────────────────────────────────────────────
+FROM deps AS build-qr-manager-ui-validator
+
+RUN pnpm --filter=qr-manager-ui run build:validator
+
+FROM node:24-alpine AS qr-manager-ui-config-validator
+
+COPY --from=build-qr-manager-ui-validator \
+     /usr/src/app/ui/qr-manager-ui/dist-validator/validate-config.js /app/validate-config.js
+# Reads one file and exits — nothing here needs root.
+USER node
+ENTRYPOINT ["node", "/app/validate-config.js"]
+# Local-run convenience only. In-cluster the chart supplies the path as an arg,
+# derived from templates.<name>.file — never hardcode a filename here.
+CMD ["/config/config.json"]

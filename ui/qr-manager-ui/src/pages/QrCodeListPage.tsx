@@ -1,13 +1,11 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Filters } from '../components/Filters.js';
-import { createQrCodesClient } from '../api/qrCodes.js';
+import { useQrCodesClient } from '../api/useQrCodesClient.js';
 import type { QrCode, QrCodeListFilter } from '../api/types.js';
-import { useRuntimeConfig } from '../runtime/RuntimeConfigContext.js';
 
 export const QrCodeListPage = () => {
-    const config = useRuntimeConfig();
-    const client = useMemo(() => createQrCodesClient(config.apiBaseURL), [config.apiBaseURL]);
+    const client = useQrCodesClient();
 
     const [filter, setFilter] = useState<QrCodeListFilter>({});
     const [items, setItems] = useState<QrCode[]>([]);

@@ -2,14 +2,16 @@ import { describe, expect, it, vi, afterEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { App } from './App.js';
-import type { AppConfig } from './types.js';
+import { AppConfigSchema } from './runtime/RuntimeConfig.js';
 
-const config: AppConfig = {
+// Built through the real schema so fixtures cannot drift from what the app
+// will actually be handed at runtime.
+const config = AppConfigSchema.parse({
     title: 'test-lab',
     unifi: { host: 'https://192.168.1.1', apiKey: 'test-key', site: 'default' },
     serverPattern: '^server(\\d+)\\.home$',
     scheme: 'http'
-};
+});
 
 const dnsRecords = [
     { key: 'server1.home', value: '192.168.1.10', record_type: 'A', enabled: true },
@@ -91,7 +93,7 @@ describe('<App />', () => {
 
     it('uses default title "Homelab dashboard" when config.title is not set', async () => {
         mockFetch([]);
-        const cfgNoTitle: AppConfig = { unifi: config.unifi };
+        const cfgNoTitle = AppConfigSchema.parse({ unifi: config.unifi });
         render(<App config={cfgNoTitle} />);
         await waitFor(() => expect(screen.getByText('Homelab dashboard')).toBeInTheDocument());
     });

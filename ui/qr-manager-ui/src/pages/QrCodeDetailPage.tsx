@@ -1,13 +1,13 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { QrImage } from '../components/QrImage.js';
-import { createQrCodesClient } from '../api/qrCodes.js';
+import { useQrCodesClient } from '../api/useQrCodesClient.js';
 import type { QrCode } from '../api/types.js';
 import { useRuntimeConfig } from '../runtime/RuntimeConfigContext.js';
 
 export const QrCodeDetailPage = () => {
     const config = useRuntimeConfig();
-    const client = useMemo(() => createQrCodesClient(config.apiBaseURL), [config.apiBaseURL]);
+    const client = useQrCodesClient();
     const { id = '' } = useParams<{ id: string }>();
     const navigate = useNavigate();
 

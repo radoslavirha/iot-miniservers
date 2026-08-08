@@ -24,6 +24,10 @@ server {
     sub_filter_types text/html;
     sub_filter_once on;
 
+    # Kubernetes probe endpoint. Absolute path, independent of NGINX_BASE_PATH.
+    # Shared with every other UI image — see packages/nginx-runtime.
+    include /etc/nginx/snippets/healthz.conf;
+
     # config.json is mounted from a Kubernetes ConfigMap. Exact-match location
     # is evaluated before the SPA catch-all.
     location = ${NGINX_BASE_PATH}/config.json {

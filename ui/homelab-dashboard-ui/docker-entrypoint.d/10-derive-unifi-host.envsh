@@ -1,0 +1,26 @@
+#!/bin/sh
+# Derives UNIFI_HOST for the nginx template's proxy_pass.
+#
+# Sourced (not executed) by the stock nginx entrypoint — the .envsh extension is
+# what makes that happen — so the export below reaches
+# 20-envsubst-on-templates.sh, which renders default.conf.template.
+#
+# Numbered 10 so it runs after 05-validate-runtime-config.sh has confirmed the
+# config file exists and parses. The schema check (including unifi.host being a
+# real http(s) URL) happens earlier still, in the validating initContainer.
+#
+# Prints the variable NAME, never its value: the host is not itself a secret,
+# but config.json also carries unifi.apiKey, and keeping the "hooks never echo
+# config values" rule uniform stops a future copy-paste from leaking it.
+
+if [ -z "${UNIFI_HOST:-}" ]; then
+    UNIFI_HOST=$(jq -r '.unifi.host // empty' "${RUNTIME_CONFIG_PATH:-/usr/share/nginx/html/config.json}")
+fi
+
+if [ -z "$UNIFI_HOST" ]; then
+    echo "[homelab-dashboard-ui] FATAL: unifi.host is empty and UNIFI_HOST is unset." >&2
+    exit 1
+fi
+
+export UNIFI_HOST
+echo "[homelab-dashboard-ui] UNIFI_HOST resolved; proxying the Unifi API"

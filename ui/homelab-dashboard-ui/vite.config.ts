@@ -31,6 +31,15 @@ const proxy = {
 export default defineConfig({
     base: './',
     plugins: [react()],
+    build: {
+        // public/ holds ONLY config.json and config.example.json — development
+        // runtime config, including a placeholder API key. Neither must reach
+        // dist/, because dist/ becomes the nginx html root: a ConfigMap that
+        // fails to mount would then be invisible, with the pod serving the
+        // placeholder while passing validation and /healthz.
+        // The dev server still serves public/, so `pnpm dev` is unaffected.
+        copyPublicDir: false
+    },
     server: {
         port: 5174,
         proxy

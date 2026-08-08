@@ -1,5 +1,6 @@
 **/coverage
 **/dist
+**/dist-validator
 **/node_modules
 **/.DS_Store
 **/.npmrc

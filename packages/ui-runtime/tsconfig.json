@@ -1,0 +1,9 @@
+{
+    "extends": "@radoslavirha/config-typescript/tsconfig.react-app.json",
+    "compilerOptions": {
+        // This package spans both halves: browser code (loadRuntimeConfig,
+        // useApiStatus) and the Node-side validator the initContainer runs.
+        "types": ["node"]
+    },
+    "include": ["src"]
+}

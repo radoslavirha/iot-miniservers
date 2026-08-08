@@ -5,9 +5,10 @@
   "description": "Admin UI for the QR Manager API. Lists, edits and deactivates QR codes; downloads printable images.",
   "type": "module",
   "scripts": {
-    "build": "tsc --noEmit && vite build",
+    "build": "tsc --noEmit && vite build && pnpm run build:validator",
+    "build:validator": "esbuild src/runtime/validate-config.ts --bundle --minify --platform=node --format=esm --target=node24 --outfile=dist-validator/validate-config.js",
     "cleanup:all": "pnpm run cleanup:artifacts && pnpm run cleanup:modules",
-    "cleanup:artifacts": "rm -rf coverage dist",
+    "cleanup:artifacts": "rm -rf coverage dist dist-validator",
     "cleanup:modules": "rm -rf node_modules",
     "dev": "vite",
     "lint": "eslint .",
@@ -18,9 +19,11 @@
   },
   "dependencies": {
     "@radoslavirha/ui-kit": "workspace:*",
+    "@radoslavirha/ui-runtime": "workspace:*",
     "react": "catalog:react",
     "react-dom": "catalog:react",
-    "react-router-dom": "catalog:react"
+    "react-router-dom": "catalog:react",
+    "zod": "catalog:"
   },
   "devDependencies": {
     "@radoslavirha/config-eslint": "catalog:",
@@ -33,6 +36,7 @@
     "@types/react-dom": "catalog:react",
     "@vitejs/plugin-react": "catalog:react",
     "@vitest/coverage-v8": "catalog:",
+    "esbuild": "catalog:",
     "eslint": "catalog:",
     "jsdom": "catalog:react",
     "typescript": "catalog:",

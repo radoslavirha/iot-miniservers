@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { AppShell, StatusBar } from '@radoslavirha/ui-kit';
+import { ApiStatusBanner, AppShell, StatusBar } from '@radoslavirha/ui-kit';
+import { useApiStatus } from '@radoslavirha/ui-runtime';
 import { ClusterSection } from './components/ClusterSection.js';
-import { fetchDnsRecords } from './lib/unifi.js';
+import { UnifiAuthError, fetchDnsRecords } from './lib/unifi.js';
 import { parseDnsRecords } from './lib/parseDns.js';
 import type { AppConfig, Cluster } from './types.js';
 
@@ -19,6 +20,22 @@ export function App({ config }: Props) {
     });
     const [query, setQuery] = useState('');
     const searchRef = useRef<HTMLInputElement>(null);
+
+    // This dashboard lives on an unattended screen, so it polls to notice the
+    // controller coming back rather than waiting for someone to press reload.
+    // The probe only runs while the status is already not 'ok'.
+    const { status: apiStatus, report } = useApiStatus({
+        recoveryProbe: {
+            probe: async () => {
+                try {
+                    await fetchDnsRecords(config);
+                    return true;
+                } catch {
+                    return false;
+                }
+            }
+        }
+    });
 
     useEffect(() => {
         const handler = (e: KeyboardEvent) => {
@@ -41,7 +58,7 @@ export function App({ config }: Props) {
         async function load() {
             try {
                 setStatus({ state: 'loading', message: 'Fetching DNS records…' });
-                const records = await fetchDnsRecords(config);
+                const records = await fetchDnsRecords(config, { onOutcome: report });
                 if (cancelled) { return; }
 
                 setStatus({ state: 'loading', message: `Parsing ${records.length} record(s)…` });
@@ -57,7 +74,11 @@ export function App({ config }: Props) {
                 if (!cancelled) {
                     setStatus({
                         state: 'error',
-                        message: err instanceof Error ? err.message : String(err)
+                        message: err instanceof UnifiAuthError
+                            // A rejected key is a config fault: say so, rather
+                            // than implying the controller is down.
+                            ? `${err.message} Check unifi.apiKey in config.json.`
+                            : err instanceof Error ? err.message : String(err)
                     });
                 }
             }
@@ -67,7 +88,7 @@ export function App({ config }: Props) {
         return () => {
             cancelled = true;
         };
-    }, [config]);
+    }, [config, report]);
 
     const filtered = useMemo(() => {
         const q = query.toLowerCase().trim();
@@ -103,6 +124,7 @@ export function App({ config }: Props) {
                 />
             }
         >
+            <ApiStatusBanner status={apiStatus} serviceName="the Unifi controller" />
             <StatusBar status={status.state} message={status.message} />
             {filtered.map(c => (
                 <ClusterSection key={c.index} cluster={c} />

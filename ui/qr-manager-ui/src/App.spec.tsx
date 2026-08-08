@@ -67,4 +67,36 @@ describe('<App />', () => {
         render(<App config={config({ basePath: '/qr-manager' })} />);
         await waitFor(() => expect(screen.getByRole('heading', { name: 'QR codes' })).toBeInTheDocument());
     });
+
+    it('shows the banner when the API cannot be reached', async () => {
+        Object.assign(globalThis, { fetch: vi.fn().mockRejectedValue(new TypeError('Failed to fetch')) });
+
+        window.history.replaceState(null, '', '/admin');
+        render(<App config={config()} />);
+
+        await waitFor(() => expect(screen.getByText('Cannot reach QR Manager API.')).toBeInTheDocument());
+    });
+
+    it('shows the banner when the API returns a server error', async () => {
+        Object.assign(globalThis, { fetch: vi.fn().mockResolvedValue(new Response('boom', { status: 503 })) });
+
+        window.history.replaceState(null, '', '/admin');
+        render(<App config={config()} />);
+
+        await waitFor(() =>
+            expect(screen.getByText(/QR Manager API is having problems/)).toBeInTheDocument());
+    });
+
+    it('shows no banner for a 4xx — the API answered, the request was wrong', async () => {
+        Object.assign(globalThis, {
+            fetch: vi.fn().mockResolvedValue(new Response('bad filter', { status: 422 }))
+        });
+
+        window.history.replaceState(null, '', '/admin');
+        render(<App config={config()} />);
+
+        // The page still renders its own error; only the global banner stays away.
+        await waitFor(() => expect(screen.getByRole('alert')).toBeInTheDocument());
+        expect(screen.queryByText(/Cannot reach|having problems/)).not.toBeInTheDocument();
+    });
 });

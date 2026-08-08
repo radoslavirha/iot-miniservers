@@ -1,0 +1,58 @@
+{
+    "name": "@radoslavirha/ui-runtime",
+    "version": "0.1.0",
+    "private": true,
+    "description": "Runtime config loading and API status primitives for the browser apps",
+    "type": "module",
+    "exports": {
+        ".": {
+            "types": "./src/index.ts",
+            "default": "./src/index.ts"
+        },
+        "./validator": {
+            "types": "./src/validator.ts",
+            "default": "./src/validator.ts"
+        }
+    },
+    "files": [
+        "src",
+        "package.json"
+    ],
+    "scripts": {
+        "build": "tsc --noEmit",
+        "cleanup:all": "pnpm run cleanup:artifacts && pnpm run cleanup:modules",
+        "cleanup:artifacts": "rm -rf coverage",
+        "cleanup:modules": "rm -rf node_modules",
+        "lint": "eslint .",
+        "lint:fix": "eslint --fix .",
+        "test": "vitest run",
+        "test:watch": "vitest"
+    },
+    "dependencies": {
+        "zod": "catalog:"
+    },
+    "peerDependencies": {
+        "react": "^19.0.0"
+    },
+    "devDependencies": {
+        "@radoslavirha/config-eslint": "catalog:",
+        "@radoslavirha/config-typescript": "catalog:",
+        "@radoslavirha/config-vitest": "catalog:",
+        "@testing-library/react": "catalog:react",
+        "@types/node": "catalog:",
+        "@types/react": "catalog:react",
+        "@vitejs/plugin-react": "catalog:react",
+        "@vitest/coverage-v8": "catalog:",
+        "eslint": "catalog:",
+        "jsdom": "catalog:react",
+        "react": "^19.2.8",
+        "react-dom": "^19.2.8",
+        "typescript": "catalog:",
+        "typescript-eslint": "catalog:",
+        "vitest": "catalog:"
+    },
+    "engines": {
+        "node": ">= 24",
+        "pnpm": ">= 11.8"
+    }
+}

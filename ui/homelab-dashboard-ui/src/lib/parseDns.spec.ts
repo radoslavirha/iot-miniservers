@@ -1,12 +1,15 @@
 import { describe, expect, it } from 'vitest';
 import { parseDnsRecords } from './parseDns.js';
-import type { AppConfig, DnsRecord } from '../types.js';
+import { AppConfigSchema } from '../runtime/RuntimeConfig.js';
+import type { DnsRecord } from '../types.js';
 
-const baseConfig: AppConfig = {
+// Built through the real schema so fixtures cannot drift from what the app
+// will actually be handed at runtime.
+const baseConfig = AppConfigSchema.parse({
     unifi: { host: 'https://192.168.1.1', apiKey: 'key' },
     serverPattern: '^server(\\d+)\\.home$',
     scheme: 'http'
-};
+});
 
 const aRecord = (key: string, value: string, enabled = true): DnsRecord => ({
     key,
@@ -90,14 +93,14 @@ describe('parseDnsRecords', () => {
             aRecord('server1.home', '192.168.1.10'),
             aRecord('app.home', '192.168.1.10')
         ];
-        const config: AppConfig = { unifi: { host: 'https://192.168.1.1', apiKey: 'key' } };
+        const config = AppConfigSchema.parse({ unifi: { host: 'https://192.168.1.1', apiKey: 'key' } });
         const clusters = parseDnsRecords(records, config);
         expect(clusters).toHaveLength(1);
     });
 
     it('uses http scheme by default', () => {
         const records = [aRecord('server1.home', '192.168.1.10'), aRecord('app.home', '192.168.1.10')];
-        const config: AppConfig = { unifi: { host: 'https://192.168.1.1', apiKey: 'key' } };
+        const config = AppConfigSchema.parse({ unifi: { host: 'https://192.168.1.1', apiKey: 'key' } });
         const clusters = parseDnsRecords(records, config);
         expect(clusters[0].services[0].url).toMatch(/^http:\/\//);
     });

@@ -5,12 +5,9 @@ server {
     root /usr/share/nginx/html;
     index index.html;
 
-    # k8s liveness / readiness probe
-    location /healthz {
-        access_log off;
-        return 200 'ok';
-        add_header Content-Type text/plain;
-    }
+    # k8s liveness / readiness probe. Exact match, shared with every other UI
+    # image — see packages/nginx-runtime.
+    include /etc/nginx/snippets/healthz.conf;
 
     # SPA routing
     location / {
