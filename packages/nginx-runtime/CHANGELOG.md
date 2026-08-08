@@ -1,6 +1,6 @@
-# @radoslavirha/ui-kit
+# @radoslavirha/nginx-runtime
 
-## 1.0.0
+## 0.2.0
 
 ### Minor Changes
 
@@ -29,32 +29,3 @@
     custom `ENTRYPOINT`, restoring the base image's own init steps.
   - Both apps show a single banner when their backend is unreachable or failing,
     derived from real request outcomes. A 4xx does not raise it.
-
-### Patch Changes
-
-- Updated dependencies [[`09a3ba1`](https://github.com/radoslavirha/iot-miniservers/commit/09a3ba182730cf56a5a680e3784cb7bb85218722), [`09a3ba1`](https://github.com/radoslavirha/iot-miniservers/commit/09a3ba182730cf56a5a680e3784cb7bb85218722)]:
-  - @radoslavirha/ui-runtime@0.2.0
-
-## 0.2.2
-
-### Patch Changes
-
-- [`4a34a89`](https://github.com/radoslavirha/iot-miniservers/commit/4a34a892fa02d4d44307e756a9cab77c1e68256a) Thanks [@radoslavirha](https://github.com/radoslavirha)! - Update packages
-
-## 0.2.1
-
-### Patch Changes
-
-- [`422cfcf`](https://github.com/radoslavirha/iot-miniservers/commit/422cfcf17880bbd18b824b20592cac85e007ec88) Thanks [@radoslavirha](https://github.com/radoslavirha)! - Update packages
-
-## 0.2.0
-
-### Minor Changes
-
-- [`aeff188`](https://github.com/radoslavirha/iot-miniservers/commit/aeff188f97952da65227e41d36e7fec2626f8cb2) Thanks [@radoslavirha](https://github.com/radoslavirha)! - Update dependencies
-
-## 0.1.1
-
-### Patch Changes
-
-- [`8bb6799`](https://github.com/radoslavirha/iot-miniservers/commit/8bb679916e23e64df4dd97643f1494e01ef710c2) Thanks [@radoslavirha](https://github.com/radoslavirha)! - Update packages
