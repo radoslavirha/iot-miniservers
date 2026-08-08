@@ -36,6 +36,7 @@ jobs:
       description: ${{ steps.information.outputs.description }}
       version: ${{ steps.information.outputs.version }}
       date: ${{ steps.set_date.outputs.date }}
+      has_validator: ${{ steps.information.outputs.has_validator }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v7
@@ -54,6 +55,15 @@ jobs:
 
           version=$(yq -r --no-colors eval '.version' "${{ inputs.APP_PATH }}/package.json")
           echo "version=${version}" >> "$GITHUB_OUTPUT"
+
+          # Apps whose config is validated at pod start ship a second image
+          # holding their schema. Detected from the Dockerfile rather than
+          # configured, so adding the stage is all a new app has to do.
+          if grep -qE "^FROM .* AS ${target}-config-validator\$" Dockerfile; then
+            echo "has_validator=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_validator=false" >> "$GITHUB_OUTPUT"
+          fi
 
           echo "date=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_OUTPUT"
   build:
@@ -100,6 +110,36 @@ jobs:
             maintainer=Radoslav Irha <radoslav.irha@gmail.com>
             org.opencontainers.image.title=${{ needs.image-data.outputs.image }}
             org.opencontainers.image.description=${{ needs.image-data.outputs.description }}
+            org.opencontainers.image.vendor=Radoslav Irha IoT Miniservers
+            org.opencontainers.image.authors=Radoslav Irha <radoslav.irha@gmail.com>
+            org.opencontainers.image.licenses=MIT
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}/${{ inputs.APP_PATH }}
+            org.opencontainers.image.documentation=https://github.com/${{ github.repository }}/blob/main/${{ inputs.APP_PATH }}/README.md
+            org.opencontainers.image.created=${{ needs.image-data.outputs.date }}
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.version=${{ needs.image-data.outputs.version }}
+      # Built from the same checkout, and tagged with the same version, as the
+      # app image above. That is what makes the pair impossible to mismatch:
+      # the chart derives <repository>-config-validator:<tag> from the app's own
+      # image block, so one deploy.json bump moves both.
+      - name: Build config validator
+        if: ${{ needs.image-data.outputs.has_validator == 'true' }}
+        uses: docker/build-push-action@v7
+        with:
+          push: ${{ inputs.PUBLISH }}
+          load: true
+          context: .
+          file: Dockerfile
+          target: ${{ needs.image-data.outputs.target }}-config-validator
+          tags: |
+            ${{ needs.image-data.outputs.image }}-config-validator:latest
+            ${{ needs.image-data.outputs.image }}-config-validator:${{ needs.image-data.outputs.version }}
+          secret-files: |
+            "npmrc=/tmp/npmrc.auth"
+          labels: |
+            maintainer=Radoslav Irha <radoslav.irha@gmail.com>
+            org.opencontainers.image.title=${{ needs.image-data.outputs.image }}-config-validator
+            org.opencontainers.image.description=Runtime config validator for ${{ needs.image-data.outputs.image }}
             org.opencontainers.image.vendor=Radoslav Irha IoT Miniservers
             org.opencontainers.image.authors=Radoslav Irha <radoslav.irha@gmail.com>
             org.opencontainers.image.licenses=MIT

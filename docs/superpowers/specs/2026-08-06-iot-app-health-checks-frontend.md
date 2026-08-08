@@ -555,7 +555,24 @@ CMD ["/config/config.json"]
   - `USER node`: it only reads a file. Nothing here needs root, and it is the cheapest place in the plan to get that right.
   - Same stage for `homelab-dashboard-ui`, importing `AppConfigSchema`.
 - [ ] Add `build:validator` to both UIs' `package.json` (esbuild → `dist-validator/validate-config.js`) and make `build` run it, so a UI can never be published without its validator.
-- [ ] **Tag lockstep is handled by the chart, not by the release workflow.** Publish each validator under the *same tag* as its UI image, from the same commit. The chart derives `<repository>-config-validator:<tag>` from the app's own `image` block, so the existing `deploy.json` bump moves both together and no second `yamlPath` is needed.
+- [ ] **Publish the validators from the same workflow run as their app.** `.github/workflows/docker-build-app.yaml` builds one image per app directory, deriving `target` from the directory name and `image` from `package.json`'s `name`; the `-config-validator` stages would otherwise never be pushed, and `validate: true` in the chart would give `ImagePullBackOff`.
+
+  Add a second `docker/build-push-action` step to the existing `build` job — same checkout, same auth, same `version` — so the pair cannot come from different commits:
+
+```yaml
+      - name: Build config validator
+        if: ${{ needs.image-data.outputs.has_validator == 'true' }}
+        uses: docker/build-push-action@v7
+        with:
+          target: ${{ needs.image-data.outputs.target }}-config-validator
+          tags: |
+            ${{ needs.image-data.outputs.image }}-config-validator:latest
+            ${{ needs.image-data.outputs.image }}-config-validator:${{ needs.image-data.outputs.version }}
+```
+
+  - `has_validator` is computed in the `image-data` job by grepping the Dockerfile for `^FROM .* AS <target>-config-validator$` — **detected, not configured**, so adding the stage is the only thing a new app has to do, and the three APIs stay untouched with no opt-out list to maintain.
+  - Both tags come from the app's own `package.json`, which is what makes the lockstep automatic: the chart derives `<repository>-config-validator:<tag>` from the app's `image` block, so one `deploy.json` bump moves both and no second `yamlPath` is needed.
+  - **Backfilling:** a release that predates this step published the app image without its validator. `docker-build-app.yaml` accepts `workflow_dispatch` with `APP_PATH` + `PUBLISH`, so re-running it for each UI republishes the app image at the same version and adds the missing validator.
 - [ ] Both UI stages are otherwise unchanged from today plus the `nginx-runtime` `COPY`s — no `apk add nodejs`, no validator bundle, no new packages.
 - [ ] **Keep the development `config.json` out of the build output** — in `vite.config.ts`, not the Dockerfile:
 
