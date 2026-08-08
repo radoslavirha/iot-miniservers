@@ -1,5 +1,11 @@
 # homelab-dashboard-ui
 
+## 0.4.0
+
+### Minor Changes
+
+- [`85e81bf`](https://github.com/radoslavirha/iot-miniservers/commit/85e81bf0dd6e3b6f06d841a0f1f59a255e936fd8) Thanks [@radoslavirha](https://github.com/radoslavirha)! - Release validator image for frontends
+
 ## 0.3.0
 
 ### Minor Changes
