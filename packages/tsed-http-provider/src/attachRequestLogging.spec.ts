@@ -59,7 +59,12 @@ describe('outbound request logging', () => {
         });
 
         const [, meta] = logger.info.mock.calls[0] as [string, Record<string, unknown>];
-        expect(meta).toMatchObject({ provider: 'api', method: 'GET', url: '/things', status: 200 });
+        expect(meta).toMatchObject({
+            provider: 'api',
+            method: 'GET',
+            url: 'http://api.example.com/things',
+            status: 200
+        });
         expect(meta['duration']).toBeTypeOf('number');
         expect(meta).not.toHaveProperty('headers');
         expect(meta).not.toHaveProperty('query');
@@ -77,7 +82,12 @@ describe('outbound request logging', () => {
         await expect(instance.get('/boom')).rejects.toThrow();
 
         const [, meta] = logger.error.mock.calls[0] as [string, Record<string, unknown>];
-        expect(meta).toMatchObject({ provider: 'api', method: 'GET', url: '/boom', status: 500 });
+        expect(meta).toMatchObject({
+            provider: 'api',
+            method: 'GET',
+            url: 'http://api.example.com/boom',
+            status: 500
+        });
         expect(meta['duration']).toBeTypeOf('number');
         expect(meta).not.toHaveProperty('headers');
         expect(meta).not.toHaveProperty('query');
@@ -120,8 +130,66 @@ describe('outbound request logging', () => {
         expect(logger.info).toHaveBeenCalledOnce();
         const [message, meta] = logger.info.mock.calls[0] as [string, Record<string, unknown>];
         expect(message).toBe('Request completed');
-        expect(meta).toMatchObject({ provider: 'api', method: 'GET', url: '/things', status: 200 });
+        expect(meta).toMatchObject({
+            provider: 'api',
+            method: 'GET',
+            url: 'http://api.example.com/things',
+            status: 200
+        });
         expect(meta['duration']).toBeTypeOf('number');
+        mock.restore();
+    });
+
+    it('joins the base URL exactly once when both sides carry a slash', async () => {
+        const logger = buildLogger();
+        const instance = buildClient({ baseURL: 'http://api.example.com/v1/' }, logger);
+        const mock = new MockAdapter(instance);
+        mock.onGet('/things').reply(200, {});
+
+        await instance.get('/things');
+
+        const [, meta] = logger.info.mock.calls[0] as [string, Record<string, unknown>];
+        expect(meta['url']).toBe('http://api.example.com/v1/things');
+        mock.restore();
+    });
+
+    it('keeps an absolute request url instead of prefixing the base URL', async () => {
+        const logger = buildLogger();
+        const instance = buildClient({ baseURL: 'http://api.example.com' }, logger);
+        const mock = new MockAdapter(instance);
+        mock.onGet('http://other.example.com/thing').reply(200, {});
+
+        await instance.get('http://other.example.com/thing');
+
+        const [, meta] = logger.info.mock.calls[0] as [string, Record<string, unknown>];
+        expect(meta['url']).toBe('http://other.example.com/thing');
+        mock.restore();
+    });
+
+    it('falls back to the base URL when the request carries no path', async () => {
+        const logger = buildLogger();
+        const instance = buildClient({ baseURL: 'http://api.example.com' }, logger);
+        const mock = new MockAdapter(instance);
+        mock.onGet('').reply(200, {});
+
+        await instance.get('');
+
+        const [, meta] = logger.info.mock.calls[0] as [string, Record<string, unknown>];
+        expect(meta['url']).toBe('http://api.example.com');
+        mock.restore();
+    });
+
+    it('logs a bare path when no base URL is configured', async () => {
+        const logger = buildLogger();
+        const instance = axios.create();
+        attachRequestLogging(instance, asLogger(logger), HttpLogConfigSchema.parse({}), 'api');
+        const mock = new MockAdapter(instance);
+        mock.onGet('/things').reply(200, {});
+
+        await instance.get('/things');
+
+        const [, meta] = logger.info.mock.calls[0] as [string, Record<string, unknown>];
+        expect(meta['url']).toBe('/things');
         mock.restore();
     });
 

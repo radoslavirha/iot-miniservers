@@ -81,7 +81,7 @@ export function attachRequestLogging(
         const meta: Record<string, unknown> = {
             provider: providerKey,
             method: requestConfig?.method?.toUpperCase(),
-            url: requestConfig?.url,
+            url: resolveUrl(requestConfig),
             status: response?.status,
             duration: requestConfig?._logStartedAt === undefined
                 ? undefined
@@ -115,6 +115,31 @@ export function attachRequestLogging(
             return Promise.reject(error);
         }
     );
+}
+
+/** An absolute URL: has a scheme, or is protocol-relative (`//host/path`). */
+const ABSOLUTE_URL = /^([a-z][a-z\d+\-.]*:)?\/\//i;
+
+/**
+ * Joins `baseURL` with the per-request `url`, mirroring how axios builds the
+ * path it actually requests. Axios keeps the two apart on the config until the
+ * adapter runs, so logging `config.url` alone yields a bare path with no host.
+ *
+ * A `url` that is already absolute wins over `baseURL`, matching axios.
+ */
+function resolveUrl(requestConfig: LoggedRequestConfig | undefined): string | undefined {
+    const url = requestConfig?.url;
+    const baseURL = requestConfig?.baseURL;
+
+    if (url === undefined || url === '') {
+        return baseURL;
+    }
+
+    if (baseURL === undefined || baseURL === '' || ABSOLUTE_URL.test(url)) {
+        return url;
+    }
+
+    return `${baseURL.replace(/\/+$/, '')}/${url.replace(/^\/+/, '')}`;
 }
 
 /** Whether a payload of this content type is safe to serialise into a log line. */
