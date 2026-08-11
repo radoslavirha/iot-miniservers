@@ -1,5 +1,18 @@
 # @radoslavirha/tsed-http-provider
 
+## 0.2.2
+
+### Patch Changes
+
+- [`d1d7337`](https://github.com/radoslavirha/iot-miniservers/commit/d1d73375fdbfe1a4df0407c63a6ba910944e3c4e) Thanks [@radoslavirha](https://github.com/radoslavirha)! - Name outbound log lines `Upstream HTTP request completed` / `Upstream HTTP request failed`.
+
+  Outbound calls used the same `Request completed` / `Request failed` messages as the
+  inbound entries from `@radoslavirha/tsed-logger`, so in Grafana the two directions were
+  indistinguishable unless the query also filtered on `scope`.
+
+  The message now carries the direction and the transport, which also leaves room for a
+  future non-HTTP client (gRPC, MQTT) to get its own message instead of overloading this one.
+
 ## 0.2.1
 
 ### Patch Changes
