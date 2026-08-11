@@ -129,7 +129,7 @@ describe('outbound request logging', () => {
 
         expect(logger.info).toHaveBeenCalledOnce();
         const [message, meta] = logger.info.mock.calls[0] as [string, Record<string, unknown>];
-        expect(message).toBe('Request completed');
+        expect(message).toBe('Upstream HTTP request completed');
         expect(meta).toMatchObject({
             provider: 'api',
             method: 'GET',
@@ -274,7 +274,7 @@ describe('outbound request logging', () => {
 
         expect(logger.error).toHaveBeenCalledOnce();
         const [message, meta] = logger.error.mock.calls[0] as [string, Record<string, unknown>];
-        expect(message).toBe('Request failed');
+        expect(message).toBe('Upstream HTTP request failed');
         expect(meta).toMatchObject({ provider: 'api', status: 500 });
         expect(meta['error_message']).toBeTypeOf('string');
         mock.restore();

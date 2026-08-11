@@ -36,6 +36,11 @@ interface LoggedError {
  * `@radoslavirha/tsed-logger`'s `$onResponse`: `method`, `url`, `status` and
  * `duration`, plus the redacted `headers`, `query`, `request` and `response`.
  *
+ * The **message** deliberately differs from inbound's `Request completed`: the
+ * two would otherwise be indistinguishable in Grafana without also filtering on
+ * `scope`. It names the direction and the transport, so a future non-HTTP client
+ * (gRPC, MQTT) gets its own message rather than overloading this one.
+ *
  * Values are sanitised through a {@link RedactionProfile} **before** reaching the
  * logger, which stays a pure transport. The profile is built once here — per
  * provider — because `fast-redact` compiles its redactors and doing that per
@@ -101,12 +106,12 @@ export function attachRequestLogging(
 
     instance.interceptors.response.use(
         (response) => {
-            logger.info('Request completed', buildMeta(response.config, response));
+            logger.info('Upstream HTTP request completed', buildMeta(response.config, response));
             return response;
         },
         (error: unknown) => {
             const failure = error as LoggedError;
-            logger.error('Request failed', {
+            logger.error('Upstream HTTP request failed', {
                 ...buildMeta(failure.config, failure.response),
                 error_name: failure.name ?? failure.code,
                 error_message: failure.message,

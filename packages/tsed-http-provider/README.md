@@ -166,12 +166,15 @@ failures, so logging again would duplicate lines.
 ## Logging
 
 Every outbound call emits one line, scoped per API (`HTTP_CLIENT:MIOT_SPEC`), shaped like the
-inbound entries from `@radoslavirha/tsed-logger`:
+inbound entries from `@radoslavirha/tsed-logger`. The message names the direction and the
+transport — `Upstream HTTP request completed` / `Upstream HTTP request failed` — so a Grafana
+query can tell an outbound call apart from the inbound `Request completed` without leaning on
+`scope`, and a future non-HTTP client gets its own message:
 
 ```json
 {
   "scope": "HTTP_CLIENT:MIOT_SPEC",
-  "body": "Request completed",
+  "body": "Upstream HTTP request completed",
   "provider": "MIOT_SPEC",
   "method": "GET",
   "url": "/instance",

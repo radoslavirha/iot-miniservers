@@ -83,7 +83,7 @@ describe('HttpProviderService', () => {
 
         await client.get('/ping');
 
-        expect(info).toHaveBeenCalledWith('Request completed', expect.objectContaining({
+        expect(info).toHaveBeenCalledWith('Upstream HTTP request completed', expect.objectContaining({
             provider: ApiKey.Example,
             status: 200
         }));

@@ -35,11 +35,11 @@ catalogs:
       specifier: ^5.0.4
       version: 5.0.4
     '@radoslavirha/tsed-platform':
-      specifier: ^4.0.0
-      version: 4.0.0
+      specifier: ^4.1.0
+      version: 4.1.0
     '@radoslavirha/tsed-swagger':
-      specifier: ^8.0.0
-      version: 8.0.0
+      specifier: ^9.0.0
+      version: 9.0.0
     '@radoslavirha/utils':
       specifier: ^0.8.4
       version: 0.8.4
@@ -347,10 +347,10 @@ importers:
         version: 0.6.0(@tsed/di@8.37.1(@tsed/core@8.37.1)(@tsed/hooks@8.37.1)(@tsed/logger@8.0.5))(@tsed/platform-http@8.37.1(@tsed/engines@8.37.1)(@tsed/logger@8.0.5)(@tsed/openspec@8.37.1)(@types/multer@2.2.0))
       '@radoslavirha/tsed-platform':
         specifier: 'catalog:'
-        version: 4.0.0(e9514700eca152b80a4a902e739ff451)
+        version: 4.1.0(e9514700eca152b80a4a902e739ff451)
       '@radoslavirha/tsed-swagger':
         specifier: 'catalog:'
-        version: 8.0.0(f258f2ba2dd88933c2354831d0201748)
+        version: 9.0.0(29f78a24643d06d80f2ae592cd6bc13a)
       '@radoslavirha/utils':
         specifier: 'catalog:'
         version: 0.8.4
@@ -552,10 +552,10 @@ importers:
         version: 5.0.4(12c6a0d3046718a1bbff6e3dc0c94dd9)
       '@radoslavirha/tsed-platform':
         specifier: 'catalog:'
-        version: 4.0.0(e9514700eca152b80a4a902e739ff451)
+        version: 4.1.0(e9514700eca152b80a4a902e739ff451)
       '@radoslavirha/tsed-swagger':
         specifier: 'catalog:'
-        version: 8.0.0(f258f2ba2dd88933c2354831d0201748)
+        version: 9.0.0(29f78a24643d06d80f2ae592cd6bc13a)
       '@radoslavirha/utils':
         specifier: 'catalog:'
         version: 0.8.4
@@ -760,13 +760,13 @@ importers:
         version: 5.0.4(12c6a0d3046718a1bbff6e3dc0c94dd9)
       '@radoslavirha/tsed-platform':
         specifier: 'catalog:'
-        version: 4.0.0(e9514700eca152b80a4a902e739ff451)
+        version: 4.1.0(e9514700eca152b80a4a902e739ff451)
       '@radoslavirha/tsed-resilience':
         specifier: workspace:*
         version: link:../../packages/tsed-resilience
       '@radoslavirha/tsed-swagger':
         specifier: 'catalog:'
-        version: 8.0.0(f258f2ba2dd88933c2354831d0201748)
+        version: 9.0.0(29f78a24643d06d80f2ae592cd6bc13a)
       '@radoslavirha/utils':
         specifier: 'catalog:'
         version: 0.8.4
@@ -3025,8 +3025,8 @@ packages:
       '@tsed/schema': 8.37.1
       mongoose: 9.9.0
 
-  '@radoslavirha/tsed-platform@4.0.0':
-    resolution: {integrity: sha512-B8v34Jk849y+AvlZiVQA2pXSBTVx80r97FdysFq0tjqdlMM898uUXcfMIR3BU7JW4FLqUye8IO1zf+qo7+jSCg==, tarball: https://npm.pkg.github.com/download/@radoslavirha/tsed-platform/4.0.0/993b37afa82fb2204cd083d6e38aed3a7ec5619d}
+  '@radoslavirha/tsed-platform@4.1.0':
+    resolution: {integrity: sha512-3h/ohcPtlTDxErkyB//F4/Rva4IXu9+UukR/ZsJ4WZydHPqqZVMvzAgPXxgQArdbcLPZ19pSStPUFaJRMrEUTQ==, tarball: https://npm.pkg.github.com/download/@radoslavirha/tsed-platform/4.1.0/06f062aa7c50e3987261b1748c0f7aa7e735a44d}
     engines: {node: '>= 24', pnpm: '>= 11.8'}
     os: [darwin, linux]
     peerDependencies:
@@ -3039,14 +3039,14 @@ packages:
       '@tsed/platform-log-request': 8.37.1
       ajv: 8.20.0
 
-  '@radoslavirha/tsed-swagger@8.0.0':
-    resolution: {integrity: sha512-8MUEhNTUNCTxZoRPLkNhB3CUEwDCh+2VVJOS+0FRhYuFoVmQU59eZdoLdKovEWmr4/GcM934wuS0KXa/chZswQ==, tarball: https://npm.pkg.github.com/download/@radoslavirha/tsed-swagger/8.0.0/a88da45b0489516cbc06a706effed85b9b9bb3ba}
+  '@radoslavirha/tsed-swagger@9.0.0':
+    resolution: {integrity: sha512-9Cjv5Yjfjgg4qEOFy8AT9YM75B+FwGFHiZW1AbB7HLhwgFt/rqKryzDNVwyyP2DSx4GdES/MmDfm6Bm2DhWbrQ==, tarball: https://npm.pkg.github.com/download/@radoslavirha/tsed-swagger/9.0.0/7edafd9e881ca1924f662b55a620da0deca758c6}
     engines: {node: '>= 24', pnpm: '>= 11.8'}
     os: [darwin, linux]
     peerDependencies:
       '@radoslavirha/tsed-configuration': 0.8.0
       '@radoslavirha/tsed-logger': 0.6.0
-      '@radoslavirha/tsed-platform': 4.0.0
+      '@radoslavirha/tsed-platform': 4.1.0
       '@tsed/di': 8.37.1
       '@tsed/json-mapper': 8.37.1
       '@tsed/openspec': 8.37.1
@@ -8256,7 +8256,7 @@ snapshots:
       '@tsed/schema': 8.37.1(@tsed/core@8.37.1)(@tsed/hooks@8.37.1)(@tsed/openspec@8.37.1)
       mongoose: 9.9.1(socks@2.8.9)
 
-  '@radoslavirha/tsed-platform@4.0.0(e9514700eca152b80a4a902e739ff451)':
+  '@radoslavirha/tsed-platform@4.1.0(e9514700eca152b80a4a902e739ff451)':
     dependencies:
       '@radoslavirha/tsed-configuration': 0.8.0(@tsed/core@8.37.1)(@tsed/di@8.37.1(@tsed/core@8.37.1)(@tsed/hooks@8.37.1)(@tsed/logger@8.0.5))(@tsed/json-mapper@8.37.1(@tsed/core@8.37.1)(@tsed/schema@8.37.1(@tsed/core@8.37.1)(@tsed/hooks@8.37.1)(@tsed/openspec@8.37.1)))(@tsed/schema@8.37.1(@tsed/core@8.37.1)(@tsed/hooks@8.37.1)(@tsed/openspec@8.37.1))(zod@4.4.3)
       '@radoslavirha/tsed-logger': 0.6.0(@tsed/di@8.37.1(@tsed/core@8.37.1)(@tsed/hooks@8.37.1)(@tsed/logger@8.0.5))(@tsed/platform-http@8.37.1(@tsed/engines@8.37.1)(@tsed/logger@8.0.5)(@tsed/openspec@8.37.1)(@types/multer@2.2.0))
@@ -8281,11 +8281,11 @@ snapshots:
       - supports-color
       - zod
 
-  '@radoslavirha/tsed-swagger@8.0.0(f258f2ba2dd88933c2354831d0201748)':
+  '@radoslavirha/tsed-swagger@9.0.0(29f78a24643d06d80f2ae592cd6bc13a)':
     dependencies:
       '@radoslavirha/tsed-configuration': 0.8.0(@tsed/core@8.37.1)(@tsed/di@8.37.1(@tsed/core@8.37.1)(@tsed/hooks@8.37.1)(@tsed/logger@8.0.5))(@tsed/json-mapper@8.37.1(@tsed/core@8.37.1)(@tsed/schema@8.37.1(@tsed/core@8.37.1)(@tsed/hooks@8.37.1)(@tsed/openspec@8.37.1)))(@tsed/schema@8.37.1(@tsed/core@8.37.1)(@tsed/hooks@8.37.1)(@tsed/openspec@8.37.1))(zod@4.4.3)
       '@radoslavirha/tsed-logger': 0.6.0(@tsed/di@8.37.1(@tsed/core@8.37.1)(@tsed/hooks@8.37.1)(@tsed/logger@8.0.5))(@tsed/platform-http@8.37.1(@tsed/engines@8.37.1)(@tsed/logger@8.0.5)(@tsed/openspec@8.37.1)(@types/multer@2.2.0))
-      '@radoslavirha/tsed-platform': 4.0.0(e9514700eca152b80a4a902e739ff451)
+      '@radoslavirha/tsed-platform': 4.1.0(e9514700eca152b80a4a902e739ff451)
       '@radoslavirha/types': 0.4.3
       '@radoslavirha/utils': 0.8.4
       '@swc/helpers': 0.5.23
