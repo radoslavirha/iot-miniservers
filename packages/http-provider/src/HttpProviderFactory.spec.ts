@@ -2,7 +2,7 @@ import { type AxiosAdapter, type AxiosInstance } from 'axios';
 import AxiosMockAdapter from 'axios-mock-adapter';
 import { readFile } from 'node:fs/promises';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { isTaskCancelledError } from '@radoslavirha/resilience';
+import { CircuitState, isTaskCancelledError } from '@radoslavirha/resilience';
 import { AuthStrategy } from './schemas/auth.schema.js';
 import { createProvidersSchema } from './schemas/providers.schema.js';
 import { HttpProviderFactory } from './HttpProviderFactory.js';
@@ -49,6 +49,61 @@ describe('HttpProviderFactory', () => {
         });
         const instance = factory.get('my-api');
         expect(instance.baseURL).toBe('http://my-api.example.com');
+    });
+
+    describe('breakers()', () => {
+        it('is empty before any client is built', () => {
+            const factory = new HttpProviderFactory({
+                'test-api': { baseURL: 'http://localhost:4000', resilience: { circuitBreaker: {} } }
+            });
+
+            expect(factory.breakers().size).toBe(0);
+        });
+
+        it('exposes the breaker for a provider configured with one', () => {
+            const factory = new HttpProviderFactory({
+                'test-api': { baseURL: 'http://localhost:4000', resilience: { circuitBreaker: {} } }
+            });
+
+            factory.get('test-api');
+
+            // A breaker that has seen no traffic reports Closed, which is honest: there is
+            // no evidence of a fault.
+            expect(factory.breakers().get('test-api')?.state).toBe(CircuitState.Closed);
+        });
+
+        // A missing key means "no signal", not "healthy" — callers must not conflate them.
+        it('records nothing for a provider without a circuit breaker', () => {
+            const factory = new HttpProviderFactory({
+                'no-breaker': { baseURL: 'http://localhost:4000', resilience: { timeout: { ms: 100 } } },
+                'no-resilience': { baseURL: 'http://localhost:4000' }
+            });
+
+            factory.get('no-breaker');
+            factory.get('no-resilience');
+
+            expect(factory.breakers().size).toBe(0);
+        });
+
+        it('keeps the provider breaker distinct from the auth client that shares its key', () => {
+            const factory = new HttpProviderFactory({
+                'test-api': {
+                    baseURL: 'http://localhost:4000',
+                    resilience: { circuitBreaker: {} },
+                    auth: {
+                        strategy: AuthStrategy.TokenExchange,
+                        request: { method: 'POST', url: 'https://auth.example.com/token' },
+                        tokenExtractor: [{ field: 'access_token', as: 'value' }],
+                        transport: { headers: [{ name: 'Authorization', value: 'Bearer {{value}}' }] }
+                    }
+                }
+            });
+
+            factory.get('test-api');
+
+            // One entry, not overwritten by the auth client's separate policy.
+            expect(factory.breakers().size).toBe(1);
+        });
     });
 
     describe('static transport (no strategy)', () => {

@@ -7,6 +7,9 @@ export type {
     HttpRequestOptions,
     HttpResponseType
 } from '@radoslavirha/http-provider';
+// Owned by @radoslavirha/resilience, which owns cockatiel.
+export { CircuitState } from '@radoslavirha/resilience';
+export type { CircuitStateLike } from '@radoslavirha/resilience';
 export { InjectHttpClient } from './InjectHttpClient.js';
 export { attachErrorTranslation } from './attachErrorTranslation.js';
 export { HTTP_CLIENT_LOG_SCOPE, attachRequestLogging } from './attachRequestLogging.js';

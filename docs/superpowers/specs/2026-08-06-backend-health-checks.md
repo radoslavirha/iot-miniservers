@@ -14,8 +14,9 @@
 Two new workspace packages — `@radoslavirha/health` (framework-agnostic) and
 `@radoslavirha/tsed-health` (Ts.ED adapter) — that give every API `/health`,
 `/health/live` and `/health/ready` endpoints, a typed registry of dependency checks, and a
-correct graceful-shutdown path. Apps contribute checks; neither package ever imports
-mongoose, mqtt or axios.
+correct graceful-shutdown path. Apps contribute the checks only they know about; anything
+shared by more than one app lives in the packages, behind an optional peer dependency when
+it needs a driver (see `MongoHealthCheck` below).
 
 Both packages are `private: true` workspace members here, mirroring how `resilience` /
 `tsed-resilience` were incubated, and move to `toolkit-hub` (`packages/health`,
@@ -116,8 +117,7 @@ packages/health/                    @radoslavirha/health
     HealthRegistry.ts               concurrent evaluation, per-check deadline, single-flight cache
     report.ts                       status roll-up + application/health+json body
     checks/
-      staticCheck.ts                always-pass; documents "no dependencies" intent
-      breakerCheck.ts               structural circuit-breaker adapter (zero deps)
+      breakerCheck.ts               circuit-breaker adapter over CircuitState from resilience
     schemas/health.schema.ts        zod HealthConfigSchema
     errors.ts
 
@@ -129,9 +129,29 @@ packages/tsed-health/               @radoslavirha/tsed-health
     HealthController.ts             @Controller('/health') @Hidden
     ShutdownState.ts                draining flag
     createShutdownHandler.ts        the correct SIGTERM sequence, shared by all apps
-    models/                         HealthReport, HealthCheckEntry (Ts.ED schema models)
+    mongoose.ts                     MongoHealthCheck — second build entry, optional peers
+    mongoose.spec.ts                testcontainers: verified against a real MongoDB
     test/setup.ts
+    test/TestMongoServer.ts         fixture server for the Mongo spec
 ```
+
+`MongoHealthCheck` is shared rather than per-app. An earlier draft of this spec kept it in
+each API — "packages never import mongoose" — which produced two files differing only in
+comments, both tested against a mocked `readyState`. That reasoning confused a *runtime*
+dependency with a *test* one: `@radoslavirha/tsed-mongoose` in `toolkit-hub` already
+declares `mongoose` as both a peer and a dev dependency and tests itself with
+`@tsed/testcontainers-mongo`, and `packages/resilience` here imports real mongoose in an
+integration spec while shipping no mongoose dependency at all.
+
+Two things make it clean:
+
+- **`/mongoose` subpath, second tsdown entry.** `mongoose` and `@tsed/mongoose` are
+  `optional: true` in `peerDependenciesMeta`, so an app with no database never resolves
+  them. Bundling the check into the main entry would drag `@tsed/mongoose` into every
+  consumer's import graph.
+- **No `ConfigService`.** `MongooseService` populates its connection map only from
+  `connect()`, so `get() === undefined` means Mongo was never configured — which is what
+  the disabled case needs, without the check knowing anything app-specific.
 
 Scaffolding is copied verbatim from `packages/tsed-resilience`: `tsdown.config.ts`
 (`[cjsConfig, esmConfig]`), `vitest.config.ts` merging `defaultConfig` with 90% thresholds,
@@ -292,8 +312,10 @@ export const HEALTH_CHECKS = Symbol.for('radoslavirha:HEALTH_CHECKS');
 @Scope(ProviderScope.SINGLETON)
 export class MongoHealthCheck implements HealthCheck { /* ... */ }
 
-// or, via the fluent builder (ProviderBuilder.type() — ProviderBuilder.d.ts:187):
-injectable(MongoHealthCheck).type(HEALTH_CHECKS).build();
+// or, via the fluent builder (ProviderBuilder.type() — ProviderBuilder.d.ts:187).
+// `injectable()` registers on call; `.token()` is the terminal accessor — there is no
+// `.build()`. Same shape as MqttClientProvider in miot-bridge-api.
+injectable(SOME_TOKEN).type(HEALTH_CHECKS).factory(() => check).token();
 ```
 
 Two consequences worth spelling out, because both are silent failures:
@@ -401,14 +423,12 @@ must not execute through a `ResiliencePolicy`.** Three reasons, in order of impo
 
 **The reverse direction, though, is where the value is.** An existing circuit breaker —
 one already guarding real traffic — is the best available signal about an external
-dependency, and reading it costs zero I/O. So `@radoslavirha/health` ships an adapter that
-consumes breaker state **structurally**, without importing anything:
+dependency, and reading it costs zero I/O. So `@radoslavirha/health` ships an adapter over
+breaker state:
 
 ```ts
 // packages/health/src/checks/breakerCheck.ts
-
-/** Structurally matches cockatiel's CircuitBreakerPolicy. Nothing is imported. */
-export interface CircuitStateLike { readonly state: number | string; }
+import { CircuitState, type CircuitStateLike } from '@radoslavirha/resilience';
 
 /**
  * Reports an existing circuit breaker's state as a health check. Passive: it reads a
@@ -425,8 +445,17 @@ export const breakerCheck = (
 ): HealthCheck => { /* Closed → pass, HalfOpen → warn, Open|Isolated → fail */ };
 ```
 
-`cockatiel`'s `CircuitBreakerPolicy` satisfies `CircuitStateLike` without any declared
-relationship. Full interop, zero coupling, and the dependency graph stays a tree.
+`CircuitStateLike` and `CircuitState` are owned by `@radoslavirha/resilience`, which owns
+cockatiel. **This is the only reason health depends on resilience, and it costs nothing:
+anyone who needs `breakerCheck` already has a circuit breaker, so already has resilience.**
+
+An earlier draft declared a structural `{ state: number | string }` in health instead, to
+keep the package dependency-free. Rejected on implementation: it produced *two* identical
+`CircuitStateLike` interfaces (health and http-provider) with no relationship between them,
+and forced health to mirror cockatiel's enum by value — `1: 'open'` — which would silently
+report every open circuit as healthy if cockatiel ever renumbered. Trading a correctness
+risk and a duplicated type for a dependency the consumer already has is a bad trade, and it
+broke the convention `http-provider` → `resilience` already sets.
 
 **One enabling change is needed** in `@radoslavirha/tsed-http-provider`:
 `HttpProviderFactory` already builds one `ResiliencePolicy` per configured entry and
@@ -456,21 +485,17 @@ additive, per the repository's configuration-contract rule), and extend
 
 ### `miot-bridge-api`
 
-- `src/health/MongoHealthCheck.ts` — `critical: true`. Injects `MongooseService`; `pass`
-  when `readyState === 1`, else `fail` with `detail` = the readyState **name**
-  (`disconnected` / `connecting` / `disconnecting`), never the connection object. No ping
-  query: `readyState` is a field read, a ping is a round trip every 5 s forever.
+- `src/health/index.ts` re-exports the shared `MongoHealthCheck` from
+  `@radoslavirha/tsed-health/mongoose` — `critical: true`. It reads `readyState` (a field
+  read; a ping would be a round trip every 5 s forever) and reports `pass` when Mongo was
+  never configured, since `MongooseService.get()` is `undefined` in that case.
 
-  **It must return `pass` when Mongo is disabled by config**, exactly like the MQTT check.
-  `MongoConfigSchema` (`@radoslavirha/tsed-mongoose`) is
-  `z.union([MongoEnabledSchema, MongoDisabledSchema])`, and both apps' `index.ts` already
-  branch on it: `mongoose: ObjectUtils.isEnabled(config.config.mongodb) ? [...] : undefined`.
-  With Mongo disabled there is no connection, `readyState` is not `1`, and a naive check
-  would report `fail` forever — the pod would **never** enter Endpoints, silently, with no
-  restart and no error log. A health check causing a total outage of a correctly-configured
-  app is the exact failure class this design exists to prevent. Gate on
-  `ObjectUtils.isEnabled(config.config.mongodb)` first and return `pass` before touching
-  `MongooseService`.
+  **The disabled case is load-bearing.** `MongoConfigSchema` is
+  `z.union([MongoEnabledSchema, MongoDisabledSchema])` and both apps' `index.ts` branch on
+  it: `mongoose: ObjectUtils.isEnabled(config.config.mongodb) ? [...] : undefined`. A naive
+  check would report `fail` forever with Mongo off — the pod would **never** enter
+  Endpoints, silently, with no restart and no error log. A health check causing a total
+  outage of a correctly-configured app is the exact failure class this design prevents.
 - `src/health/MqttHealthCheck.ts` — `critical: true`. Injects `MqttClientProvider`; `pass`
   when the client is non-null and `client.connected`. **`pass` when the provider resolved
   to `null`** — MQTT disabled by config is not a failure, and this app runs with
@@ -605,8 +630,8 @@ publish it first, then bump both catalog entries in `pnpm-workspace.yaml`.
 **Phase 0 — `toolkit-hub`** (blocking). Land the logger spec; publish `@radoslavirha/tsed-logger`
 and `@radoslavirha/tsed-configuration`; bump both in `pnpm-workspace.yaml` here.
 
-**Phase 1 — `packages/health`.** Contract, registry, roll-up, report, `staticCheck`,
-`breakerCheck`, config schema. Pure logic, no Ts.ED — testable in isolation and the place
+**Phase 1 — `packages/health`.** Contract, registry, roll-up, report, `breakerCheck`,
+config schema. Pure logic, no Ts.ED — testable in isolation and the place
 to get the semantics right.
 
 **Phase 2 — `packages/tsed-health`.** Token, service, controller, `ShutdownState`,
@@ -710,7 +735,10 @@ kubectl rollout restart deploy/api-iot-qr-manager-api -n sandbox
 | `HealthController` in `toolkit-hub`'s `tsed/platform` (the upstream plan) | Rejected — loads a registry, a cache and a shutdown state machine onto every `BaseServer` consumer, and forces a publish per contract change during the exact period the contract is unstable. |
 | `@tsed/terminus` | Rejected — one aggregated path, so live and ready cannot differ; `@godaddy/terminus` is effectively unmaintained. Same verdict as the upstream plan. |
 | Health checks executed through `ResiliencePolicy` | Rejected — retry double-counts `failureThreshold`, a breaker at 0.2 rps is meaningless and can poison the real traffic path if shared. Timeout is the only primitive wanted and it is 10 lines. |
-| Health *importing* `@radoslavirha/resilience` for the breaker type | Rejected — a structural `CircuitStateLike` interface gives identical interop with zero dependency. Keeps the graph a tree and the package relocatable to `toolkit-hub` on its own. |
+| Health *importing* `@radoslavirha/resilience` for the breaker type | **Chosen.** Anyone needing `breakerCheck` already has a breaker, so already has resilience — the dependency is never paid by someone who would not have it anyway. |
+| A structural `{ state }` in health instead, to keep it dependency-free | Rejected on implementation — produced two unrelated copies of the same interface and forced health to mirror cockatiel's enum by value, which fails silently on a renumbering. |
+| `MongoHealthCheck` shared, behind a `/mongoose` subpath with optional peers | **Chosen.** One implementation, tested once against a real MongoDB. Apps with no database never resolve `mongoose`. |
+| `MongoHealthCheck` copied into each Mongo-backed API | Rejected on implementation — two files differing only in comments, both testing a mocked `readyState`, so the premise the `critical: true` design rests on went unverified in either. |
 | Active outbound probe of third-party APIs in readiness | Rejected — an outage you cannot fix would delete your own pods from Endpoints, and it adds synthetic load to someone else's service every 5 s. Passive breaker state, non-critical, instead. |
 | Binary "register a check" vs "register nothing" for external deps | Rejected — loses the observability entirely and puts the reasoning in a plan document rather than at the registration site. `critical: false` keeps both. |
 | No result cache | Rejected — three probes plus `/health` multiply into concurrent evaluations of the same checks; a 1 s single-flight TTL removes the amplification at a staleness below any probe's resolution. |

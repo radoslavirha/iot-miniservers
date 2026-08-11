@@ -1,5 +1,6 @@
 import { Inject, Injectable, ProviderScope, Scope } from '@tsed/di';
 import { HttpProviderFactory, type HttpClient, type HttpInstanceRole } from '@radoslavirha/http-provider';
+import type { CircuitStateLike } from '@radoslavirha/resilience';
 import { Logger } from '@radoslavirha/tsed-logger';
 import type { AxiosInstance } from 'axios';
 import { HTTP_CLIENT_LOG_SCOPE, attachRequestLogging } from './attachRequestLogging.js';
@@ -64,6 +65,21 @@ export class HttpProviderService<K extends string = string> {
         }
 
         return client;
+    }
+
+    /**
+     * Circuit breakers for the providers created so far, keyed by provider key.
+     *
+     * Only providers already built by {@link get} appear, and only those configured with
+     * `resilience.circuitBreaker`. A missing key means "no signal", not "healthy".
+     *
+     * Pair with `breakerCheck` from `@radoslavirha/health` to report an upstream's state
+     * on `/health` at zero I/O cost. Register those checks as **non-critical**: a
+     * third-party outage must degrade the report, never remove this pod from Endpoints.
+     */
+    public breakers(): ReadonlyMap<K, CircuitStateLike> {
+        this.factory ??= this.createFactory();
+        return this.factory.breakers();
     }
 
     private createFactory(): HttpProviderFactory<K> {

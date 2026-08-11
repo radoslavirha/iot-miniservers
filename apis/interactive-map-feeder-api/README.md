@@ -62,6 +62,23 @@ Update the ConfigMap first, then roll image updates.
 
 `dataSource` enum: `radar` (only currently implemented source).
 
+## Health
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/health/live` | Liveness. Always `200` — no dependency I/O, by design |
+| GET | `/health/ready` | Readiness. `503` when a critical dependency is down or the pod is draining |
+| GET | `/health` | Full report: `{ status, checks }`. `200` for `pass` and `warn`, `503` for `fail` |
+
+Checks: `upstream-apis` (**non-critical**). Readiness deliberately does not depend on the
+third-party ČHMÚ APIs — failing it during an outage nobody here can fix would remove
+this pod from Endpoints for no benefit. State is read passively from the circuit breakers
+already guarding real traffic, so `/health` degrades to `warn` while `/health/ready`
+stays `200`.
+
+Hidden from Swagger, excluded from traces and request logs. See
+[`@radoslavirha/tsed-health`](../../packages/tsed-health/README.md).
+
 ## Data Flow
 
 ```

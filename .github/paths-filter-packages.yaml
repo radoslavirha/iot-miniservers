@@ -1,9 +1,11 @@
 ---
 # Key must match subdirectory in packages/
+health: packages/health/**
 http-provider: packages/http-provider/**
 miot-device: packages/miot-device/**
 otel: packages/otel/**
 resilience: packages/resilience/**
+tsed-health: packages/tsed-health/**
 tsed-http-provider: packages/tsed-http-provider/**
 tsed-resilience: packages/tsed-resilience/**
 ui-kit: packages/ui-kit/**

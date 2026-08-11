@@ -6,7 +6,7 @@
 
 **Goal:** both nginx images listen on IPv6 as well as IPv4, so the probe path is reachable by name from inside the container and the containers stay correct if a cluster ever becomes dual-stack.
 
-**Supersedes:** fix 2 of [`plans/2026-08-08-validator-uid-and-ipv6-listener.md`](../plans/2026-08-08-validator-uid-and-ipv6-listener.md). That plan's fix 1 (numeric validator UID) is done; its fix 2 analysis was investigated and **two of its claims turned out to be wrong** — both corrected below. Read this file, not that section.
+**Origin:** reported from the `homelab` side on 2026-08-08, alongside the numeric-validator-UID defect (fixed in `c286c71`, released as `qr-manager-ui@0.7.1` / `homelab-dashboard-ui@0.4.1`). That report's IPv6 analysis was investigated here and **two of its claims turned out to be wrong** — both corrected below. This file is the authority.
 
 **Size:** four nginx config lines, one test case, two doc corrections. No package changes, no new dependencies, **no homelab change**.
 

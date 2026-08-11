@@ -28,6 +28,21 @@ Use case: print a QR code once; change the target URL at any time without reprin
 | DELETE | `/qr-codes/:id` | Delete record |
 | GET | `/qr-codes/:id/image` | Render QR image. Query: `format=svg\|png`, `size` (px, PNG only), `ecLevel=L\|M\|Q\|H` |
 
+## Health
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/health/live` | Liveness. Always `200` — no dependency I/O, by design |
+| GET | `/health/ready` | Readiness. `503` when a critical dependency is down or the pod is draining |
+| GET | `/health` | Full report: `{ status, checks }`. `200` for `pass` and `warn`, `503` for `fail` |
+
+Checks: `mongodb` (**critical** — every route reads or writes Mongo). Shared, from
+`@radoslavirha/tsed-health/mongoose`, and verified there against a real database. Reports
+`pass` when Mongo is not configured.
+
+Hidden from Swagger, excluded from traces and request logs. See
+[`@radoslavirha/tsed-health`](../../packages/tsed-health/README.md).
+
 ## Record Shape
 
 ```json

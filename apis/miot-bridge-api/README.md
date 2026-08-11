@@ -65,6 +65,22 @@ Apply ConfigMap changes before rolling application images.
 
 > `deviceId` in path = app UUID (assigned on registration). `deviceId` in command body = numeric MIoT hardware ID.
 
+## Health
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/health/live` | Liveness. Always `200` — no dependency I/O, by design |
+| GET | `/health/ready` | Readiness. `503` when a critical dependency is down or the pod is draining |
+| GET | `/health` | Full report: `{ status, checks }`. `200` for `pass` and `warn`, `503` for `fail` |
+
+Checks: `mongodb` (shared, from `@radoslavirha/tsed-health/mongoose`) and `mqtt` (local) —
+both **critical**, since a bridge without storage or broker cannot serve. Each reports
+`pass` when not configured. The MQTT check is the only
+signal a mid-life broker outage produces, since reconnects after startup are silent.
+
+Hidden from Swagger, excluded from traces and request logs. See
+[`@radoslavirha/tsed-health`](../../packages/tsed-health/README.md).
+
 ## MQTT
 
 | Topic | Direction | Description |

@@ -560,7 +560,7 @@ CMD ["/config/config.json"]
     non-numeric user (node), cannot verify user is non-root
     ```
 
-    Found the hard way — it blocked the first `validate: true` sync on both sandbox clusters (`plans/2026-08-08-validator-uid-and-ipv6-listener.md`). The chart carries a defensive `runAsUser: 1000`, but the image is the right place to state who it runs as: any other consumer applying a restricted securityContext would otherwise rediscover the same failure.
+    Found the hard way — it blocked the first `validate: true` sync on both sandbox clusters. The chart carries a defensive `runAsUser: 1000`, but the image is the right place to state who it runs as: any other consumer applying a restricted securityContext would otherwise rediscover the same failure.
   - Same stage for `homelab-dashboard-ui`, importing `AppConfigSchema`.
 - [ ] Add `build:validator` to both UIs' `package.json` (esbuild → `dist-validator/validate-config.js`) and make `build` run it, so a UI can never be published without its validator.
 - [ ] **Publish the validators from the same workflow run as their app.** `.github/workflows/docker-build-app.yaml` builds one image per app directory, deriving `target` from the directory name and `image` from `package.json`'s `name`; the `-config-validator` stages would otherwise never be pushed, and `validate: true` in the chart would give `ImagePullBackOff`.

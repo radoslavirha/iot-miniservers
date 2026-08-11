@@ -5,7 +5,10 @@ export { AuthStrategy } from './schemas/auth.schema.js';
 export { HttpProvidersConfigSchema, createProvidersSchema } from './schemas/providers.schema.js';
 export { HttpProviderEntrySchema, DEFAULT_RETRIABLE_STATUS_CODES } from './schemas/provider.schema.js';
 export { TransportSchema } from './schemas/transport.schema.js';
-export type { ResilienceConfig } from '@radoslavirha/resilience';
+// Re-exported so a consumer reading breaker state via `breakers()` needs only this
+// package. The types are owned by @radoslavirha/resilience, which owns cockatiel.
+export type { CircuitStateLike, ResilienceConfig } from '@radoslavirha/resilience';
+export { CircuitState } from '@radoslavirha/resilience';
 export type { AuthConfig, KubernetesServiceAccountAuth, TokenExchangeAuth, TokenExchangeRequest, TokenExtractorEntry, JwtSelfSignedAuth, JwtKey, JwtClaims } from './schemas/auth.schema.js';
 export type { HttpProviderEntry, ResolvedHttpProviderEntry } from './schemas/provider.schema.js';
 export type { HttpProvidersConfig } from './schemas/providers.schema.js';

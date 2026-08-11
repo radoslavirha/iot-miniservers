@@ -26,6 +26,7 @@
     "@radoslavirha/otel": "workspace:*",
     "@radoslavirha/tsed-common": "catalog:",
     "@radoslavirha/tsed-configuration": "catalog:",
+    "@radoslavirha/tsed-health": "workspace:*",
     "@radoslavirha/tsed-logger": "catalog:",
     "@radoslavirha/tsed-mongoose": "catalog:",
     "@radoslavirha/tsed-platform": "catalog:",

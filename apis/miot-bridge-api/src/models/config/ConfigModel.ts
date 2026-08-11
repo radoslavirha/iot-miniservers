@@ -3,6 +3,7 @@ import { createExternalApisSchema } from '@radoslavirha/tsed-http-provider';
 import { z } from 'zod';
 import { ExternalApi } from './ExternalApi.enum.js';
 import { HttpConfigSchema } from './HttpConfig.js';
+import { HealthConfigSchema } from '@radoslavirha/tsed-health';
 import { MongoConfigSchema } from '@radoslavirha/tsed-mongoose';
 import { MqttConfigSchema } from './MqttConfig.js';
 import { PollingConfigSchema } from './PollingConfig.js';
@@ -18,6 +19,9 @@ export const ConfigSchema = BaseConfig.extend({
     http: HttpConfigSchema.optional().describe('HTTP notification configuration.'),
     externalApis: createExternalApisSchema(Object.values(ExternalApi)).describe('External APIs this service calls — base URL, auth, resilience and logging per API.'),
     mqtt: MqttConfigSchema.optional().describe('MQTT client configuration. Connection is shared by the inbound command subscriber and outbound notification publisher.'),
+    // Every field is defaulted, so omitting `health` entirely is valid — additive, and
+    // safe for a rolling deploy where an old pod reads a new ConfigMap or vice versa.
+    health: HealthConfigSchema.optional().describe('Health endpoint configuration.'),
     logger: LoggerOptionsSchema.optional(),
     otel: OtelConfigSchema.optional().describe('OpenTelemetry configuration.')
 });

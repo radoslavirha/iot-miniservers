@@ -13,7 +13,9 @@ import { NodeSDK } from '@opentelemetry/sdk-node';
 import { type SpanExporter } from '@opentelemetry/sdk-trace-node';
 import { ATTR_SERVICE_NAME, ATTR_SERVICE_VERSION } from '@opentelemetry/semantic-conventions';
 import { CommonUtils, ObjectUtils } from '@radoslavirha/utils';
+import { isIgnoredTracePath } from './ignoredPaths.js';
 import type { OTELConfig, OTELLogsConfig, OTELMetricsConfig, OTELTracesConfig } from './OtelConfig.js';
+import { register } from 'node:module';
 
 export interface OtelBootstrapOptions {
     readonly otel?: OTELConfig;
@@ -33,6 +35,7 @@ export class OpenTelemetryService {
         }
 
         this.initDebug(otel);
+        this.registerInstrumentationHook();
         this.initSDK(otel, service, version, extraInstrumentations);
     }
 
@@ -54,7 +57,19 @@ export class OpenTelemetryService {
             metricReaders: this.getMetricReaders(config.metrics),
             logRecordProcessors: this.getLoggerProcessors(config.logs),
             instrumentations: [
-                new HttpInstrumentation({ enabled: tracesEnabled }),
+                new HttpInstrumentation({
+                    enabled: tracesEnabled,
+                    // One hook covers the whole trace: the ignore branch wraps the handler
+                    // in `context.with(suppressTracing(...))`, and the SDK's tracer returns
+                    // a non-recording span under suppression — so the Express child spans
+                    // are dropped along with the root. No Express filter or sampler needed.
+                    //
+                    // This also drops `http.server.request.duration` for these paths, which
+                    // is wanted: probe traffic is fast and constant-rate, and leaving it in
+                    // dilutes every percentile of the real-traffic latency histogram. Probe
+                    // *state* is a Kubernetes-layer fact and belongs to kube-state-metrics.
+                    ignoreIncomingRequestHook: (request) => isIgnoredTracePath(request.url)
+                }),
                 new ExpressInstrumentation({ enabled: tracesEnabled }),
                 new WinstonInstrumentation({
                     enabled: tracesEnabled,
@@ -111,5 +126,14 @@ export class OpenTelemetryService {
         if (config.debug) {
             diag.setLogger(new DiagConsoleLogger(), DiagLogLevel.DEBUG);
         }
+    }
+
+    /**
+     * Installs the `import-in-the-middle` ESM loader hook. Without it only CommonJS
+     * `require` is patched and ESM-only dependencies (mongoose via `@tsed/mongoose`,
+     * for example) stay uninstrumented.
+     */
+    private registerInstrumentationHook(): void {
+        register('@opentelemetry/instrumentation/hook.mjs', import.meta.url);
     }
 }

@@ -3,7 +3,7 @@ import axios, {
     type AxiosInstance,
     type InternalAxiosRequestConfig
 } from 'axios';
-import { createResiliencePolicy, type ResiliencePolicy } from '@radoslavirha/resilience';
+import { createResiliencePolicy, type CircuitStateLike, type ResiliencePolicy } from '@radoslavirha/resilience';
 import { AuthStrategy } from './schemas/auth.schema.js';
 import {
     HttpProviderEntrySchema,
@@ -67,6 +67,7 @@ export interface HttpProviderFactoryOptions<K extends string = string> {
 
 export class HttpProviderFactory<K extends string> {
     private readonly clients = new Map<K, HttpClient>();
+    private readonly breakerStates = new Map<K, CircuitStateLike>();
     private readonly config: Partial<Record<K, HttpProviderEntry>>;
     private readonly onInstanceCreated: HttpProviderFactoryOptions<K>['onInstanceCreated'];
 
@@ -98,6 +99,21 @@ export class HttpProviderFactory<K extends string> {
     }
 
     /**
+     * Circuit breakers for the providers created so far, keyed by provider key.
+     *
+     * Clients are built lazily by {@link get}, so a provider that has never been used has
+     * no entry here — and a provider configured without `resilience.circuitBreaker` never
+     * will. Callers must treat a missing key as "no signal", not as a failure.
+     *
+     * Intended for reporting, not control: feed an entry to `breakerCheck` from
+     * `@radoslavirha/health` to surface an upstream's state on `/health` without issuing a
+     * single extra request.
+     */
+    public breakers(): ReadonlyMap<K, CircuitStateLike> {
+        return this.breakerStates;
+    }
+
+    /**
      * Parses the raw entry so every Zod default (auth token paths, transports,
      * retriable statuses, resilience) is resolved in one place rather than
      * hand-applied here. Parsing is idempotent, so an entry that already went
@@ -117,7 +133,7 @@ export class HttpProviderFactory<K extends string> {
             this.attachAuthInterceptor(instance, strategy, transport);
         }
 
-        this.configureResilience(instance, entry);
+        this.configureResilience(instance, entry, key);
 
         return instance;
     }
@@ -146,8 +162,16 @@ export class HttpProviderFactory<K extends string> {
      * later `instance.defaults.adapter` swap. The timeout's `AbortSignal` is
      * threaded into the adapter and derived from the caller's signal, so both a
      * timeout and request-lifecycle cancellation abort the underlying call.
+     *
+     * @param recordBreakerAs when set, the policy's circuit breaker is retained under this
+     *   key and exposed by {@link breakers}. Left unset for the auth client, whose policy
+     *   is separate and would otherwise overwrite the provider's own breaker.
      */
-    private configureResilience(instance: AxiosInstance, entry: ResolvedHttpProviderEntry): void {
+    private configureResilience(
+        instance: AxiosInstance,
+        entry: ResolvedHttpProviderEntry,
+        recordBreakerAs?: K
+    ): void {
         const resilience = entry.resilience;
 
         if (!resilience) {
@@ -158,6 +182,13 @@ export class HttpProviderFactory<K extends string> {
         const policy = createResiliencePolicy(resilience, {
             shouldHandle: (error) => isRetriableHttpError(error, retriableStatusCodes)
         });
+
+        // Retained so callers can read the breaker's state. It is the cheapest signal
+        // there is about an external dependency — it comes from real traffic, so it
+        // costs no extra request and cannot raise a false alarm while idle.
+        if (recordBreakerAs !== undefined && policy.breaker) {
+            this.breakerStates.set(recordBreakerAs, policy.breaker);
+        }
 
         instance.interceptors.request.use((requestConfig: InternalAxiosRequestConfig) => {
             this.wrapAdapterWithPolicy(instance, requestConfig, policy);

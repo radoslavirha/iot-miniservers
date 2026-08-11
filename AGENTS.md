@@ -166,14 +166,62 @@ ui/<ui-name>/
    | `config/test.json` | Set `server.httpPort` |
    | `src/models/config/ConfigModel.ts` | Extends `BaseConfig`; add API-specific config fields here |
    | `src/services/ConfigService.ts` | Standard `ConfigProvider<ConfigModel>` — identical across APIs |
-   | `src/Server.ts` | Mount `SwaggerController` at `/` plus controllers from `controllers/index.ts` |
+   | `src/Server.ts` | Mount `SwaggerController` and `HealthController` at `/` plus controllers from `controllers/index.ts` |
    | `src/index.ts` | Bootstrap entrypoint — identical across APIs |
+   | `src/health/index.ts` | Health checks — see [Health checks](#health-checks) |
    | `src/otel/instrument.ts` | OTel SDK preload (loaded via `node --import` in `start:prod`) |
 
 2. New workspace members are auto-discovered via `apis/*` glob in `pnpm-workspace.yaml` — no changes needed there.
 3. Run `pnpm install` from the repo root (requires `NODE_AUTH_TOKEN` in env).
 4. Add a `.README.md`.
 5. Add a `Dockerfile` stage in the root `Dockerfile` following the `qr-manager-api` pattern (deps → build → final image with `pnpm start:prod`).
+
+## Health checks
+
+Every API exposes `/health/live`, `/health/ready` and `/health` via `HealthController` from
+`@radoslavirha/tsed-health`. Full guidance is in that package's
+[README](./packages/tsed-health/README.md); the rules that matter when adding an API:
+
+- **Do not write your own MongoDB check.** `@radoslavirha/tsed-health/mongoose` ships one —
+  re-export it from the app's health barrel, which is what registers it:
+
+  ```ts
+  export { MongoHealthCheck } from '@radoslavirha/tsed-health/mongoose';
+  ```
+
+  It sits behind a subpath because `mongoose` and `@tsed/mongoose` are *optional* peers, so
+  an app with no database never resolves them. Write a check in the app only when the
+  dependency is genuinely app-specific (`MqttHealthCheck` in `miot-bridge-api`); anything a
+  second app would duplicate belongs in the package.
+- **Tag every app-local check with `@Injectable({ type: HEALTH_CHECKS })`** and import the
+  `src/health/index.ts` barrel from `Server.ts` for its side effect. A check with a bare
+  `@Injectable()` resolves normally but is invisible to `injectMany` — the app then reports
+  healthy having checked nothing. Assert the expected check names in an integration test;
+  asserting that `/health` returns 200 does not catch it.
+- **Mount `HealthController` at `/`**, never under a version prefix — the probe path must be
+  identical across apps or the Helm chart's probe block stops being copy-paste.
+  `interactive-map-feeder-api` mounts its own controllers at `/v1` and health still at `/`.
+- **Mind mount order against catch-all routes.** `qr-manager-api`'s `RedirectController` is
+  `@Controller('/')` with `@Get('/:slug')`, which matches `/health` too. `HealthController`
+  must come first in the `mount` array. `/health/live` and `/health/ready` are two segments
+  and keep working either way, so a reorder leaves every probe green while `/health`
+  silently becomes a slug lookup.
+- **Set `critical` deliberately.** `true` only for dependencies without which this pod can
+  do nothing (its own database, its own broker). `false` for anything you cannot fix by
+  restarting or rescheduling this pod — third-party APIs above all, since failing readiness
+  on their behalf turns someone else's outage into ours.
+- **A dependency disabled by config must report `pass`.** Returning `fail` leaves a
+  correctly-configured deployment permanently NotReady, silently, with no restart and no
+  error log — liveness is shallow by design and will not catch it.
+- **Never put a URL, hostname, credential or stack trace in `detail`** — `/health` is
+  readable by anything that can reach the pod.
+- **Drain on SIGTERM** with `createShutdownHandler(platform)` in `index.ts`. Do not register
+  it for `beforeExit`: that fires when the event loop empties, not on a signal.
+- Add `health: HealthConfigSchema.optional()` to `ConfigModel`, and a `HealthProvider`
+  overriding the `HealthCheckService` token to supply it.
+
+Probe traffic is excluded from traces in `packages/otel` and from request logs by
+`@radoslavirha/tsed-logger`'s `requests.ignorePaths` default — no per-API wiring needed.
 
 ## Adding a New UI
 
