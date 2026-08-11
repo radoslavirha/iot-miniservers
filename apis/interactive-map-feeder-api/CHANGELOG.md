@@ -1,5 +1,12 @@
 # interactive-map-feeder
 
+## 0.11.2
+
+### Patch Changes
+
+- Updated dependencies [[`a97c558`](https://github.com/radoslavirha/iot-miniservers/commit/a97c558d31f8ae3095b1d1553626f9fd2e625896)]:
+  - @radoslavirha/tsed-http-provider@0.2.1
+
 ## 0.11.1
 
 ### Patch Changes
