@@ -92,6 +92,54 @@ describe('createShutdownHandler', () => {
     it('Should default the drain delay to five seconds', () => {
         expect(DEFAULT_DRAIN_DELAY_MS).toBe(5_000);
     });
+
+    it('Should run onStopped after the platform has stopped', async () => {
+        const order: string[] = [];
+
+        await createShutdownHandler(
+            { stop: () => order.push('stop') },
+            {
+                drainDelayMs: 0,
+                onStopped: () => {
+                    order.push('stopped');
+                }
+            }
+        )();
+
+        // Telemetry flushed before the listeners close would miss the teardown it exists
+        // to record.
+        expect(order).toEqual(['stop', 'stopped']);
+    });
+
+    it('Should await an async onStopped rather than returning early', async () => {
+        let flushed = false;
+
+        await createShutdownHandler(
+            { stop: () => undefined },
+            {
+                drainDelayMs: 0,
+                onStopped: async () => {
+                    await new Promise((resolve) => setTimeout(resolve, 30));
+                    flushed = true;
+                }
+            }
+        )();
+
+        expect(flushed).toBe(true);
+    });
+
+    // The reason onStopped lives inside the guard rather than after `shutdown()` at the
+    // call site: on re-entry the handler returns immediately instead of awaiting the first
+    // run, so a call-site flush would fire while the first shutdown is still draining.
+    it('Should run onStopped once however many times it is invoked', async () => {
+        const onStopped = vi.fn();
+        const shutdown = createShutdownHandler({ stop: vi.fn() }, { drainDelayMs: 20, onStopped });
+
+        await Promise.all([shutdown(), shutdown(), shutdown()]);
+        await shutdown();
+
+        expect(onStopped).toHaveBeenCalledOnce();
+    });
 });
 
 describe('ShutdownState', () => {

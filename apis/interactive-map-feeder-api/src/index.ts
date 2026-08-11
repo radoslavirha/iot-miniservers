@@ -1,5 +1,6 @@
 import { Platform, ServerConfiguration } from '@radoslavirha/tsed-platform';
 import { createShutdownHandler } from '@radoslavirha/tsed-health';
+import { openTelemetry } from '@radoslavirha/otel';
 import { SwaggerConfig, SwaggerDocumentConfig, SwaggerProvider } from '@radoslavirha/tsed-swagger';
 import { CommonUtils } from '@radoslavirha/utils';
 import { Server } from './Server.js';
@@ -50,7 +51,11 @@ try {
     // pre-shutdown hook — `platform.stop()` destroys the injector before closing the
     // listeners — so the drain has to be driven from here, not from a lifecycle hook.
     const shutdown = createShutdownHandler(platform, {
-        onShutdown: (phase) => logger.info(`Server ${phase}.`, { event: 'SERVER_SHUTDOWN' })
+        onShutdown: (phase) => logger.info(`Server ${phase}.`, { event: 'SERVER_SHUTDOWN' }),
+        // Last, once the listeners are closed. Without it the batched spans, logs and —
+        // worst, on a 60s export interval — metrics from the drain are discarded when the
+        // process exits.
+        onStopped: () => openTelemetry.shutdown()
     });
 
     SIG_EVENTS.forEach((evt) => process.on(evt, shutdown));
@@ -62,6 +67,9 @@ try {
                 stack: error.stack
             });
             await platform.stop();
+            // The crash's own telemetry is the most valuable trace this process will
+            // produce, and it is the one sitting unflushed in the batch queues.
+            await openTelemetry.shutdown();
         })
     );
 } catch (error) {

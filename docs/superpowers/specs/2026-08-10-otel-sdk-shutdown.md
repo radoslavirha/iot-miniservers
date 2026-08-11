@@ -10,6 +10,8 @@
 
 **Size:** one new method plus an exported instance in `packages/otel`, one callback option in `packages/tsed-health`, six call-site lines across the three APIs. No new dependencies, no homelab change.
 
+**Status (2026-08-11):** implemented on `feat/otel-sdk-shutdown`; `pnpm run verify` green. The Verification section below is deploy-time and still outstanding — in particular, confirming the 3s flush fits inside the deployed `terminationGracePeriodSeconds`.
+
 ---
 
 ## The problem, verified
@@ -63,10 +65,10 @@ That is worse than the current bug: it would flush an empty-ish batch, then tear
 ```ts
 // packages/otel/src/OpenTelemetryService.ts
 export class OpenTelemetryService {
-    #sdk: NodeSDK | undefined;
+    private sdk: NodeSDK | undefined;
 
     public init(options: OtelBootstrapOptions): void { /* … */ }
-    public async shutdown(timeoutMs = 3_000): Promise<void> { /* … */ }
+    public async shutdown(timeoutMs = DEFAULT_OTEL_SHUTDOWN_MS): Promise<void> { /* … */ }
 }
 
 /**
@@ -79,11 +81,11 @@ export const openTelemetry = new OpenTelemetryService();
 
 Options move from the constructor to `init()`.
 
-**The trap this avoids, written down because it is not obvious:** calling `new OpenTelemetryService().shutdown()` from `index.ts` *cannot* work. It is a fresh instance with an empty `#sdk`, so it no-ops silently — the same failure mode as today, but now with code that looks like it handles shutdown. Anyone reaching for the handle must use the exported instance.
+**The trap this avoids, written down because it is not obvious:** calling `new OpenTelemetryService().shutdown()` from `index.ts` *cannot* work. It is a fresh instance with an empty `sdk`, so it no-ops silently — the same failure mode as today, but now with code that looks like it handles shutdown. Anyone reaching for the handle must use the exported instance.
 
 Rejected alternatives:
 
-- **A free `let activeSdk` at module scope.** Works identically at runtime, but tests cannot isolate it — no way to reset between cases. State on `#sdk` keeps the class exported for throwaway instances in tests while the singleton serves production.
+- **A free `let activeSdk` at module scope.** Works identically at runtime, but tests cannot isolate it — no way to reset between cases. State on a private field keeps the class exported for throwaway instances in tests while the singleton serves production. (The field is a TS `private`, not a `#` private: no `#` field appears anywhere in `packages/`.)
 - **`globalThis[Symbol.for('@radoslavirha/otel.sdk')]`.** Only buys reach across *separate copies* of the module. Nothing here has that problem (see Decision 5), so it adds a genuine global for no gain.
 - **`import { otel } from './otel/instrument.js'` in `index.ts`.** Works in prod — the absolute `--import` path and the relative import resolve to the same URL, so no re-execution. Breaks dev: `nodemon src/index.ts` has no `--import`, so the import would newly *execute* `instrument.ts` and start an SDK where none exists today. Silent dev/prod divergence, and dependent on an import staying in first source position against lint-driven reordering.
 
@@ -177,33 +179,33 @@ Wrong moment, per the comment already at [`index.ts:58-60`](../../../apis/qr-man
 
 ### 1. `packages/otel`
 
-- [ ] `OpenTelemetryService`: add `#sdk: NodeSDK | undefined`; move `OtelBootstrapOptions` from the constructor to `init(options)`; assign `this.#sdk = sdk` after `sdk.start()`.
-- [ ] `init()`: return early when `this.#sdk` is already set (Decision 5's idempotency only — do not add a `globalThis` guard).
-- [ ] Add `shutdown(timeoutMs = 3_000)`, using `setTimeout as delay` from `node:timers/promises`. Clear `#sdk` **before** awaiting, so a concurrent second call is a no-op rather than a second `sdk.shutdown()`. Swallow errors — a failed flush must never turn a clean termination into a crash.
-- [ ] TSDoc on `shutdown()` must state both non-obvious facts: it no-ops when `init()` never ran (`pnpm start` has no `--import`; tests never bootstrap), and the timeout exists because the OTLP exporter retries against a dead collector.
-- [ ] Export `openTelemetry` from [`packages/otel/src/index.ts`](../../../packages/otel/src/index.ts), keeping the `OpenTelemetryService` class export for tests.
+- [x] `OpenTelemetryService`: add `sdk: NodeSDK | undefined`; move `OtelBootstrapOptions` from the constructor to `init(options)`; assign `this.sdk = sdk` after `sdk.start()`.
+- [x] `init()`: return early when `this.sdk` is already set (Decision 5's idempotency only — do not add a `globalThis` guard).
+- [x] Add `shutdown(timeoutMs = DEFAULT_OTEL_SHUTDOWN_MS)`, using `setTimeout as delay` from `node:timers/promises`. Clear `sdk` **before** awaiting, so a concurrent second call is a no-op rather than a second `sdk.shutdown()`. Swallow errors — a failed flush must never turn a clean termination into a crash.
+- [x] TSDoc on `shutdown()` must state both non-obvious facts: it no-ops when `init()` never ran (`pnpm start` has no `--import`; tests never bootstrap), and the timeout exists because the OTLP exporter retries against a dead collector.
+- [x] Export `openTelemetry` from [`packages/otel/src/index.ts`](../../../packages/otel/src/index.ts), keeping the `OpenTelemetryService` class export for tests.
 
 ### 2. `packages/tsed-health`
 
-- [ ] Add `onStopped?: () => Promise<void> | void` to `ShutdownHandlerOptions`, awaited after `onShutdown?.('stopped')` and inside the re-entry guard.
-- [ ] Extend the sequence TSDoc with step 5 and the reason it is inside the guard (Decision 2) — the second-signal race is invisible from the code alone.
-- [ ] Add the `otelShutdownMs` term to the `drainDelayMs` budget note.
+- [x] Add `onStopped?: () => Promise<void> | void` to `ShutdownHandlerOptions`, awaited after `onShutdown?.('stopped')` and inside the re-entry guard.
+- [x] Extend the sequence TSDoc with step 5 and the reason it is inside the guard (Decision 2) — the second-signal race is invisible from the code alone.
+- [x] Add the `otelShutdownMs` term to the `drainDelayMs` budget note.
 
 ### 3. The three APIs
 
-- [ ] `apis/*/src/otel/instrument.ts` — `new OpenTelemetryService({…}).init()` → `openTelemetry.init({…})`. All three keep their own `extraInstrumentations`.
-- [ ] `apis/*/src/index.ts` — add `onStopped: () => openTelemetry.shutdown()` to the `createShutdownHandler` options.
-- [ ] `apis/*/src/index.ts` — add `await openTelemetry.shutdown()` after `platform.stop()` in the `uncaughtException` / `unhandledRejection` handler.
+- [x] `apis/*/src/otel/instrument.ts` — `new OpenTelemetryService({…}).init()` → `openTelemetry.init({…})`. All three keep their own `extraInstrumentations`.
+- [x] `apis/*/src/index.ts` — add `onStopped: () => openTelemetry.shutdown()` to the `createShutdownHandler` options.
+- [x] `apis/*/src/index.ts` — add `await openTelemetry.shutdown()` after `platform.stop()` in the `uncaughtException` / `unhandledRejection` handler.
 
 ### 4. Tests
 
-- [ ] `packages/otel` — `shutdown()` before any `init()` resolves without throwing; `shutdown()` after `init()` calls `sdk.shutdown()` once; a `sdk.shutdown()` that never settles is abandoned at the timeout instead of hanging; a rejecting `sdk.shutdown()` does not propagate.
-- [ ] `packages/tsed-health` — `onStopped` runs after `platform.stop()` and never before; a second signal during the drain does **not** trigger it a second time. This is the regression test for Decision 2; without it the race returns the first time someone inlines the call.
+- [x] `packages/otel` — `shutdown()` before any `init()` resolves without throwing; `shutdown()` after `init()` calls `sdk.shutdown()` once; a `sdk.shutdown()` that never settles is abandoned at the timeout instead of hanging; a rejecting `sdk.shutdown()` does not propagate.
+- [x] `packages/tsed-health` — `onStopped` runs after `platform.stop()` and never before; a second signal during the drain does **not** trigger it a second time. This is the regression test for Decision 2; without it the race returns the first time someone inlines the call.
 
 ### 5. Release
 
-- [ ] Changesets: minor for `@radoslavirha/otel` (the `init()` signature moves) and `@radoslavirha/tsed-health` (additive option); patch for the three APIs.
-- [ ] `pnpm run verify`.
+- [x] Changesets: minor for `@radoslavirha/otel` (the `init()` signature moves) and `@radoslavirha/tsed-health` (additive option); patch for the three APIs.
+- [x] `pnpm run verify`.
 - [ ] No homelab change. `terminationGracePeriodSeconds` already covers `preStop + 5s drain + teardown`; 3s of flush fits the existing budget, but confirm against the deployed values before merging rather than assuming.
 
 ---
