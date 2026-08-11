@@ -1,5 +1,20 @@
 # miot-bridge
 
+## 0.19.1
+
+### Patch Changes
+
+- [#61](https://github.com/radoslavirha/iot-miniservers/pull/61) [`9bec12c`](https://github.com/radoslavirha/iot-miniservers/commit/9bec12c6b3fc8cdb9cc910c155647ef0d48862d3) Thanks [@radoslavirha](https://github.com/radoslavirha)! - Flush OTEL on shutdown.
+
+  `onStopped: () => openTelemetry.shutdown()` runs after the platform stops, so the drain's
+  spans, logs and metrics reach the collector instead of dying with the process. The
+  `uncaughtException` / `unhandledRejection` path flushes too — the crash's own telemetry is
+  the trace most worth having and the one that was always lost.
+
+- Updated dependencies [[`9bec12c`](https://github.com/radoslavirha/iot-miniservers/commit/9bec12c6b3fc8cdb9cc910c155647ef0d48862d3), [`9bec12c`](https://github.com/radoslavirha/iot-miniservers/commit/9bec12c6b3fc8cdb9cc910c155647ef0d48862d3)]:
+  - @radoslavirha/otel@0.4.0
+  - @radoslavirha/tsed-health@0.2.0
+
 ## 0.19.0
 
 ### Minor Changes
