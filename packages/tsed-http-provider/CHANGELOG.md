@@ -1,5 +1,19 @@
 # @radoslavirha/tsed-http-provider
 
+## 0.2.1
+
+### Patch Changes
+
+- [`a97c558`](https://github.com/radoslavirha/iot-miniservers/commit/a97c558d31f8ae3095b1d1553626f9fd2e625896) Thanks [@radoslavirha](https://github.com/radoslavirha)! - Log the full outbound URL, base included.
+
+  Axios keeps `baseURL` and `url` apart on the config until the adapter runs, so the
+  interceptor logged a bare path (`/files/portal/docs/...`) with no host. Lines from
+  different providers were indistinguishable and could not be traced back to a target.
+
+  `resolveUrl()` now joins the two the way axios does: one separator regardless of the
+  slashes on either side, an already-absolute `url` wins over `baseURL`, and an empty `url`
+  falls back to `baseURL` alone.
+
 ## 0.2.0
 
 ### Minor Changes
