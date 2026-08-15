@@ -1,5 +1,11 @@
 # qr-manager-api
 
+## 0.5.2
+
+### Patch Changes
+
+- [`6c82bdb`](https://github.com/radoslavirha/iot-miniservers/commit/6c82bdb4db625aaec873d51b4343d23b508e84bb) Thanks [@radoslavirha](https://github.com/radoslavirha)! - Fix root documentation page
+
 ## 0.5.1
 
 ### Patch Changes
