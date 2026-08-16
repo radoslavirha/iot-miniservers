@@ -1,5 +1,12 @@
 # interactive-map-feeder
 
+## 0.11.5
+
+### Patch Changes
+
+- Updated dependencies [[`b3c30db`](https://github.com/radoslavirha/iot-miniservers/commit/b3c30db5964b8a55e912c6442dcf47ddd3a1e1ee)]:
+  - @radoslavirha/otel@0.5.0
+
 ## 0.11.4
 
 ### Patch Changes
