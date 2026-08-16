@@ -1,13 +1,18 @@
 import { createSocket } from 'dgram';
 import { Inject, Service, Scope, ProviderScope } from '@tsed/di';
 import { CommonUtils, ObjectUtils } from '@radoslavirha/utils';
+import { SpanStatusCode } from '@opentelemetry/api';
 import type { MqttClient } from 'mqtt';
 import type { PropertyChangeEvent } from '../models/PropertyChangeEvent.js';
 import { NotificationPayload } from '../models/NotificationPayload.js';
 import { MqttClientProvider } from '../providers/MqttClientProvider.js';
 import { ConfigService } from './ConfigService.js';
 import { MqttTopicService } from './MqttTopicService.js';
+import { MqttTracingService } from './MqttTracingService.js';
 import { BaseLogger, Logger } from '@radoslavirha/tsed-logger';
+
+/** QoS used for outbound notification publishes. */
+const QOS = 1;
 
 /**
  * Central hub for all inbound property-value observations, regardless of transport.
@@ -27,6 +32,7 @@ export class NotificationDispatchService {
         private readonly configService: ConfigService,
         @Inject(MqttClientProvider) private readonly mqttClient: MqttClient | null,
         private readonly mqttTopicService: MqttTopicService,
+        private readonly mqttTracingService: MqttTracingService,
         logger: Logger
     ) {
         this.logger = logger.child('NOTIFICATION_DISPATCH');
@@ -54,29 +60,44 @@ export class NotificationDispatchService {
         }
 
         if (ObjectUtils.isEnabled(config.mqtt?.notifications) && this.mqttClient) {
-            this.sendMqtt(payload);
+            void this.sendMqtt(payload);
         }
     }
 
-    private sendMqtt(payload: NotificationPayload): void {
+    private async sendMqtt(payload: NotificationPayload): Promise<void> {
         const topic = this.mqttTopicService.getNotificationsTopic(payload.deviceId);
         const message = JSON.stringify({ [payload.property]: payload.value ?? null });
-        this.mqttClient!.publish(topic, message, { qos: 1 }, (err) => {
-            if (CommonUtils.notNil(err)) {
-                this.logger.warn('NOTIFICATION_MQTT_ERROR',{
-                    topic,
-                    deviceId: payload.deviceId,
-                    property: payload.property,
-                    message: err.message
-                });
-            } else {
-                this.logger.debug('NOTIFICATION_MQTT_SENT',{
-                    topic,
-                    deviceId: payload.deviceId,
-                    property: payload.property
-                });
+
+        await this.mqttTracingService.publish(
+            {
+                topic,
+                topicTemplate: this.mqttTopicService.getNotificationsTopicTemplate(),
+                qos: QOS,
+                bodySize: Buffer.byteLength(message),
+                attributes: { 'miot.device.id': payload.deviceId, 'miot.property': payload.property }
+            },
+            async (userProperties, span) => {
+                try {
+                    await this.mqttClient!.publishAsync(topic, message, { qos: QOS, properties: { userProperties } });
+                    this.logger.debug('NOTIFICATION_MQTT_SENT', {
+                        topic,
+                        deviceId: payload.deviceId,
+                        property: payload.property
+                    });
+                } catch (error) {
+                    // Marked on the span but not rethrown, matching the other two transports:
+                    // one unreachable notification sink must not stop the fan-out.
+                    const reason = error instanceof Error ? error.message : String(error);
+                    span.setStatus({ code: SpanStatusCode.ERROR, message: reason });
+                    this.logger.warn('NOTIFICATION_MQTT_ERROR', {
+                        topic,
+                        deviceId: payload.deviceId,
+                        property: payload.property,
+                        message: reason
+                    });
+                }
             }
-        });
+        );
     }
 
     private async sendHttp(address: string, payload: NotificationPayload): Promise<void> {

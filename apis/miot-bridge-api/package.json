@@ -69,6 +69,7 @@
     "zod": "catalog:"
   },
   "devDependencies": {
+    "@opentelemetry/sdk-trace-node": "catalog:otel",
     "@radoslavirha/config-eslint": "catalog:",
     "@radoslavirha/config-vitest": "catalog:",
     "@swc/core": "catalog:swc",

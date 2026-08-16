@@ -12,10 +12,18 @@ import { CommonUtils } from '@radoslavirha/utils';
  *
  * The optional `mqtt.topicPrefix` config value is prepended to every topic.
  * Trailing slashes in the prefix are stripped automatically.
+ *
+ * Each topic also has a `…Template` variant with `{deviceId}` left unsubstituted. Those are
+ * for telemetry: every topic here embeds a device id, so naming spans after the concrete topic
+ * would give Tempo one span name per device and break grouping and every latency aggregate.
+ * The concrete topic still travels on the span as `messaging.destination.name`.
  */
 @Service()
 @Scope(ProviderScope.SINGLETON)
 export class MqttTopicService {
+    /** Placeholder standing in for the device id in the `…Template` variants. */
+    private static readonly DEVICE_ID_PLACEHOLDER = '{deviceId}';
+
     constructor(private readonly configService: ConfigService) {}
 
     /**
@@ -35,6 +43,14 @@ export class MqttTopicService {
     }
 
     /**
+     * Low-cardinality form of {@link getCommandTopic} for span names.
+     * Format: `[prefix/]miot-bridge/device/{deviceId}/command`
+     */
+    public getCommandTopicTemplate(): string {
+        return this.build(`miot-bridge/device/${MqttTopicService.DEVICE_ID_PLACEHOLDER}/command`);
+    }
+
+    /**
      * Returns the outbound response topic for a specific device.
      * Format: `[prefix/]miot-bridge/device/{miotDeviceId}/response`
      */
@@ -43,11 +59,27 @@ export class MqttTopicService {
     }
 
     /**
+     * Low-cardinality form of {@link getResponseTopic} for span names.
+     * Format: `[prefix/]miot-bridge/device/{deviceId}/response`
+     */
+    public getResponseTopicTemplate(): string {
+        return this.build(`miot-bridge/device/${MqttTopicService.DEVICE_ID_PLACEHOLDER}/response`);
+    }
+
+    /**
      * Returns the notification topic for a specific Xiaomi device.
      * Format: `[prefix/]miot-bridge/device/{miotDeviceId}/notifications`
      */
     public getNotificationsTopic(miotDeviceId: number): string {
         return this.build(`miot-bridge/device/${miotDeviceId}/notifications`);
+    }
+
+    /**
+     * Low-cardinality form of {@link getNotificationsTopic} for span names.
+     * Format: `[prefix/]miot-bridge/device/{deviceId}/notifications`
+     */
+    public getNotificationsTopicTemplate(): string {
+        return this.build(`miot-bridge/device/${MqttTopicService.DEVICE_ID_PLACEHOLDER}/notifications`);
     }
 
     /**
@@ -72,8 +104,15 @@ export class MqttTopicService {
         return CommonUtils.notNil(prefix) ? prefix : '';
     }
 
+    /**
+     * Tests emptiness, not nil-ness: `getPrefix()` normalises "no prefix" to `''`, which is
+     * not nil, so an `isNil` check here produced a leading slash on every topic when no prefix
+     * was configured. `extractDeviceIdFromCommandTopic` has always compared against the
+     * unslashed form, so the two disagreed and every inbound command was silently dropped.
+     * Latent in production only because every deployment sets `mqtt.topicPrefix`.
+     */
     private build(path: string): string {
         const prefix = this.getPrefix();
-        return CommonUtils.isNil(prefix) ? path : `${prefix}/${path}`;
+        return prefix === '' ? path : `${prefix}/${path}`;
     }
 }

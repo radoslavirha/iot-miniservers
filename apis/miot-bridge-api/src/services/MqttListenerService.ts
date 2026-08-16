@@ -1,14 +1,19 @@
 import { Inject, Injectable, Scope, ProviderScope, OnInit } from '@tsed/di';
 import { CommonUtils } from '@radoslavirha/utils';
 import { JSONSchemaValidator } from '@radoslavirha/tsed-common';
-import type { MqttClient } from 'mqtt';
+import { SpanStatusCode, type Span } from '@opentelemetry/api';
+import type { IPublishPacket, MqttClient } from 'mqtt';
 import { DeviceCommandOperation } from '../models/DeviceCommandOperation.enum.js';
 import { MqttCommandRequestModel } from '../models/MqttCommandRequestModel.js';
 import { MqttClientProvider } from '../providers/MqttClientProvider.js';
 import { MqttTopicService } from './MqttTopicService.js';
+import { MqttTracingService } from './MqttTracingService.js';
 import { DeviceCommandService } from './DeviceCommandService.js';
 import { DeviceCommandRequest } from '../models/DeviceCommandRequest.js';
 import { BaseLogger, Logger } from '@radoslavirha/tsed-logger';
+
+/** QoS used for both the command subscription and the response publish. */
+const QOS = 1;
 
 /**
  * Subscribes to inbound MQTT command messages and handles them directly.
@@ -28,6 +33,7 @@ export class MqttListenerService implements OnInit {
     constructor(
         @Inject(MqttClientProvider) private readonly mqttClient: MqttClient | null,
         private readonly mqttTopicService: MqttTopicService,
+        private readonly mqttTracingService: MqttTracingService,
         private readonly deviceCommandService: DeviceCommandService,
         logger: Logger
     ) {
@@ -46,7 +52,7 @@ export class MqttListenerService implements OnInit {
 
         const pattern = this.mqttTopicService.getCommandSubscriptionPattern();
 
-        this.mqttClient.subscribe(pattern, { qos: 1 }, (err) => {
+        this.mqttClient.subscribe(pattern, { qos: QOS }, (err) => {
             if (CommonUtils.notNil(err)) {
                 this.logger.error(`Failed to subscribe to MQTT topic ${pattern}: ${err.message}`);
             } else {
@@ -54,29 +60,80 @@ export class MqttListenerService implements OnInit {
             }
         });
 
-        this.mqttClient.on('message', (topic: string, payload: Buffer) => {
+        this.mqttClient.on('message', (topic: string, payload: Buffer, packet: IPublishPacket) => {
             const deviceId = this.mqttTopicService.extractDeviceIdFromCommandTopic(topic);
             if (CommonUtils.isNil(deviceId)) {
                 return;
             }
 
-            void this.handleMessage(deviceId, payload).then((result) => {
-                if (CommonUtils.isNil(result)) {
-                    return;
-                }
-                const responseTopic = this.mqttTopicService.getResponseTopic(deviceId);
-                this.mqttClient!.publish(responseTopic, result, { qos: 1 }, (err) => {
-                    if (CommonUtils.notNil(err)) {
-                        this.logger.error(`Failed to publish MQTT response to topic ${responseTopic}: ${err.message}`);
-                    } else {
-                        this.logger.debug(`MQTT response published to topic ${responseTopic}`);
-                    }
-                });
-            });
+            void this.onMessage(topic, deviceId, payload, packet);
         });
     }
 
-    private async handleMessage(deviceId: number, payload: Buffer): Promise<string | null> {
+    /**
+     * Handles one inbound command and publishes its response, all inside a single consumer
+     * span.
+     *
+     * The span has to wrap *both* halves. Everything the command touches on the way — the miot
+     * cloud call via axios, Mongo lookups — is traced by auto-instrumentations that know
+     * nothing about MQTT and simply attach to whatever span is current; without this wrapper
+     * they attach to nothing and each becomes its own orphan trace. Wrapping the response
+     * publish too is what makes it a child rather than a fourth root.
+     *
+     * Never rejects: a failure inside is already turned into an `error:` response payload or
+     * logged by the publish path, and this is called from an event handler where a rejection
+     * would surface as an unhandled one.
+     */
+    private async onMessage(topic: string, deviceId: number, payload: Buffer, packet: IPublishPacket): Promise<void> {
+        await this.mqttTracingService.consume(
+            {
+                topic,
+                topicTemplate: this.mqttTopicService.getCommandTopicTemplate(),
+                qos: packet.qos,
+                bodySize: payload.length,
+                userProperties: packet.properties?.userProperties,
+                attributes: { 'miot.device.id': deviceId }
+            },
+            async (span) => {
+                const result = await this.handleMessage(deviceId, payload, span);
+
+                if (CommonUtils.isNil(result)) {
+                    return;
+                }
+
+                await this.publishResponse(deviceId, result);
+            }
+        );
+    }
+
+    private async publishResponse(deviceId: number, result: string): Promise<void> {
+        const topic = this.mqttTopicService.getResponseTopic(deviceId);
+
+        await this.mqttTracingService.publish(
+            {
+                topic,
+                topicTemplate: this.mqttTopicService.getResponseTopicTemplate(),
+                qos: QOS,
+                bodySize: Buffer.byteLength(result),
+                attributes: { 'miot.device.id': deviceId }
+            },
+            async (userProperties, span) => {
+                try {
+                    await this.mqttClient!.publishAsync(topic, result, { qos: QOS, properties: { userProperties } });
+                    this.logger.debug(`MQTT response published to topic ${topic}`);
+                } catch (error) {
+                    // Marked on the span but not rethrown: an undeliverable response is not a
+                    // reason to fail the command that produced it, which is how this behaved
+                    // before it was traced.
+                    const message = this.stringifyError(error);
+                    this.setSpanError(span, message);
+                    this.logger.error(`Failed to publish MQTT response to topic ${topic}: ${message}`);
+                }
+            }
+        );
+    }
+
+    private async handleMessage(deviceId: number, payload: Buffer, span: Span): Promise<string | null> {
         if (payload.length === 0) {
             return null;
         }
@@ -86,6 +143,7 @@ export class MqttListenerService implements OnInit {
         try {
             parsed = JSON.parse(payload.toString('utf8'));
         } catch {
+            this.setSpanError(span, 'Invalid JSON.');
             this.logger.warn('Received non-JSON MQTT payload.');
             return 'error: Invalid JSON.';
         }
@@ -95,9 +153,12 @@ export class MqttListenerService implements OnInit {
         try {
             request = JSONSchemaValidator.validate(MqttCommandRequestModel, parsed);
         } catch (error) {
+            this.setSpanError(span, `Validation failed. ${this.stringifyError(error)}`);
             this.logger.warn('MQTT payload validation failed.', { error });
             return `error: Validation failed. ${this.stringifyError(error)}`;
         }
+
+        span.setAttributes({ 'miot.command': request.command, 'miot.operation': request.operation });
 
         try {
             const commandRequest = CommonUtils.buildModelStrict(DeviceCommandRequest, {
@@ -116,9 +177,21 @@ export class MqttListenerService implements OnInit {
             return String(response.value ?? '');
         } catch (error) {
             const message = this.stringifyError(error);
+            this.setSpanError(span, message);
             this.logger.error(`MQTT command failed for device ${deviceId}, command ${request.command}: ${message}`);
             return `error: ${message}`;
         }
+    }
+
+    /**
+     * Marks the span failed for a fault this service handles itself.
+     *
+     * These paths all return an `error:` payload rather than throwing, so the span helper's
+     * own rejection handling never sees them — without this, a command that answered
+     * `error: Invalid JSON.` would look successful in Tempo.
+     */
+    private setSpanError(span: Span, message: string): void {
+        span.setStatus({ code: SpanStatusCode.ERROR, message });
     }
 
     private stringifyError(error: unknown): string {

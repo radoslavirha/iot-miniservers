@@ -12,6 +12,7 @@ export * from './ModelPropertyOverrideMongoService.js';
 export * from './ModelPropertyOverrideService.js';
 export * from './MqttListenerService.js';
 export * from './MqttTopicService.js';
+export * from './MqttTracingService.js';
 export * from './NotificationDispatchService.js';
 export * from './NotificationLocalStorageService.js';
 export * from './NotificationStorageService.js';

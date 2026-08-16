@@ -341,7 +341,7 @@ importers:
         version: link:../../packages/tsed-health
       '@radoslavirha/tsed-http-provider':
         specifier: workspace:*
-        version: file:packages/tsed-http-provider(@radoslavirha/tsed-logger@0.6.0(@tsed/di@8.37.1(@tsed/core@8.37.1)(@tsed/hooks@8.37.1)(@tsed/logger@8.0.5))(@tsed/platform-http@8.37.1(@tsed/engines@8.37.1)(@tsed/logger@8.0.5)(@tsed/openspec@8.37.1)(@types/multer@2.2.0)))(@tsed/di@8.37.1(@tsed/core@8.37.1)(@tsed/hooks@8.37.1)(@tsed/logger@8.0.5))(@tsed/exceptions@8.37.1(@tsed/core@8.37.1))(axios@1.19.0)(tslib@2.8.1)
+        version: link:../../packages/tsed-http-provider
       '@radoslavirha/tsed-logger':
         specifier: 'catalog:'
         version: 0.6.0(@tsed/di@8.37.1(@tsed/core@8.37.1)(@tsed/hooks@8.37.1)(@tsed/logger@8.0.5))(@tsed/platform-http@8.37.1(@tsed/engines@8.37.1)(@tsed/logger@8.0.5)(@tsed/openspec@8.37.1)(@types/multer@2.2.0))
@@ -456,7 +456,7 @@ importers:
     devDependencies:
       '@radoslavirha/config-eslint':
         specifier: 'catalog:'
-        version: 0.4.4(eslint@10.8.0(supports-color@5.5.0))(supports-color@5.5.0)(typescript@6.0.3)
+        version: 0.4.4(eslint@10.8.0)(typescript@6.0.3)
       '@radoslavirha/config-vitest':
         specifier: 'catalog:'
         version: 0.4.3(@swc/core@1.15.47(@swc/helpers@0.5.23))(@vitest/coverage-v8@4.1.10)(vitest@4.1.10)
@@ -495,7 +495,7 @@ importers:
         version: 2.1.0(axios@1.19.0)
       eslint:
         specifier: 'catalog:'
-        version: 10.8.0(supports-color@5.5.0)
+        version: 10.8.0
       nodemon:
         specifier: 'catalog:'
         version: 3.1.14
@@ -507,7 +507,7 @@ importers:
         version: 2.8.1
       typescript-eslint:
         specifier: 'catalog:'
-        version: 8.66.0(eslint@10.8.0(supports-color@5.5.0))(supports-color@5.5.0)(typescript@6.0.3)
+        version: 8.66.0(eslint@10.8.0)(typescript@6.0.3)
       vitest:
         specifier: 'catalog:'
         version: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.1.2)(@vitest/coverage-v8@4.1.10)(jsdom@30.0.1(@noble/hashes@1.8.0))(vite@8.2.1(@types/node@26.1.2)(esbuild@0.28.1)(yaml@2.9.0))
@@ -543,7 +543,7 @@ importers:
         version: link:../../packages/tsed-health
       '@radoslavirha/tsed-http-provider':
         specifier: workspace:*
-        version: link:../../packages/tsed-http-provider
+        version: file:packages/tsed-http-provider(@radoslavirha/tsed-logger@0.6.0(@tsed/di@8.37.1(@tsed/core@8.37.1)(@tsed/hooks@8.37.1)(@tsed/logger@8.0.5))(@tsed/platform-http@8.37.1(@tsed/engines@8.37.1)(@tsed/logger@8.0.5)(@tsed/openspec@8.37.1)(@types/multer@2.2.0)))(@tsed/di@8.37.1(@tsed/core@8.37.1)(@tsed/hooks@8.37.1)(@tsed/logger@8.0.5))(@tsed/exceptions@8.37.1(@tsed/core@8.37.1))(axios@1.19.0)(tslib@2.8.1)
       '@radoslavirha/tsed-logger':
         specifier: 'catalog:'
         version: 0.6.0(@tsed/di@8.37.1(@tsed/core@8.37.1)(@tsed/hooks@8.37.1)(@tsed/logger@8.0.5))(@tsed/platform-http@8.37.1(@tsed/engines@8.37.1)(@tsed/logger@8.0.5)(@tsed/openspec@8.37.1)(@types/multer@2.2.0))
@@ -665,9 +665,12 @@ importers:
         specifier: 'catalog:'
         version: 4.4.3
     devDependencies:
+      '@opentelemetry/sdk-trace-node':
+        specifier: catalog:otel
+        version: 2.10.0(@opentelemetry/api@1.9.1)
       '@radoslavirha/config-eslint':
         specifier: 'catalog:'
-        version: 0.4.4(eslint@10.8.0)(typescript@6.0.3)
+        version: 0.4.4(eslint@10.8.0(supports-color@5.5.0))(supports-color@5.5.0)(typescript@6.0.3)
       '@radoslavirha/config-vitest':
         specifier: 'catalog:'
         version: 0.4.3(@swc/core@1.15.47(@swc/helpers@0.5.23))(@vitest/coverage-v8@4.1.10)(vitest@4.1.10)
@@ -706,7 +709,7 @@ importers:
         version: 2.1.0(axios@1.19.0)
       eslint:
         specifier: 'catalog:'
-        version: 10.8.0
+        version: 10.8.0(supports-color@5.5.0)
       nodemon:
         specifier: 'catalog:'
         version: 3.1.14
@@ -718,7 +721,7 @@ importers:
         version: 2.8.1
       typescript-eslint:
         specifier: 'catalog:'
-        version: 8.66.0(eslint@10.8.0)(typescript@6.0.3)
+        version: 8.66.0(eslint@10.8.0(supports-color@5.5.0))(supports-color@5.5.0)(typescript@6.0.3)
       vitest:
         specifier: 'catalog:'
         version: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.1.2)(@vitest/coverage-v8@4.1.10)(jsdom@30.0.1(@noble/hashes@1.8.0))(vite@8.2.1(@types/node@26.1.2)(esbuild@0.28.1)(yaml@2.9.0))

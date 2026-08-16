@@ -8,6 +8,21 @@ const RECONNECT_PERIOD_MS = 5_000;
 const MAX_STARTUP_ERRORS = 5;
 
 /**
+ * MQTT 5, not the library default of 4 (3.1.1).
+ *
+ * 3.1.1 has nowhere to put a `traceparent`: it carries a topic and an opaque payload and
+ * nothing else. MQTT 5 user properties are that carrier, and they are what makes an inbound
+ * command join the caller's trace instead of starting an orphan one — see `withMqttConsumeSpan`
+ * in `@radoslavirha/otel`. Embedding the header in the JSON payload instead is not an option:
+ * `MqttCommandRequestModel` is `@AdditionalProperties(false)` and the payload is a contract
+ * with the miniserver.
+ *
+ * Safe to raise unilaterally — MQTT version is negotiated per connection, so publishers still
+ * on 3.1.1 are unaffected. Requires a broker that speaks v5; EMQX does.
+ */
+const PROTOCOL_VERSION = 5;
+
+/**
  * Ts.ED custom provider that holds a connected MQTT client instance.
  *
  * - Resolves to a connected {@link MqttClient} when `mqtt.enabled` is `true`.
@@ -43,6 +58,7 @@ export const MqttClientProvider = injectable(Symbol.for('MqttClient'))
                 clientId: mqttConfig.clientId,
                 username: mqttConfig.username,
                 password: mqttConfig.password,
+                protocolVersion: PROTOCOL_VERSION,
                 reconnectPeriod: RECONNECT_PERIOD_MS
             });
 
