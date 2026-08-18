@@ -53,7 +53,7 @@ apis/<api-name>/
       <storage group>/    # Per backend + entity (e.g. `qr-mongo/`, `device-local-storage/`).
         dto/              # DTO models for storage repositories.
         *Repository.ts    # Repository service that accepts/returns only DTOs. SINGLETON scoped when possible.
-    otel/                 # OpenTelemetry bootstrap (`instrument.ts`) + per-API OTel config.
+    otel/                 # OpenTelemetry bootstrap (`instrument.ts`), per-API OTel config, and `telemetry.ts` — the span names, tracer scopes, `job.name` values and app attribute keys this API emits.
     ModelGroups.ts        # Groups used in `@Groups()` decorator. Groups belong on Controller endpoints (request/response models) and Models. If `@Groups()` is used in a child model, the parent model must use `@ForwardGroups()` on that property.
     Server.ts
     index.ts
@@ -222,6 +222,42 @@ Every API exposes `/health/live`, `/health/ready` and `/health` via `HealthContr
 
 Probe traffic is excluded from traces in `packages/otel` and from request logs by
 `@radoslavirha/tsed-logger`'s `requests.ignorePaths` default — no per-API wiring needed.
+
+## Instrumenting Entry Points
+
+HTTP and MQTT already root their own traces. **Anything else that starts work must root one
+itself** — a timer, a poller, a socket listener, a queue consumer, a `$onInit` task. Skipping it
+breaks two things silently: every auto-instrumented call underneath becomes its own parentless
+trace, and every log line underneath loses `trace_id` — `WinstonInstrumentation` reads it off the
+active span, so a log with no trace context is a missing span, never a logger problem.
+
+**Scheduled work — a timer, cron or startup task — uses `runJob`, which emits the span *and* the
+`job.*` metrics from one call:**
+
+```ts
+import { runJob, recordJobSkip, withEntryPointSpan, withClientSpan } from '@radoslavirha/otel';
+
+// scheduled work → span + metrics
+await runJob({ name: JOB_POLL_DEVICE_PROPERTIES, tracer: POLLER_TRACER_NAME, spanName: SPAN_POLL_TICK },
+    async ({ recordItem }) => { … });
+
+// inbound traffic (UDP datagram, queue message) → span only, it is not a job
+await withEntryPointSpan({ name: SPAN_UDP_COMMAND, tracer: UDP_TRACER_NAME, kind: SpanKind.CONSUMER }, (span) => …);
+
+// outbound call over an uninstrumented protocol (miot UDP, raw `dgram`, `fetch`)
+await withClientSpan({ name: SPAN_MIOT_GET_PROPERTIES, tracer: MIOT_TRACER_NAME }, () => …);
+```
+
+Metrics matter more than traces for a cron, because a cron is deterministic and an error that
+recurs every tick shows up in any of them. Three reusable instruments — `job.run.duration`
+(Histogram, `s`), `job.run.skips` and `job.run.items` (Counters) — all keyed by a **bounded,
+static** `job.name`. **Traces are head-sampled, metrics never are:** a run passed
+`suppressTrace: true` emits no span and still records its duration and outcome.
+
+Full conventions — span kinds, naming, name constants in `src/otel/telemetry.ts`, the metric set
+and its cardinality budget, why the namespace is `job.*` and not `faas.*`, which metrics a
+self-rescheduling vs fixed-rate scheduler can honestly emit, and the assertions a test must make —
+are in `.apm/skills/instrument-entry-point/SKILL.md`.
 
 ## Adding a New UI
 

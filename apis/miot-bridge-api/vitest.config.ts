@@ -7,10 +7,10 @@ export default defineConfig(mergeConfig(defaultConfig, {
         coverage: {
             exclude: ['src/models/**'],
             thresholds: {
-                lines: 29.4,
-                functions: 26.5,
-                statements: 28.3,
-                branches: 20.5
+                lines: 50.9,
+                functions: 36.8,
+                statements: 49.7,
+                branches: 47.6
             }
         }
     }

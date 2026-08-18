@@ -1,5 +1,6 @@
 import { createSocket } from 'dgram';
 import { CommonUtils } from '@radoslavirha/utils';
+import { MIOT_DEFAULT_PORT } from './Constants.js';
 import { CONSOLE_LOGGER } from './consoleLogger.js';
 import { IncomingPacket, OutgoingPacket } from './packet/index.js';
 import type { DiscoverResult, GetPropertiesResult, ILogger } from './types.js';
@@ -17,9 +18,6 @@ interface MiotResponse {
     result?: string | number | unknown;
     error?: { code: number; message: string };
 }
-
-/** Default miot protocol UDP port. */
-const MIOT_PORT = 54321;
 
 /** UDP command/handshake timeout in milliseconds. */
 const MIOT_TIMEOUT_MS = 10_000;
@@ -39,7 +37,7 @@ export class MiotTransport {
         port?: number,
         private readonly logger: ILogger = CONSOLE_LOGGER
     ) {
-        this.port = port ?? MIOT_PORT;
+        this.port = port ?? MIOT_DEFAULT_PORT;
     }
 
     /**

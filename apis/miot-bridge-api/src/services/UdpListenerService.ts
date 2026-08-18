@@ -2,12 +2,28 @@ import { createSocket, type RemoteInfo, type Socket } from 'dgram';
 import { Injectable, Scope, ProviderScope, OnDestroy, OnInit } from '@tsed/di';
 import { CommonUtils, ObjectUtils } from '@radoslavirha/utils';
 import { JSONSchemaValidator } from '@radoslavirha/tsed-common';
+import { recordSpanError, withEntryPointSpan } from '@radoslavirha/otel';
+import { SpanKind, type Span } from '@opentelemetry/api';
+import {
+    ATTR_NETWORK_LOCAL_PORT,
+    ATTR_NETWORK_PEER_ADDRESS,
+    ATTR_NETWORK_PEER_PORT,
+    ATTR_NETWORK_TRANSPORT,
+    NETWORK_TRANSPORT_VALUE_UDP
+} from '@opentelemetry/semantic-conventions';
 import { ConfigService } from './ConfigService.js';
 import { DeviceCommandService } from './DeviceCommandService.js';
 import { CommandRequestModel } from '../models/CommandRequestModel.js';
 import { DeviceCommandOperation } from '../models/DeviceCommandOperation.enum.js';
 import { DeviceCommandRequest } from '../models/DeviceCommandRequest.js';
 import { BaseLogger, Logger } from '@radoslavirha/tsed-logger';
+import {
+    ATTR_MIOT_COMMAND,
+    ATTR_MIOT_DEVICE_ID,
+    ATTR_MIOT_OPERATION,
+    SPAN_UDP_COMMAND,
+    UDP_TRACER_NAME
+} from '../otel/telemetry.js';
 
 /** Maximum number of consecutive socket restarts before giving up. */
 const MAX_RESTART_ATTEMPTS = 5;
@@ -135,7 +151,36 @@ export class UdpListenerService implements OnInit, OnDestroy {
         });
     }
 
+    /**
+     * Handles one inbound datagram inside a single CONSUMER span.
+     *
+     * An inbound datagram is an entry point exactly like an HTTP request — Loxone asking this
+     * service to do something — so it roots a trace. Loxone sends no trace context, hence no
+     * carrier to extract: the span is deliberately a root rather than a child of whatever
+     * happened to be on the stack when the socket fired.
+     *
+     * The span wraps the reply as well as the command, for the same reason the MQTT consumer
+     * does: everything raised underneath — the Mongo lookups, the miot UDP call — is traced by
+     * instrumentations that attach to the current span and nothing else.
+     */
     private async handleMessage(msg: Buffer, rinfo: RemoteInfo): Promise<void> {
+        await withEntryPointSpan(
+            {
+                name: SPAN_UDP_COMMAND,
+                tracer: UDP_TRACER_NAME,
+                kind: SpanKind.CONSUMER,
+                attributes: {
+                    [ATTR_NETWORK_TRANSPORT]: NETWORK_TRANSPORT_VALUE_UDP,
+                    [ATTR_NETWORK_PEER_ADDRESS]: rinfo.address,
+                    [ATTR_NETWORK_PEER_PORT]: rinfo.port,
+                    [ATTR_NETWORK_LOCAL_PORT]: this.configService.config.udp?.port
+                }
+            },
+            (span) => this.handleCommand(msg, rinfo, span)
+        );
+    }
+
+    private async handleCommand(msg: Buffer, rinfo: RemoteInfo, span: Span): Promise<void> {
         let payload: unknown;
 
         this.logger.info(`Received UDP message from ${rinfo.address}:${rinfo.port}. Payload: ${msg.toString('utf8')}`);
@@ -143,6 +188,9 @@ export class UdpListenerService implements OnInit, OnDestroy {
         try {
             payload = JSON.parse(msg.toString('utf8'));
         } catch {
+            // Recorded on the span even though this path answers rather than throws: without it
+            // a datagram that was replied to with `error:` looks successful in Tempo.
+            recordSpanError(span, 'Invalid JSON.');
             this.logger.warn(`Invalid JSON from ${rinfo.address}:${rinfo.port}.`);
             this.reply('error: Invalid JSON.', rinfo);
             return;
@@ -153,12 +201,19 @@ export class UdpListenerService implements OnInit, OnDestroy {
         try {
             request = JSONSchemaValidator.validate(CommandRequestModel, payload);
         } catch (error) {
+            recordSpanError(span, `Validation failed. ${this.stringifyError(error)}`);
             this.logger.warn(`Validation failed from ${rinfo.address}:${rinfo.port}.`, {
                 error
             });
             this.reply(`error: Validation failed. ${this.stringifyError(error)}`, rinfo);
             return;
         }
+
+        span.setAttributes({
+            [ATTR_MIOT_DEVICE_ID]: request.deviceId,
+            [ATTR_MIOT_COMMAND]: request.command,
+            [ATTR_MIOT_OPERATION]: request.operation
+        });
 
         try {
             const commandRequest = CommonUtils.buildModelStrict(DeviceCommandRequest, {
@@ -177,6 +232,7 @@ export class UdpListenerService implements OnInit, OnDestroy {
             }
         } catch (error) {
             const message = this.stringifyError(error);
+            recordSpanError(span, error);
             this.logger.error('UDP_COMMAND_FAILED', { message, deviceId: request.deviceId, command: request.command });
             this.reply(`error: ${message}`, rinfo);
         }

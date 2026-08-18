@@ -36,6 +36,7 @@
     },
     "dependencies": {
         "@opentelemetry/api": "catalog:otel",
+        "@opentelemetry/core": "catalog:otel",
         "@opentelemetry/exporter-logs-otlp-http": "catalog:otel",
         "@opentelemetry/exporter-metrics-otlp-http": "catalog:otel",
         "@opentelemetry/exporter-trace-otlp-http": "catalog:otel",

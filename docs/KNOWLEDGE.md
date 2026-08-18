@@ -39,6 +39,40 @@ pnpm monorepo of small independent Node.js APIs and UIs (Ts.ED, TypeScript ESM).
 
 `logs.enabled` in `OtelConfig` defaults to `false` in production helm values. OTLP log export can be re-enabled at any time for debugging by setting `logs.enabled: true`.
 
+### Every entry point owns a root span
+
+A log line without a `trace_id` is a missing span, not a logging fault: `WinstonInstrumentation` reads the id off the active span. The same missing span turns every Mongo query underneath into a parentless single-span trace — the miot-bridge poller produced ~7,500 of those per 6 hours before it had one.
+
+| Entry point | Root span from |
+|---|---|
+| Inbound HTTP | `HttpInstrumentation` / `ExpressInstrumentation` |
+| Inbound + outbound MQTT | `withMqttConsumeSpan` / `withMqttPublishSpan` (`packages/otel`), per-app broker identity via `MqttTracingService` |
+| Poll tick, startup task, any scheduled work | `runJob` (`packages/otel/src/jobTelemetry.ts`) — span **and** `job.*` metrics |
+| Inbound UDP datagram | `withEntryPointSpan` (`packages/otel/src/spanTracing.ts`) |
+| miot device UDP call, other uninstrumented outbound calls | `withClientSpan`, wrapped for miot by `apis/miot-bridge-api/src/otel/miotTracing.ts` |
+
+Span names, tracer scopes, `job.name` values and `miot.*` attribute keys are constants in `apis/<api>/src/otel/telemetry.ts`. Adding a background job or listener: `.apm/skills/instrument-entry-point`.
+
+**The poll tick is head-sampled.** At a 5s interval an always-on tick span is ~17k identical traces a day, which is what made a 6h Tempo search return nothing else. `DevicePropertyPollerService` traces at most one tick per `polling.traceIntervalMs` (default 60s) plus every tick that polls a device already failing; the rest run with tracing *suppressed*, so their Mongo and UDP calls are dropped instead of becoming orphan traces. The cost: a property change detected in a suppressed tick publishes its notification untraced. Set `polling.traceIntervalMs: 0` to trace every tick.
+
+### Scheduled work is a metrics problem, not a tracing problem
+
+A cron is deterministic — same work, same inputs, every tick — so correlating a log line to one exact iteration buys almost nothing; a fault that recurs every tick shows up in any of them. Traces are the sampled deep dive; **metrics are the always-on answer to "is this job healthy"**. `runJob` emits both from one call so the next job author cannot get only one, and **a run sampled out of tracing still records its metrics** — otherwise the sampling rate silently becomes the run rate.
+
+Three reusable instruments, repo-local namespace (OpenTelemetry has no convention for in-process scheduled jobs; `faas.*` was rejected as claiming FaaS semantics a `setTimeout` does not have, `cicd.pipeline.run.*` lent its shape):
+
+| Metric | Instrument | Unit | Attributes |
+|---|---|---|---|
+| `job.run.duration` | Histogram | `s` | `job.name`, `job.run.outcome` |
+| `job.run.skips` | Counter | `{skip}` | `job.name`, `job.skip.reason` |
+| `job.run.items` | Counter | `{item}` | `job.name`, `job.item.outcome` |
+
+`job.name` must be a bounded static set — every value is a permanent series on all three. ~64 series per `miot-bridge-api` pod.
+
+**`job.run.items` is what makes the poller's health legible.** The tick catches each device fault itself and turns it into back-off, so the *run* always reports success — run outcome alone would call the job healthy with every device dead.
+
+**The poller cannot overrun, it runs late.** `scheduleNext` re-arms a `setTimeout` in `tick`'s `finally`, after the awaited work, so exactly one timer is ever armed: its `_ticking` guard is unreachable and emits no `overrun` skip. The effective period is `intervalMs + tick duration`, which is why production ticks arrive ~5.6s apart against a 5s setting. That drift needs no metric of its own — for a self-rescheduling chain there is no missed deadline to be late against, and `1 / (rate(job_run_duration_seconds_count) + rate(job_run_skips_total))` already gives the effective period.
+
 ### Health probe traffic is excluded from telemetry
 
 `/health*` and `/healthz` produce no spans (`HttpInstrumentation.ignoreIncomingRequestHook` in `@radoslavirha/otel`) and no request-log lines (`requests.ignorePaths` in `@radoslavirha/tsed-logger`, on by default). At ~0.3 req/s per pod forever, they would otherwise dominate both Tempo and Loki while carrying no information.

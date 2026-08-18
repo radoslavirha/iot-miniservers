@@ -7,6 +7,8 @@ import { SimplifiedMiotSpec } from '../models/simplified-miot-spec/SimplifiedMio
 import { SimplifiedMiotSpecV2Mapper } from '../mappers/SimplifiedMiotSpecV2Mapper.js';
 import { ModelPropertyOverrideService } from './ModelPropertyOverrideService.js';
 import { Logger } from '@radoslavirha/tsed-logger';
+import { withMiotCallSpan } from '../otel/miotTracing.js';
+import { SPAN_MIOT_HANDSHAKE } from '../otel/telemetry.js';
 
 /** Minimal device address info accepted by discover(). Both DeviceDiscoverRequest and DeviceRequest satisfy this. */
 export interface DeviceAddressInput {
@@ -42,11 +44,18 @@ export class DeviceDiscoveryService {
     ) {}
 
     async discover(request: DeviceAddressInput): Promise<DeviceDiscoveryResult> {
-        const { deviceId, stamp } = await new MiotDevice({
-            address: request.address,
-            token: request.token,
-            logger: this.logger.child('MIOT_DISCOVERY')
-        }).discover();
+        // Same seam and same reason as the command path: a wrong address here is ten silent
+        // seconds of `dgram` timeout, and this span is the only thing that names what was
+        // being waited on.
+        const { deviceId, stamp } = await withMiotCallSpan(
+            { name: SPAN_MIOT_HANDSHAKE, device: { address: request.address } },
+            () =>
+                new MiotDevice({
+                    address: request.address,
+                    token: request.token,
+                    logger: this.logger.child('MIOT_DISCOVERY')
+                }).discover()
+        );
         const rawDto = await this.miotSpecEndpoint.fetchRaw(request.model);
         const rawSpec = await this.miotSpecMapper.mapDTOToModel(rawDto);
         const overrides = await this.modelPropertyOverrideService.getByModel(request.model);

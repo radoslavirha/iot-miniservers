@@ -19,6 +19,7 @@
   "dependencies": {
     "@opentelemetry/api": "catalog:otel",
     "@opentelemetry/instrumentation-mongoose": "catalog:otel",
+    "@opentelemetry/semantic-conventions": "catalog:otel",
     "@opentelemetry/winston-transport": "catalog:otel",
     "@radoslavirha/config-typescript": "catalog:",
     "@radoslavirha/tsed-http-provider": "workspace:*",
@@ -69,6 +70,7 @@
     "zod": "catalog:"
   },
   "devDependencies": {
+    "@opentelemetry/sdk-metrics": "catalog:otel",
     "@opentelemetry/sdk-trace-node": "catalog:otel",
     "@radoslavirha/config-eslint": "catalog:",
     "@radoslavirha/config-vitest": "catalog:",

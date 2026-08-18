@@ -1,5 +1,6 @@
 import { Service, Scope, ProviderScope } from '@tsed/di';
 import { BadRequest, NotFound } from '@tsed/exceptions';
+import type { Attributes } from '@opentelemetry/api';
 import { CommonUtils } from '@radoslavirha/utils';
 import { DeviceCommandOperation } from '../models/DeviceCommandOperation.enum.js';
 import { DeviceCommandRequest } from '../models/DeviceCommandRequest.js';
@@ -15,6 +16,17 @@ import { NotificationDispatchService } from './NotificationDispatchService.js';
 import { ModelPropertyOverrideService } from './ModelPropertyOverrideService.js';
 import { MiotDeviceRegistry } from './MiotDeviceRegistry.js';
 import type { GetPropertiesResult } from '@radoslavirha/miot-device';
+import { withMiotCallSpan } from '../otel/miotTracing.js';
+import {
+    ATTR_MIOT_AIID,
+    ATTR_MIOT_COMMAND,
+    ATTR_MIOT_PIID,
+    ATTR_MIOT_PROPERTY_COUNT,
+    ATTR_MIOT_SIID,
+    SPAN_MIOT_ACTION,
+    SPAN_MIOT_GET_PROPERTIES,
+    SPAN_MIOT_SET_PROPERTIES
+} from '../otel/telemetry.js';
 
 /** Per-key result returned by {@link DeviceCommandService.getProperties}. */
 export type KeyedPropertyResult = GetPropertiesResult & { key: string };
@@ -64,7 +76,14 @@ export class DeviceCommandService {
         if (!props.length) return { miotDeviceId: device.deviceId, results: [] };
 
         const miotDevice = this.registry.getOrCreate(device);
-        const rawResults = await miotDevice.getProperties(props.map(p => ({ siid: p.siid, piid: p.piid })));
+        const rawResults = await withMiotCallSpan(
+            {
+                name: SPAN_MIOT_GET_PROPERTIES,
+                device,
+                attributes: { [ATTR_MIOT_PROPERTY_COUNT]: props.length }
+            },
+            () => miotDevice.getProperties(props.map(p => ({ siid: p.siid, piid: p.piid })))
+        );
 
         const results = props.map(p => {
             const r = rawResults.find(x => x.siid === p.siid && x.piid === p.piid);
@@ -99,13 +118,22 @@ export class DeviceCommandService {
 
         switch (request.operation) {
             case DeviceCommandOperation.GetProperty:
-                value = await miotDevice.getProperty(request.siid, request.piid!);
+                value = await withMiotCallSpan(
+                    { name: SPAN_MIOT_GET_PROPERTIES, device, attributes: this.iidAttributes(request.siid, request.piid!) },
+                    () => miotDevice.getProperty(request.siid, request.piid!)
+                );
                 break;
             case DeviceCommandOperation.SetProperty:
-                await miotDevice.setProperty(request.siid, request.piid!, request.value as string | number);
+                await withMiotCallSpan(
+                    { name: SPAN_MIOT_SET_PROPERTIES, device, attributes: this.iidAttributes(request.siid, request.piid!) },
+                    () => miotDevice.setProperty(request.siid, request.piid!, request.value as string | number)
+                );
                 break;
             case DeviceCommandOperation.Action:
-                await miotDevice.callAction(request.siid, request.aiid!, request.value);
+                await withMiotCallSpan(
+                    { name: SPAN_MIOT_ACTION, device, attributes: { [ATTR_MIOT_SIID]: request.siid, [ATTR_MIOT_AIID]: request.aiid } },
+                    () => miotDevice.callAction(request.siid, request.aiid!, request.value)
+                );
                 break;
             default:
                 throw new BadRequest(`Unsupported operation: ${request.operation as string}.`);
@@ -135,7 +163,17 @@ export class DeviceCommandService {
 
         switch (resolved.operation) {
             case DeviceCommandOperation.GetProperty:
-                value = await miotDevice.getProperty(resolved.property.siid, resolved.property.piid);
+                value = await withMiotCallSpan(
+                    {
+                        name: SPAN_MIOT_GET_PROPERTIES,
+                        device,
+                        attributes: {
+                            ...this.iidAttributes(resolved.property.siid, resolved.property.piid),
+                            [ATTR_MIOT_COMMAND]: request.command
+                        }
+                    },
+                    () => miotDevice.getProperty(resolved.property.siid, resolved.property.piid)
+                );
                 this.notificationDispatch.receive({
                     deviceId: device.id,
                     miotDeviceId: device.deviceId,
@@ -146,7 +184,17 @@ export class DeviceCommandService {
                 });
                 break;
             case DeviceCommandOperation.SetProperty:
-                await miotDevice.setProperty(resolved.property.siid, resolved.property.piid, request.value as string | number);
+                await withMiotCallSpan(
+                    {
+                        name: SPAN_MIOT_SET_PROPERTIES,
+                        device,
+                        attributes: {
+                            ...this.iidAttributes(resolved.property.siid, resolved.property.piid),
+                            [ATTR_MIOT_COMMAND]: request.command
+                        }
+                    },
+                    () => miotDevice.setProperty(resolved.property.siid, resolved.property.piid, request.value as string | number)
+                );
                 this.notificationDispatch.receive({
                     deviceId: device.id,
                     miotDeviceId: device.deviceId,
@@ -157,7 +205,18 @@ export class DeviceCommandService {
                 });
                 break;
             case DeviceCommandOperation.Action:
-                await miotDevice.callAction(resolved.action.siid, resolved.action.aiid, request.value);
+                await withMiotCallSpan(
+                    {
+                        name: SPAN_MIOT_ACTION,
+                        device,
+                        attributes: {
+                            [ATTR_MIOT_SIID]: resolved.action.siid,
+                            [ATTR_MIOT_AIID]: resolved.action.aiid,
+                            [ATTR_MIOT_COMMAND]: request.command
+                        }
+                    },
+                    () => miotDevice.callAction(resolved.action.siid, resolved.action.aiid, request.value)
+                );
                 break;
         }
 
@@ -168,6 +227,14 @@ export class DeviceCommandService {
             success: true,
             value
         });
+    }
+
+    /**
+     * Service and property instance ids for a single-property call, so a span says which
+     * property was being read when the device stopped answering.
+     */
+    private iidAttributes(siid: number, piid: number): Attributes {
+        return { [ATTR_MIOT_SIID]: siid, [ATTR_MIOT_PIID]: piid };
     }
 
     /**

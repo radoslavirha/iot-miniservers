@@ -1,13 +1,4 @@
-import {
-    context,
-    propagation,
-    SpanKind,
-    SpanStatusCode,
-    trace,
-    type Attributes,
-    type Context,
-    type Span
-} from '@opentelemetry/api';
+import { context, propagation, SpanKind, type Attributes, type Context, type Span } from '@opentelemetry/api';
 import {
     ATTR_MESSAGING_CLIENT_ID,
     ATTR_MESSAGING_DESTINATION_NAME,
@@ -20,7 +11,7 @@ import {
     MESSAGING_OPERATION_TYPE_VALUE_SEND
 } from '@opentelemetry/semantic-conventions/incubating';
 import { ATTR_SERVER_ADDRESS, ATTR_SERVER_PORT } from '@opentelemetry/semantic-conventions';
-import { getTracer } from './telemetry.js';
+import { withSpan } from './spanTracing.js';
 
 /**
  * Instrumentation scope for every MQTT span. Named after the wire protocol rather than the
@@ -83,17 +74,23 @@ export function withMqttPublishSpan<T>(
     options: MqttSpanOptions,
     fn: (userProperties: Record<string, string>, span: Span) => T
 ): T {
-    const span = getTracer(MQTT_TRACER_NAME).startSpan(`publish ${options.topicTemplate}`, {
-        kind: SpanKind.PRODUCER,
-        attributes: buildAttributes(options, 'publish', MESSAGING_OPERATION_TYPE_VALUE_SEND)
-    });
+    return withSpan(
+        {
+            name: `publish ${options.topicTemplate}`,
+            tracer: MQTT_TRACER_NAME,
+            kind: SpanKind.PRODUCER,
+            attributes: buildAttributes(options, 'publish', MESSAGING_OPERATION_TYPE_VALUE_SEND)
+        },
+        (span) => {
+            const userProperties: Record<string, string> = {};
 
-    const spanContext = trace.setSpan(context.active(), span);
-    const userProperties: Record<string, string> = {};
+            // Injected from the active context rather than a hand-built one: `withSpan` has
+            // already made this span current, so the carrier names it as the parent.
+            propagation.inject(context.active(), userProperties);
 
-    propagation.inject(spanContext, userProperties);
-
-    return runInSpan(span, spanContext, () => fn(userProperties, span));
+            return fn(userProperties, span);
+        }
+    );
 }
 
 /**
@@ -107,20 +104,16 @@ export function withMqttPublishSpan<T>(
  * detached.
  */
 export function withMqttConsumeSpan<T>(options: MqttConsumeSpanOptions, fn: (span: Span) => T): T {
-    const parent = extractMqttContext(options.userProperties);
-
-    const span = getTracer(MQTT_TRACER_NAME).startSpan(
-        `process ${options.topicTemplate}`,
+    return withSpan(
         {
+            name: `process ${options.topicTemplate}`,
+            tracer: MQTT_TRACER_NAME,
             kind: SpanKind.CONSUMER,
-            attributes: buildAttributes(options, 'process', MESSAGING_OPERATION_TYPE_VALUE_PROCESS)
+            attributes: buildAttributes(options, 'process', MESSAGING_OPERATION_TYPE_VALUE_PROCESS),
+            parent: extractMqttContext(options.userProperties)
         },
-        parent
+        fn
     );
-
-    const spanContext = trace.setSpan(parent, span);
-
-    return runInSpan(span, spanContext, () => fn(span));
 }
 
 /**
@@ -155,52 +148,6 @@ function toTextMap(userProperties: MqttUserProperties): Record<string, string> {
     }
 
     return carrier;
-}
-
-/**
- * Runs `fn` with `span` current, ending the span once its result settles.
- *
- * Handles the sync and async cases from one place because the publish helper is used both
- * ways: a thenable result ends the span on settlement, anything else ends it immediately.
- * Errors are recorded and rethrown — instrumentation must not swallow a failure.
- */
-function runInSpan<T>(span: Span, spanContext: Context, fn: () => T): T {
-    let result: T;
-
-    try {
-        result = context.with(spanContext, fn);
-    } catch (error) {
-        recordError(span, error);
-        span.end();
-        throw error;
-    }
-
-    if (!isPromiseLike(result)) {
-        span.end();
-        return result;
-    }
-
-    return result.then(
-        (value) => {
-            span.end();
-            return value;
-        },
-        (error: unknown) => {
-            recordError(span, error);
-            span.end();
-            throw error;
-        }
-    ) as T;
-}
-
-function recordError(span: Span, error: unknown): void {
-    const normalized = error instanceof Error ? error : new Error(String(error));
-    span.recordException(normalized);
-    span.setStatus({ code: SpanStatusCode.ERROR, message: normalized.message });
-}
-
-function isPromiseLike<T>(value: T): value is T & PromiseLike<unknown> {
-    return typeof (value as PromiseLike<unknown> | undefined)?.then === 'function';
 }
 
 function buildAttributes(options: MqttSpanOptions, operationName: string, operationType: string): Attributes {
