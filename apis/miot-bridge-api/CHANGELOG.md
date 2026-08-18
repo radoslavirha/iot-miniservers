@@ -1,5 +1,209 @@
 # miot-bridge
 
+## 0.22.0
+
+### Minor Changes
+
+- [`55f6775`](https://github.com/radoslavirha/iot-miniservers/commit/55f6775ffe2760a78e86d72d7cd322ab67935dd6) Thanks [@radoslavirha](https://github.com/radoslavirha)! - Surface _why_ a miIO call failed, and whose spec entry the device refused.
+
+  ## The gap
+
+  `miot-bridge-api` builds a miIO request from the device spec and sends it over UDP. When that came
+  back refused, none of the reason survived the trip. miIO is JSON-RPC shaped — a rejection is a real
+  response carrying `error: { code, message }` — and `MiotTransport` flattened it into
+  `new Error('Device error -4004: ...')`, after which `MiotDevice.runWithFreshStamp` re-wrapped it a
+  second time into `new Error('Operation failed after stamp refresh for device 1141132187: <that
+message>')`. By the time `DeviceCommandService` caught it, the only machine-readable content was a
+  substring. Instrumentation on top of that can say "the call failed" and nothing else.
+
+  Worse, the case that matters most was not an error at all. A bulk `get_properties` returns a
+  per-property `code` per result item, so a read of twelve properties where the device refuses three
+  is a **successful** RPC call: green span, `job.run.items` = `success`, and
+  `DevicePropertyPollerService` simply `continue`d past every non-zero code. That is the shape every
+  refusal takes on the polling path, which is the dominant caller.
+
+  ## The device is a blackbox and the published spec is incomplete
+
+  `model-property-overrides` holds entries that are _not_ in the published spec but that the device is
+  believed to know. So a refusal means one of three things — the override is wrong, the published spec
+  is wrong, or the device genuinely does not implement it — and nothing recorded which.
+
+  `SimplifiedMiotSpecV2Mapper` is the only place that can tell: it maps the published spec first and
+  lets overrides `set()` over it, so an override reusing a published key **replaces** it and the
+  merged map keeps no record of who won. `MiotProperty.source` is now stamped there, at insertion, and
+  rides through to telemetry as `miot.property.source` = `spec` | `override`.
+
+  ## `@radoslavirha/miot-device`
+
+  New `MiotError`, carrying `kind`, `method`, `code` and `stampRefreshed`. Still no OpenTelemetry
+  dependency — it is plain data the app maps onto attributes.
+
+  - `kind` is `timeout` (silence), `device_error` (the device answered and refused) or
+    `transport_error` (socket fault, failed send, empty or undecryptable response).
+  - `code` is the miIO status code from _either_ wire position: `error.code` of the envelope, or the
+    `code` of a result item. Both are the device saying "no, and here is why".
+  - `MiotError.afterStampRefresh` replaces the `new Error(...)` in `runWithFreshStamp`, so the
+    classification survives the retry. Messages are unchanged.
+  - `runWithStamp` retries **every** failure behind a fresh handshake, including a `device_error` that
+    can never succeed twice — a refused property costs a handshake plus a second round trip.
+    Behaviour is unchanged here, but the failure now says so via `stampRefreshed`.
+
+  ## Traces
+
+  `withMiotCallSpan` now emits the span _and_ the metrics from one call, the same pairing as `runJob`.
+  miIO is JSON-RPC over UDP, so the RPC conventions apply as they are — no `miot.error_code` was
+  invented:
+
+  | Attribute                           | Value                                                                                                 |
+  | ----------------------------------- | ----------------------------------------------------------------------------------------------------- |
+  | `rpc.system.name`                   | `jsonrpc` (`rpc.system` is deprecated)                                                                |
+  | `rpc.method`                        | `get_properties` / `set_properties` / `action` / `handshake` (`rpc.service` is deprecated, folded in) |
+  | `rpc.response.status_code`          | the miIO code **as a string** (`rpc.jsonrpc.error_code` is deprecated)                                |
+  | `error.type`                        | `timeout` / `device_error` / `transport_error` / `rejected_locally` / `_OTHER`                        |
+  | span status description             | the error message (`rpc.jsonrpc.error_message` is deprecated)                                         |
+  | `miot.property.source`              | `spec` / `override`, on single-property calls                                                         |
+  | `miot.stamp.refreshed`              | set when the failure survived a stamp-refresh retry                                                   |
+  | `miot.property.rejected` / `.count` | which keys of a bulk read were refused                                                                |
+
+  `error.type` is where the outcome taxonomy lives rather than a `miot.call.outcome` of our own: it is
+  stable semconv, it is what RPC metrics require on failure, and it is contractually low cardinality.
+  Success sets no `error.type`, per semconv — `error_type=""` is the success series.
+  `stamp_retry_exhausted` is deliberately **not** a member, because every such failure is also a
+  timeout, a device error or a transport error, and promoting it would erase the code on exactly the
+  calls where it matters.
+
+  Anything that is not a `MiotError` gets semconv's own `_OTHER` rather than a guess. A Mongo fault or
+  a programming error surfacing on this path is not a device fault, and folding it into
+  `transport_error` would put our bugs in the device's column.
+
+  `jsonrpc.protocol.version` is not emitted: it is defined as the value of the request's `jsonrpc`
+  member and a miIO packet has none — the payload is JSON-RPC 1.0-shaped, and asserting `"2.0"` would
+  be a fabrication. `jsonrpc.request.id` is not emitted either; it is a UNIX timestamp minted inside
+  `OutgoingPacket` and never surfaced. `network.transport` stays even though the RPC conventions
+  dropped it, because UDP is what makes a failure ten seconds of silence.
+
+  Note `rpc.response.status_code` being a string also sidesteps the Grafana TableNG crash that sparse
+  _numeric_ span attributes cause — the same reason identifiers became strings.
+
+  ## Metrics
+
+  | Metric                      | Instrument | Unit          | Attributes                                                       |
+  | --------------------------- | ---------- | ------------- | ---------------------------------------------------------------- |
+  | `miot.client.call.duration` | Histogram  | `s`           | `rpc.method`, `error.type`                                       |
+  | `miot.property.rejections`  | Counter    | `{rejection}` | `rpc.method`, `rpc.response.status_code`, `miot.property.source` |
+
+  - **Not `rpc.client.call.duration`**, deliberately. The RPC client metric conventions make
+    `server.address` **required**, and that is one LAN address per physical device — the per-device
+    cardinality this repo already refuses on `job.*`. Emitting the reserved name without a required
+    attribute produces a non-conformant metric under a name tools assume is conformant. Same reasoning
+    that made the job namespace `job.*` and not `faas.*`; the shape is identical, so it converges by
+    rename if the constraint ever lifts.
+  - Buckets are the semconv-recommended RPC set extended past 10s, because 10s is not a tail here — it
+    is `MIOT_TIMEOUT_MS` exactly, and the stamp-refresh retry doubles it.
+  - `rpc.response.status_code` is on the counter and **not** the histogram: nobody asks how long a
+    `-4004` took, and ~15 codes across 16 buckets buys nothing the counter gives for one series each.
+  - `miot.property.source` is on the counter only. A bulk read mixes provenances, so a call has no
+    honest single value, and an attribute present on some series and absent on others makes every
+    `sum by` over it lie.
+  - `rpc.method` is on both. Read-versus-write refusal is the signature of an override with the wrong
+    `access`.
+  - Never `miot.device.id`, `miot.siid`, `miot.piid` or `server.address` on either.
+
+  `rejected_locally` is recorded from `DeviceCommandService`, which raises no span for it on purpose —
+  a client span for a call that never left the process would be a lie. The metric is therefore the
+  only always-on evidence that Loxone is asking for a key in neither the spec nor the overrides, which
+  is the mirror image of a device refusal.
+
+  A property the device omits from a bulk read response entirely is recorded as
+  `rpc.response.status_code="_MISSING"`. The `-1` filler is ours, not the device's, and putting it on
+  the attribute would invent a miIO code and sort in among the real ones.
+
+  ## Logs
+
+  Device faults keep their readable message and gain structured fields — `errorType`, `statusCode`,
+  `stampRefreshed`, `consecutiveErrors` — so Loki filters on them instead of regexing prose. Each
+  refused property in a bulk read gets its own `warn` carrying the key, siid/piid, provenance and
+  code. Both sites run inside an active span, so `WinstonInstrumentation` stamps `trace_id` for free.
+
+  ## Answering the question
+
+  ```traceql
+  { span.miot.device.id = "1141132187" && span.rpc.response.status_code != "" }
+  | select(span.miot.command, span.rpc.response.status_code, span.miot.property.source)
+  ```
+
+  ```promql
+  sum by (rpc_response_status_code, miot_property_source) (
+    rate(miot_property_rejections_total[1h])
+  )
+  ```
+
+### Patch Changes
+
+- [`55f6775`](https://github.com/radoslavirha/iot-miniservers/commit/55f6775ffe2760a78e86d72d7cd322ab67935dd6) Thanks [@radoslavirha](https://github.com/radoslavirha)! - Emit `miot.*` identifier attributes as strings, not integers.
+
+  A Grafana 13.0.1 table panel running a Tempo TraceQL query with `select(span.miot.device.id, …)`
+  crashed outright:
+
+  ```
+  TypeError: Cannot read properties of undefined (reading '0')
+    at eval (eval at Mo (utils.ts:821), <anonymous>)   ← the new Function()-compiled row accessor
+    at hooks.ts:301 / useMemo / hooks.ts:288
+    at ql (TableNG.tsx:217)
+  ```
+
+  Bisected against live data one attribute at a time at a fixed window: `select(span.http.request.method,
+span.url.path)` (strings, present on every matched span) renders; `select(span.miot.command,
+span.http.response.status_code)` (absent from every matched span) renders; `select(span.miot.device.id)`
+  (int, present on **some** matched spans) crashes. Tempo exports the attribute as `intValue` on the
+  `poll device` span and not on the sibling mongoose spans, Grafana builds a sparse numeric column in
+  the nested sub-frame, and the compiled row accessor dereferences the hole. The two string attributes
+  above are equally sparse and are fine.
+
+  String is also the more correct choice independently of the Grafana bug. `miot.device.id` is an
+  **identifier**, not a measurement: nothing sums, averages or ranges over it, so the integer it
+  happens to be carries no arithmetic meaning worth keeping — and OTel models identifiers as strings
+  even when the underlying value is numeric (`service.instance.id`, `messaging.message.id`,
+  `k8s.pod.uid`). It removes a TraceQL trap too, since an int attribute has to be filtered unquoted
+  (`span.miot.device.id = 1141132187`) and quoting it by habit silently matches nothing.
+
+  Now a **repo-local rule**, written down because no semantic convention covers `miot.*` and the
+  failure mode is invisible until a dashboard happens to `select()` the attribute:
+
+  > **Identifier attributes are strings, quantity attributes are numbers.**
+
+  - **Strings, via the new `identifierAttribute()` in `src/otel/telemetry.ts`:** `miot.device.id`
+    (every call site — the miot CLIENT span, the UDP and MQTT consumer spans, the notification
+    publish span, the poll device span), `miot.device.storage_id` (already a string; routed through
+    the helper so a future change of storage id type cannot slip a number onto a span), and
+    `miot.siid` / `miot.piid` / `miot.aiid`.
+  - **Unchanged, because they are quantities:** `miot.property.count`, `miot.poll.device.count`,
+    `miot.poll.failing.count`, `miot.poll.interval_ms`, `miot.poll.subscription.count`, plus the
+    semconv attributes beside them — `server.port`, `network.peer.port`, `network.local.port`,
+    `messaging.message.body.size`, `messaging.mqtt.qos`. Those are aggregated, and semconv _requires_
+    integers for several; stringifying them would break both the panel maths and the convention.
+
+  `siid`/`piid`/`aiid` are identifiers rather than indices despite looking like small ordinals: they
+  are the coordinates a call is addressed to — `siid=2,piid=1` is "the vacuum service's status
+  property" — and `siid + 1` names an unrelated service rather than the next one. They also have the
+  same sparse shape as the device id, appearing only on the `miot *` client spans, so leaving them
+  numeric would have left the identical crash armed on a different column.
+
+  `identifierAttribute()` is a helper rather than a bare `String()` at each call site because a miot
+  handshake is the call that _asks_ for the device id, so the value is `undefined` there;
+  `String(undefined)` would put the literal `"undefined"` on that span. `undefined` in, `undefined`
+  out — an absent attribute stays absent.
+
+  **Metric attributes are untouched.** The `job.*` instruments deliberately carry no device id, and
+  `runJob` still never copies span attributes onto a metric.
+
+  Tests assert the string form at every call site and a new one pins the _type_ rather than the
+  value, so a call site that drops `identifierAttribute()` fails in CI instead of at the next
+  dashboard load.
+
+- Updated dependencies [[`55f6775`](https://github.com/radoslavirha/iot-miniservers/commit/55f6775ffe2760a78e86d72d7cd322ab67935dd6)]:
+  - @radoslavirha/miot-device@0.6.0
+
 ## 0.21.0
 
 ### Minor Changes
