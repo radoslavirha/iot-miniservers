@@ -1,6 +1,6 @@
 import { Service, Scope, ProviderScope } from '@tsed/di';
 import { BadRequest, NotFound } from '@tsed/exceptions';
-import type { Attributes } from '@opentelemetry/api';
+import type { Attributes, Span } from '@opentelemetry/api';
 import { CommonUtils } from '@radoslavirha/utils';
 import { DeviceCommandOperation } from '../models/DeviceCommandOperation.enum.js';
 import { DeviceCommandRequest } from '../models/DeviceCommandRequest.js';
@@ -15,21 +15,38 @@ import { CommandResponseModel } from '../models/CommandResponseModel.js';
 import { NotificationDispatchService } from './NotificationDispatchService.js';
 import { ModelPropertyOverrideService } from './ModelPropertyOverrideService.js';
 import { MiotDeviceRegistry } from './MiotDeviceRegistry.js';
-import type { GetPropertiesResult } from '@radoslavirha/miot-device';
-import { withMiotCallSpan } from '../otel/miotTracing.js';
+import {
+    MIOT_METHOD_ACTION,
+    MIOT_METHOD_GET_PROPERTIES,
+    MIOT_METHOD_SET_PROPERTIES,
+    type GetPropertiesResult,
+    type MiotMethod
+} from '@radoslavirha/miot-device';
+import { Logger, type BaseLogger } from '@radoslavirha/tsed-logger';
+import { recordMiotLocalRejection, recordPropertyRejection, withMiotCallSpan } from '../otel/miotTracing.js';
 import {
     ATTR_MIOT_AIID,
     ATTR_MIOT_COMMAND,
     ATTR_MIOT_PIID,
     ATTR_MIOT_PROPERTY_COUNT,
+    ATTR_MIOT_PROPERTY_REJECTED,
+    ATTR_MIOT_PROPERTY_REJECTED_COUNT,
     ATTR_MIOT_SIID,
-    SPAN_MIOT_ACTION,
-    SPAN_MIOT_GET_PROPERTIES,
-    SPAN_MIOT_SET_PROPERTIES
+    identifierAttribute,
+    MIOT_ERROR_TYPE_VALUE_REJECTED_LOCALLY,
+    MIOT_PROPERTY_CODE_MISSING,
+    MIOT_STATUS_CODE_VALUE_MISSING,
+    type MiotPropertySource
 } from '../otel/telemetry.js';
 
-/** Per-key result returned by {@link DeviceCommandService.getProperties}. */
-export type KeyedPropertyResult = GetPropertiesResult & { key: string };
+/**
+ * Per-key result returned by {@link DeviceCommandService.getProperties}.
+ *
+ * `source` rides along so a consumer can say whose spec entry a non-zero `code` belongs to without
+ * re-resolving the spec — the poller logs it, and it is the difference between "the published spec
+ * is wrong" and "our override is wrong".
+ */
+export type KeyedPropertyResult = GetPropertiesResult & { key: string; source: MiotPropertySource };
 
 /** Bulk result returned by {@link DeviceCommandService.getProperties}. */
 export type GetPropertiesResponse = { miotDeviceId: number; results: KeyedPropertyResult[] };
@@ -48,13 +65,18 @@ type ResolvedCommand =
 @Service()
 @Scope(ProviderScope.SINGLETON)
 export class DeviceCommandService {
+    private readonly logger: BaseLogger;
+
     constructor(
         private readonly deviceStorageService: DeviceStorageService,
         private readonly simplifiedMiotSpecMapper: SimplifiedMiotSpecV2Mapper,
         private readonly notificationDispatch: NotificationDispatchService,
         private readonly modelPropertyOverrideService: ModelPropertyOverrideService,
-        private readonly registry: MiotDeviceRegistry
-    ) {}
+        private readonly registry: MiotDeviceRegistry,
+        logger: Logger
+    ) {
+        this.logger = logger.child('DeviceCommandService');
+    }
 
     /**
      * Bulk-reads a set of spec property keys for a device identified by its storage ID.
@@ -68,29 +90,90 @@ export class DeviceCommandService {
 
         const overrides = await this.modelPropertyOverrideService.getByModel(device.model);
         const spec = await this.simplifiedMiotSpecMapper.map(device.rawSpec, overrides);
-        const props: Array<{ key: string; siid: number; piid: number }> = [];
+        const props: Array<{ key: string; siid: number; piid: number; source: MiotPropertySource }> = [];
         for (const key of keys) {
             const property = spec.properties.get(key);
-            if (property) props.push({ key, siid: property.siid, piid: property.piid });
+            if (property) props.push({ key, siid: property.siid, piid: property.piid, source: property.source });
         }
         if (!props.length) return { miotDeviceId: device.deviceId, results: [] };
 
         const miotDevice = this.registry.getOrCreate(device);
-        const rawResults = await withMiotCallSpan(
+        // No `propertySource` here: a bulk read mixes published and overridden entries, so the call
+        // has no single provenance. The per-property refusals below carry it one at a time.
+        const results = await withMiotCallSpan(
             {
-                name: SPAN_MIOT_GET_PROPERTIES,
+                method: MIOT_METHOD_GET_PROPERTIES,
                 device,
                 attributes: { [ATTR_MIOT_PROPERTY_COUNT]: props.length }
             },
-            () => miotDevice.getProperties(props.map(p => ({ siid: p.siid, piid: p.piid })))
+            async (span) => {
+                const rawResults = await miotDevice.getProperties(props.map(p => ({ siid: p.siid, piid: p.piid })));
+                const mapped = props.map(p => {
+                    const r = rawResults.find(x => x.siid === p.siid && x.piid === p.piid);
+                    return {
+                        key: p.key,
+                        siid: p.siid,
+                        piid: p.piid,
+                        source: p.source,
+                        value: r?.value,
+                        code: r?.code ?? MIOT_PROPERTY_CODE_MISSING
+                    };
+                });
+
+                // Inside the callback, not after it: the refusals belong to *this* call, and the
+                // span is already ended by the time the wrapper returns.
+                this.reportRejectedProperties(span, device.deviceId, mapped);
+
+                return mapped;
+            }
         );
 
-        const results = props.map(p => {
-            const r = rawResults.find(x => x.siid === p.siid && x.piid === p.piid);
-            return { key: p.key, siid: p.siid, piid: p.piid, value: r?.value, code: r?.code ?? -1 };
+        return { miotDeviceId: device.deviceId, results };
+    }
+
+    /**
+     * Reports the properties a bulk read came back refused.
+     *
+     * **This is the signal the whole exercise is about.** A bulk `get_properties` is one RPC call
+     * that succeeds at the envelope level while answering `code: -4004` for individual properties,
+     * so nothing about the call itself is failed — the span is green, the poller's job outcome is
+     * `success`, and until now the poller simply `continue`d past every one of them. On a device
+     * whose published spec is incomplete and whose gaps are patched by `model-property-overrides`,
+     * these codes are the only evidence of which entries the hardware actually knows.
+     *
+     * Three signals, each carrying what it can afford:
+     *
+     * - the **metric**, bounded to code x provenance x method, so the question is answerable
+     *   without a trace;
+     * - the **span**, listing which keys of *this* read were refused;
+     * - a **log line per refusal**, which is the only one that can afford the key and the device id
+     *   together, and which correlates back to the span through the `trace_id` the logger stamps
+     *   from the active span.
+     */
+    private reportRejectedProperties(span: Span, miotDeviceId: number, results: KeyedPropertyResult[]): void {
+        const rejected = results.filter(r => r.code !== 0);
+        if (!rejected.length) return;
+
+        span.setAttributes({
+            [ATTR_MIOT_PROPERTY_REJECTED]: rejected.map(r => r.key),
+            [ATTR_MIOT_PROPERTY_REJECTED_COUNT]: rejected.length
         });
 
-        return { miotDeviceId: device.deviceId, results };
+        for (const r of rejected) {
+            const statusCode = r.code === MIOT_PROPERTY_CODE_MISSING ? MIOT_STATUS_CODE_VALUE_MISSING : String(r.code);
+
+            recordPropertyRejection({ method: MIOT_METHOD_GET_PROPERTIES, source: r.source, statusCode });
+
+            this.logger.warn(`Device refused property '${r.key}'.`, {
+                miotDeviceId,
+                property: r.key,
+                siid: r.siid,
+                piid: r.piid,
+                propertySource: r.source,
+                rpcMethod: MIOT_METHOD_GET_PROPERTIES,
+                statusCode
+            });
+        }
     }
 
     /**
@@ -119,19 +202,26 @@ export class DeviceCommandService {
         switch (request.operation) {
             case DeviceCommandOperation.GetProperty:
                 value = await withMiotCallSpan(
-                    { name: SPAN_MIOT_GET_PROPERTIES, device, attributes: this.iidAttributes(request.siid, request.piid!) },
+                    { method: MIOT_METHOD_GET_PROPERTIES, device, attributes: this.iidAttributes(request.siid, request.piid!) },
                     () => miotDevice.getProperty(request.siid, request.piid!)
                 );
                 break;
             case DeviceCommandOperation.SetProperty:
                 await withMiotCallSpan(
-                    { name: SPAN_MIOT_SET_PROPERTIES, device, attributes: this.iidAttributes(request.siid, request.piid!) },
+                    { method: MIOT_METHOD_SET_PROPERTIES, device, attributes: this.iidAttributes(request.siid, request.piid!) },
                     () => miotDevice.setProperty(request.siid, request.piid!, request.value as string | number)
                 );
                 break;
             case DeviceCommandOperation.Action:
                 await withMiotCallSpan(
-                    { name: SPAN_MIOT_ACTION, device, attributes: { [ATTR_MIOT_SIID]: request.siid, [ATTR_MIOT_AIID]: request.aiid } },
+                    {
+                        method: MIOT_METHOD_ACTION,
+                        device,
+                        attributes: {
+                            [ATTR_MIOT_SIID]: identifierAttribute(request.siid),
+                            [ATTR_MIOT_AIID]: identifierAttribute(request.aiid)
+                        }
+                    },
                     () => miotDevice.callAction(request.siid, request.aiid!, request.value)
                 );
                 break;
@@ -156,7 +246,7 @@ export class DeviceCommandService {
 
         const overrides = await this.modelPropertyOverrideService.getByModel(device.model);
         const spec = await this.simplifiedMiotSpecMapper.map(device.rawSpec, overrides);
-        const resolved = this.resolveCommand(request, device.deviceId, spec);
+        const resolved = this.resolveOrRecordRejection(request, device.deviceId, spec);
 
         const miotDevice = this.registry.getOrCreate(device);
         let value: string | number | undefined;
@@ -165,8 +255,9 @@ export class DeviceCommandService {
             case DeviceCommandOperation.GetProperty:
                 value = await withMiotCallSpan(
                     {
-                        name: SPAN_MIOT_GET_PROPERTIES,
+                        method: MIOT_METHOD_GET_PROPERTIES,
                         device,
+                        propertySource: resolved.property.source,
                         attributes: {
                             ...this.iidAttributes(resolved.property.siid, resolved.property.piid),
                             [ATTR_MIOT_COMMAND]: request.command
@@ -186,8 +277,9 @@ export class DeviceCommandService {
             case DeviceCommandOperation.SetProperty:
                 await withMiotCallSpan(
                     {
-                        name: SPAN_MIOT_SET_PROPERTIES,
+                        method: MIOT_METHOD_SET_PROPERTIES,
                         device,
+                        propertySource: resolved.property.source,
                         attributes: {
                             ...this.iidAttributes(resolved.property.siid, resolved.property.piid),
                             [ATTR_MIOT_COMMAND]: request.command
@@ -207,11 +299,11 @@ export class DeviceCommandService {
             case DeviceCommandOperation.Action:
                 await withMiotCallSpan(
                     {
-                        name: SPAN_MIOT_ACTION,
+                        method: MIOT_METHOD_ACTION,
                         device,
                         attributes: {
-                            [ATTR_MIOT_SIID]: resolved.action.siid,
-                            [ATTR_MIOT_AIID]: resolved.action.aiid,
+                            [ATTR_MIOT_SIID]: identifierAttribute(resolved.action.siid),
+                            [ATTR_MIOT_AIID]: identifierAttribute(resolved.action.aiid),
                             [ATTR_MIOT_COMMAND]: request.command
                         }
                     },
@@ -234,7 +326,36 @@ export class DeviceCommandService {
      * property was being read when the device stopped answering.
      */
     private iidAttributes(siid: number, piid: number): Attributes {
-        return { [ATTR_MIOT_SIID]: siid, [ATTR_MIOT_PIID]: piid };
+        return { [ATTR_MIOT_SIID]: identifierAttribute(siid), [ATTR_MIOT_PIID]: identifierAttribute(piid) };
+    }
+
+    /**
+     * {@link resolveCommand}, with the refusal made observable.
+     *
+     * A spec violation is rejected before the device is addressed, so there is no client span to
+     * hang it on — one would claim a call that never left the process. That leaves the metric as
+     * the only always-on evidence, and it is worth having: `rejected_locally` means Loxone asked
+     * for a key that is in neither the published spec nor the overrides, which is the mirror image
+     * of a device refusal and points at the same table from the other side.
+     */
+    private resolveOrRecordRejection(request: DeviceCommandRequest, deviceId: number, spec: SimplifiedMiotSpec): ResolvedCommand {
+        try {
+            return this.resolveCommand(request, deviceId, spec);
+        } catch (error) {
+            const method = miotMethodOf(request.operation);
+
+            recordMiotLocalRejection({ method });
+            this.logger.warn(`Rejected command '${request.command}' before sending.`, {
+                miotDeviceId: deviceId,
+                property: request.command,
+                operation: request.operation,
+                rpcMethod: method,
+                errorType: MIOT_ERROR_TYPE_VALUE_REJECTED_LOCALLY,
+                reason: error instanceof Error ? error.message : String(error)
+            });
+
+            throw error;
+        }
     }
 
     /**
@@ -286,5 +407,23 @@ export class DeviceCommandService {
                 `Allowed values: ${allowed}`
             );
         }
+    }
+}
+
+/**
+ * The miIO wire method a `DeviceCommandOperation` would have used.
+ *
+ * Needed only on the local-rejection path, where the call is abandoned before the transport
+ * chooses one — without it every rejected command would share a single `rpc.method` and reads
+ * would be indistinguishable from writes in the metric.
+ */
+function miotMethodOf(operation: DeviceCommandOperation): MiotMethod {
+    switch (operation) {
+        case DeviceCommandOperation.SetProperty:
+            return MIOT_METHOD_SET_PROPERTIES;
+        case DeviceCommandOperation.Action:
+            return MIOT_METHOD_ACTION;
+        default:
+            return MIOT_METHOD_GET_PROPERTIES;
     }
 }

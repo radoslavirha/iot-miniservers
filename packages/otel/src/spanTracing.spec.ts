@@ -43,12 +43,12 @@ describe('spanTracing', () => {
 
     describe('withSpan', () => {
         it('Should emit an INTERNAL span with the given name and attributes by default', () => {
-            withSpan({ name: 'work', tracer: TRACER, attributes: { 'miot.device.id': 442 } }, () => undefined);
+            withSpan({ name: 'work', tracer: TRACER, attributes: { 'miot.device.id': '442' } }, () => undefined);
 
             const span = spanNamed('work');
 
             expect(span.kind).toBe(SpanKind.INTERNAL);
-            expect(span.attributes).toMatchObject({ 'miot.device.id': 442 });
+            expect(span.attributes).toMatchObject({ 'miot.device.id': '442' });
         });
 
         it('Should return the callback result', () => {

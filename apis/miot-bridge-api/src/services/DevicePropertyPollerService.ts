@@ -18,6 +18,7 @@ import {
     type JobOutcome
 } from '@radoslavirha/otel';
 import type { Span } from '@opentelemetry/api';
+import { MiotError } from '@radoslavirha/miot-device';
 import {
     ATTR_MIOT_DEVICE_ID,
     ATTR_MIOT_DEVICE_STORAGE_ID,
@@ -26,8 +27,11 @@ import {
     ATTR_MIOT_POLL_INTERVAL_MS,
     ATTR_MIOT_POLL_SUBSCRIPTION_COUNT,
     ATTR_MIOT_PROPERTY_COUNT,
+    identifierAttribute,
     JOB_POLL_DEVICE_PROPERTIES,
     JOB_POLL_SUBSCRIPTIONS_LOAD,
+    miotErrorType,
+    miotStatusCode,
     POLLER_TRACER_NAME,
     SPAN_POLL_DEVICE,
     SPAN_POLL_SUBSCRIPTIONS_LOAD,
@@ -344,7 +348,7 @@ export class DevicePropertyPollerService extends EventEmitter implements OnInit,
                 name: SPAN_POLL_DEVICE,
                 tracer: POLLER_TRACER_NAME,
                 attributes: {
-                    [ATTR_MIOT_DEVICE_STORAGE_ID]: deviceId,
+                    [ATTR_MIOT_DEVICE_STORAGE_ID]: identifierAttribute(deviceId),
                     [ATTR_MIOT_PROPERTY_COUNT]: properties.length
                 }
             },
@@ -356,7 +360,7 @@ export class DevicePropertyPollerService extends EventEmitter implements OnInit,
         try {
             const { miotDeviceId, results } = await this.deviceCommandService.getProperties(deviceId, properties);
 
-            span.setAttribute(ATTR_MIOT_DEVICE_ID, miotDeviceId);
+            span.setAttribute(ATTR_MIOT_DEVICE_ID, identifierAttribute(miotDeviceId));
 
             if (!ObjectUtils.isEnabled(this.configService.config.polling)) {
                 this.logger.info('Device property polling is disabled. Skipping tick.');
@@ -368,6 +372,11 @@ export class DevicePropertyPollerService extends EventEmitter implements OnInit,
             const now = Date.now();
 
             for (const { key, value: newValue, code } of results) {
+                // Refusals are not dropped here any more, they are just not *dispatched*: a
+                // property the device said no to has no value to publish. `DeviceCommandService`
+                // has already counted each one on `miot.property.rejections`, put the keys on the
+                // read's span, and logged it with the code and the provenance — see
+                // `reportRejectedProperties`.
                 if (code !== 0) {
                     continue;
                 }
@@ -407,12 +416,28 @@ export class DevicePropertyPollerService extends EventEmitter implements OnInit,
             const count = (this._errorCounts.get(deviceId) ?? 0) + 1;
             this._errorCounts.set(deviceId, count);
 
+            // Structured, not just interpolated. The message still reads for a human, but the
+            // fields are what makes `errorType` and `statusCode` filterable in Loki instead of
+            // requiring a regex over prose — and `trace_id` is stamped automatically from the
+            // active span, so a matching line links straight back to the read that produced it.
+            const fault = {
+                deviceId,
+                errorType: miotErrorType(error),
+                statusCode: miotStatusCode(error),
+                stampRefreshed: MiotError.is(error) ? error.stampRefreshed : undefined,
+                consecutiveErrors: count,
+                reason: message
+            };
+
             if (count >= maxErrors) {
-                this.logger.warn(`Device ${deviceId} failed ${maxErrors} times in a row (last: ${message}). Pausing for ${skipCycles} cycles.`, { deviceId });
+                this.logger.warn(
+                    `Device ${deviceId} failed ${maxErrors} times in a row (last: ${message}). Pausing for ${skipCycles} cycles.`,
+                    { ...fault, pausedForCycles: skipCycles }
+                );
                 this._errorCounts.delete(deviceId);
                 this._skipCycles.set(deviceId, skipCycles);
             } else {
-                this.logger.warn(`Device ${deviceId} encountered an error (${count}/${maxErrors}): ${message}`, { deviceId });
+                this.logger.warn(`Device ${deviceId} encountered an error (${count}/${maxErrors}): ${message}`, fault);
             }
 
             // The fault is swallowed here by design, so the tick reports success and its span is

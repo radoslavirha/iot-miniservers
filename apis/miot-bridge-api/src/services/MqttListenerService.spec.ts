@@ -127,7 +127,7 @@ describe('MqttListenerService', () => {
             expect(span.attributes).toMatchObject({
                 'messaging.system': 'mqtt',
                 'messaging.destination.name': COMMAND_TOPIC,
-                'miot.device.id': DEVICE_ID,
+                'miot.device.id': String(DEVICE_ID),
                 'miot.command': 'vacuum:status',
                 'miot.operation': DeviceCommandOperation.GetProperty
             });

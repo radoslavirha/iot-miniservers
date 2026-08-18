@@ -11,7 +11,7 @@ import { MqttTracingService } from './MqttTracingService.js';
 import { DeviceCommandService } from './DeviceCommandService.js';
 import { DeviceCommandRequest } from '../models/DeviceCommandRequest.js';
 import { BaseLogger, Logger } from '@radoslavirha/tsed-logger';
-import { ATTR_MIOT_COMMAND, ATTR_MIOT_DEVICE_ID, ATTR_MIOT_OPERATION } from '../otel/telemetry.js';
+import { ATTR_MIOT_COMMAND, ATTR_MIOT_DEVICE_ID, ATTR_MIOT_OPERATION, identifierAttribute } from '../otel/telemetry.js';
 
 /** QoS used for both the command subscription and the response publish. */
 const QOS = 1;
@@ -93,7 +93,7 @@ export class MqttListenerService implements OnInit {
                 qos: packet.qos,
                 bodySize: payload.length,
                 userProperties: packet.properties?.userProperties,
-                attributes: { [ATTR_MIOT_DEVICE_ID]: deviceId }
+                attributes: { [ATTR_MIOT_DEVICE_ID]: identifierAttribute(deviceId) }
             },
             async (span) => {
                 const result = await this.handleMessage(deviceId, payload, span);
@@ -116,7 +116,7 @@ export class MqttListenerService implements OnInit {
                 topicTemplate: this.mqttTopicService.getResponseTopicTemplate(),
                 qos: QOS,
                 bodySize: Buffer.byteLength(result),
-                attributes: { [ATTR_MIOT_DEVICE_ID]: deviceId }
+                attributes: { [ATTR_MIOT_DEVICE_ID]: identifierAttribute(deviceId) }
             },
             async (userProperties, span) => {
                 try {

@@ -254,10 +254,27 @@ recurs every tick shows up in any of them. Three reusable instruments — `job.r
 static** `job.name`. **Traces are head-sampled, metrics never are:** a run passed
 `suppressTrace: true` emits no span and still records its duration and outcome.
 
-Full conventions — span kinds, naming, name constants in `src/otel/telemetry.ts`, the metric set
-and its cardinality budget, why the namespace is `job.*` and not `faas.*`, which metrics a
-self-rescheduling vs fixed-rate scheduler can honestly emit, and the assertions a test must make —
-are in `.apm/skills/instrument-entry-point/SKILL.md`.
+**Outbound miot calls use `withMiotCallSpan`, which emits the CLIENT span *and*
+`miot.client.call.duration` from one call** — the same pairing as `runJob`, and for a stronger
+reason: the poller swallows device faults into back-off, so a device that has been refusing a
+property for a week produces no failing span and no failing job outcome. miIO is JSON-RPC over UDP,
+so it uses the RPC conventions as they are — `rpc.system.name`, `rpc.method`,
+`rpc.response.status_code` (a **string**), and `error.type` for the outcome
+(`timeout` / `device_error` / `transport_error` / `rejected_locally`, absent on success). A bulk
+read can succeed while refusing individual properties; those land on `miot.property.rejections`,
+keyed by the code and by `miot.property.source` = `spec` | `override`, which is what says whether a
+refused entry is the published spec's fault or ours.
+
+**Span attribute types are a repo-local rule: identifiers are strings, quantities are numbers.**
+Every identifier goes through `identifierAttribute()` from `src/otel/telemetry.ts` —
+`miot.device.id`, `miot.device.storage_id`, `miot.siid`/`piid`/`aiid` — while counts, intervals and
+ports stay numeric. A numeric identifier reaches Tempo as an `intValue` and crashes any Grafana
+table panel that `select()`s it, because the attribute is sparse across a trace's spans.
+
+Full conventions — span kinds, naming, name constants in `src/otel/telemetry.ts`, attribute types,
+the metric set and its cardinality budget, why the namespace is `job.*` and not `faas.*`, which
+metrics a self-rescheduling vs fixed-rate scheduler can honestly emit, and the assertions a test
+must make — are in `.apm/skills/instrument-entry-point/SKILL.md`.
 
 ## Adding a New UI
 

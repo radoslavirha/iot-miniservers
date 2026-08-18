@@ -1,4 +1,11 @@
 import { MiotTransport } from './MiotTransport.js';
+import {
+    MiotError,
+    MIOT_METHOD_ACTION,
+    MIOT_METHOD_GET_PROPERTIES,
+    MIOT_METHOD_SET_PROPERTIES,
+    type MiotMethod
+} from './MiotError.js';
 import { CONSOLE_LOGGER } from './consoleLogger.js';
 import type { DiscoverResult, GetPropertiesResult, ILogger, MiotDeviceOptions, StampState } from './types.js';
 
@@ -66,21 +73,21 @@ export class MiotDevice {
     }
 
     async getProperty(siid: number, piid: number): Promise<string | number | undefined> {
-        return this.runWithStamp(async (stamp, deviceId) => {
+        return this.runWithStamp(MIOT_METHOD_GET_PROPERTIES, async (stamp, deviceId) => {
             const value = await this.transport.getProperty(deviceId, stamp, siid, piid);
             return { result: value };
         });
     }
 
     async setProperty(siid: number, piid: number, value: string | number): Promise<void> {
-        await this.runWithStamp(async (stamp, deviceId) => {
+        await this.runWithStamp(MIOT_METHOD_SET_PROPERTIES, async (stamp, deviceId) => {
             await this.transport.setProperty(deviceId, stamp, siid, piid, value);
             return { result: undefined };
         });
     }
 
     async callAction(siid: number, aiid: number, args?: unknown): Promise<void> {
-        await this.runWithStamp(async (stamp, deviceId) => {
+        await this.runWithStamp(MIOT_METHOD_ACTION, async (stamp, deviceId) => {
             await this.transport.callAction(deviceId, stamp, siid, aiid, args);
             return { result: undefined };
         });
@@ -96,7 +103,7 @@ export class MiotDevice {
         props: Array<{ siid: number; piid: number }>,
         maxChunkSize = 14
     ): Promise<GetPropertiesResult[]> {
-        return this.runWithStamp(async (stamp, deviceId) => {
+        return this.runWithStamp(MIOT_METHOD_GET_PROPERTIES, async (stamp, deviceId) => {
             const { results, finalStamp } = await this.transport.getProperties(deviceId, stamp, props, maxChunkSize);
             return { result: results, finalStamp };
         });
@@ -134,8 +141,18 @@ export class MiotDevice {
      * `fn` must return `{ result, finalStamp? }`. When `finalStamp` is
      * provided (multi-chunk operations), it is used as the persisted stamp
      * instead of the stamp passed to `fn`.
+     *
+     * **The retry is unconditional, and that is worth knowing when reading telemetry.** A stale
+     * stamp and a refused property are indistinguishable here, so a `device_error` such as
+     * `-4004` — which will never succeed on a second attempt — still costs a handshake plus a
+     * second round trip before it surfaces. The failure that does surface says so via
+     * {@link MiotError.stampRefreshed}; the app puts that on the call span.
+     *
+     * @param method - The miIO method `fn` will call, so a failure keeps naming it after the
+     *                 stamp-refresh retry has re-thrown.
      */
     private async runWithStamp<T>(
+        method: MiotMethod,
         fn: (stamp: number, deviceId: number) => Promise<{ result: T; finalStamp?: number }>
     ): Promise<T> {
         const deviceId = this.requireDeviceId();
@@ -149,7 +166,7 @@ export class MiotDevice {
         }
 
         if (!this._stampState) {
-            return this.runWithFreshStamp(deviceId, fn);
+            return this.runWithFreshStamp(method, deviceId, fn);
         }
 
         try {
@@ -165,10 +182,11 @@ export class MiotDevice {
             this.logger.warn(`Sending command failed`, { deviceId, reason, retryingWithFreshStamp: true });
         }
 
-        return this.runWithFreshStamp(deviceId, fn);
+        return this.runWithFreshStamp(method, deviceId, fn);
     }
 
     private async runWithFreshStamp<T>(
+        method: MiotMethod,
         deviceId: number,
         fn: (stamp: number, deviceId: number) => Promise<{ result: T; finalStamp?: number }>
     ): Promise<T> {
@@ -180,9 +198,19 @@ export class MiotDevice {
             await this.updateStamp(finalStamp ?? stamp);
             return result;
         } catch (retryError) {
-            const reason = retryError instanceof Error ? retryError.message : String(retryError);
-            this.logger.error(`Operation failed after stamp refresh`, { deviceId, reason });
-            throw new Error(`Operation failed after stamp refresh for device ${deviceId}: ${reason}`);
+            // Re-thrown as a MiotError that keeps `kind` and `code`. The previous
+            // `new Error(...)` here flattened a `-4004` refusal into prose, which is exactly the
+            // information the app needs to tell "our override is wrong" from "the device is
+            // asleep".
+            const failure = MiotError.afterStampRefresh(retryError, method, deviceId);
+            this.logger.error(`Operation failed after stamp refresh`, {
+                deviceId,
+                method: failure.method,
+                kind: failure.kind,
+                code: failure.code,
+                reason: retryError instanceof Error ? retryError.message : String(retryError)
+            });
+            throw failure;
         }
     }
 

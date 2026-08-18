@@ -1,5 +1,5 @@
 import { Service, Scope, ProviderScope } from '@tsed/di';
-import { MiotDevice } from '@radoslavirha/miot-device';
+import { MiotDevice, MIOT_METHOD_HANDSHAKE } from '@radoslavirha/miot-device';
 import { MiotSpecV2 } from '../models/miot-spec-v2/index.js';
 import { MiotSpecV2Endpoint } from '../endpoints/miot-spec-v2/MiotSpecV2Endpoint.js';
 import { MiotSpecV2Mapper } from '../mappers/MiotSpecV2Mapper.js';
@@ -8,7 +8,6 @@ import { SimplifiedMiotSpecV2Mapper } from '../mappers/SimplifiedMiotSpecV2Mappe
 import { ModelPropertyOverrideService } from './ModelPropertyOverrideService.js';
 import { Logger } from '@radoslavirha/tsed-logger';
 import { withMiotCallSpan } from '../otel/miotTracing.js';
-import { SPAN_MIOT_HANDSHAKE } from '../otel/telemetry.js';
 
 /** Minimal device address info accepted by discover(). Both DeviceDiscoverRequest and DeviceRequest satisfy this. */
 export interface DeviceAddressInput {
@@ -48,7 +47,7 @@ export class DeviceDiscoveryService {
         // seconds of `dgram` timeout, and this span is the only thing that names what was
         // being waited on.
         const { deviceId, stamp } = await withMiotCallSpan(
-            { name: SPAN_MIOT_HANDSHAKE, device: { address: request.address } },
+            { method: MIOT_METHOD_HANDSHAKE, device: { address: request.address } },
             () =>
                 new MiotDevice({
                     address: request.address,

@@ -253,9 +253,9 @@ describe('mqttTracing', () => {
         });
 
         it('Should merge application attributes onto the span', () => {
-            withMqttPublishSpan({ ...OPTIONS, attributes: { 'miot.device.id': 442 } }, () => undefined);
+            withMqttPublishSpan({ ...OPTIONS, attributes: { 'miot.device.id': '442' } }, () => undefined);
 
-            expect(spanNamed(`publish ${TEMPLATE}`).attributes['miot.device.id']).toBe(442);
+            expect(spanNamed(`publish ${TEMPLATE}`).attributes['miot.device.id']).toBe('442');
         });
     });
 });

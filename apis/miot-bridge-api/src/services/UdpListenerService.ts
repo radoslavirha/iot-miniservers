@@ -21,6 +21,7 @@ import {
     ATTR_MIOT_COMMAND,
     ATTR_MIOT_DEVICE_ID,
     ATTR_MIOT_OPERATION,
+    identifierAttribute,
     SPAN_UDP_COMMAND,
     UDP_TRACER_NAME
 } from '../otel/telemetry.js';
@@ -210,7 +211,7 @@ export class UdpListenerService implements OnInit, OnDestroy {
         }
 
         span.setAttributes({
-            [ATTR_MIOT_DEVICE_ID]: request.deviceId,
+            [ATTR_MIOT_DEVICE_ID]: identifierAttribute(request.deviceId),
             [ATTR_MIOT_COMMAND]: request.command,
             [ATTR_MIOT_OPERATION]: request.operation
         });

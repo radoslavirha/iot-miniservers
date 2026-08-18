@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { MiotDevice } from './MiotDevice.js';
+import { MiotError, MIOT_ERROR_DEVICE_ERROR, MIOT_ERROR_TRANSPORT_ERROR, MIOT_METHOD_GET_PROPERTIES } from './MiotError.js';
 import type { DiscoverResult, GetPropertiesResult, IStampStore, StampState } from './types.js';
 
 // ---------------------------------------------------------------------------
@@ -169,6 +170,41 @@ describe('MiotDevice', () => {
             device.setStampState({ stamp: STAMP, updatedAt: Date.now() });
 
             await expect(device.getProperty(2, 1)).rejects.toThrow('Operation failed after stamp refresh');
+        });
+
+        // The retry is unconditional, so a refusal the device will repeat verbatim still goes
+        // round twice. What must not happen is the code being lost on the way back out: it is the
+        // only thing that separates "this property does not exist on the device" from "the device
+        // is asleep", and the app puts it straight onto `rpc.response.status_code`.
+        it('preserves the device error code through the stamp-refresh retry', async () => {
+            mockGetProperty.mockRejectedValue(new MiotError('Device error -4004: property not exist', {
+                kind: MIOT_ERROR_DEVICE_ERROR,
+                method: MIOT_METHOD_GET_PROPERTIES,
+                code: -4004
+            }));
+
+            const device = new MiotDevice({ address: '1.2.3.4', token: TOKEN, deviceId: DEVICE_ID });
+            device.setStampState({ stamp: STAMP, updatedAt: Date.now() });
+
+            const error = await device.getProperty(2, 1).catch((err: unknown) => err);
+
+            expect(MiotError.is(error)).toBe(true);
+            expect((error as MiotError).kind).toBe(MIOT_ERROR_DEVICE_ERROR);
+            expect((error as MiotError).code).toBe(-4004);
+            expect((error as MiotError).method).toBe(MIOT_METHOD_GET_PROPERTIES);
+            expect((error as MiotError).stampRefreshed).toBe(true);
+        });
+
+        it('classifies a non-MiotError from the retry as a transport error', async () => {
+            mockGetProperty.mockRejectedValue(new Error('Still failing'));
+
+            const device = new MiotDevice({ address: '1.2.3.4', token: TOKEN, deviceId: DEVICE_ID });
+            device.setStampState({ stamp: STAMP, updatedAt: Date.now() });
+
+            const error = await device.getProperty(2, 1).catch((err: unknown) => err);
+
+            expect((error as MiotError).kind).toBe(MIOT_ERROR_TRANSPORT_ERROR);
+            expect((error as MiotError).stampRefreshed).toBe(true);
         });
     });
 

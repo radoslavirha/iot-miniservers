@@ -1,6 +1,7 @@
 import { createCipheriv, createHash } from 'crypto';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { HEADER_SIZE } from './Constants.js';
+import { MiotError, MIOT_ERROR_DEVICE_ERROR, MIOT_ERROR_TIMEOUT, MIOT_ERROR_TRANSPORT_ERROR, MIOT_METHOD_ACTION, MIOT_METHOD_GET_PROPERTIES } from './MiotError.js';
 import { MiotTransport } from './MiotTransport.js';
 
 const TOKEN_HEX = '00112233445566778899aabbccddeeff';
@@ -227,6 +228,24 @@ describe('MiotTransport', () => {
             await expect(transport.getProperty(DEVICE_ID, STAMP, 2, 3)).rejects.toThrow('get_properties failed');
         });
 
+        // miIO puts a per-property refusal in the *result*, not the error envelope. It is the same
+        // "the device said no" answer and carries the same class of code, so it is classified the
+        // same way — see MiotError.code for why both wire positions land in one field.
+        it('classifies a non-zero per-property code as a device error carrying that code', async () => {
+            const response = buildCommandResponse({
+                id: 1,
+                result: [{ did: String(DEVICE_ID), siid: 2, piid: 3, code: -4004 }]
+            });
+            createSocketMock.mockReturnValue(createMockSocket(response));
+
+            const transport = new MiotTransport('192.168.1.1', TOKEN_HEX);
+            const error = await transport.getProperty(DEVICE_ID, STAMP, 2, 3).catch((err: unknown) => err);
+
+            expect((error as MiotError).kind).toBe(MIOT_ERROR_DEVICE_ERROR);
+            expect((error as MiotError).code).toBe(-4004);
+            expect((error as MiotError).method).toBe(MIOT_METHOD_GET_PROPERTIES);
+        });
+
         it('throws when result is missing', async () => {
             const response = buildCommandResponse({ id: 1, result: [] });
             createSocketMock.mockReturnValue(createMockSocket(response));
@@ -357,6 +376,50 @@ describe('MiotTransport', () => {
 
             const transport = new MiotTransport('192.168.1.1', TOKEN_HEX);
             await expect(transport.callAction(DEVICE_ID, STAMP, 2, 1)).rejects.toThrow('Device error -9999: Device error');
+        });
+
+        // The whole point of the typed error: a JSON-RPC `error` envelope is the device answering
+        // "no, and here is why". Asserting only the message would let the code be dropped again
+        // without a test noticing.
+        it('classifies a JSON-RPC error envelope as a device error carrying its code', async () => {
+            const response = buildCommandResponse({ id: 1, error: { code: -9999, message: 'Device error' } });
+            createSocketMock.mockReturnValue(createMockSocket(response));
+
+            const transport = new MiotTransport('192.168.1.1', TOKEN_HEX);
+            const error = await transport.callAction(DEVICE_ID, STAMP, 2, 1).catch((err: unknown) => err);
+
+            expect(MiotError.is(error)).toBe(true);
+            expect((error as MiotError).kind).toBe(MIOT_ERROR_DEVICE_ERROR);
+            expect((error as MiotError).code).toBe(-9999);
+            expect((error as MiotError).method).toBe(MIOT_METHOD_ACTION);
+        });
+
+        it('classifies a socket fault as a transport error with no code', async () => {
+            createSocketMock.mockReturnValue(createMockSocket(undefined, new Error('EHOSTUNREACH')));
+
+            const transport = new MiotTransport('192.168.1.1', TOKEN_HEX);
+            const error = await transport.callAction(DEVICE_ID, STAMP, 2, 1).catch((err: unknown) => err);
+
+            expect((error as MiotError).kind).toBe(MIOT_ERROR_TRANSPORT_ERROR);
+            expect((error as MiotError).method).toBe(MIOT_METHOD_ACTION);
+            expect((error as MiotError).code).toBeUndefined();
+        });
+
+        // Silence, not a refusal. There is no response to read a code from, and that difference is
+        // the whole reason `timeout` and `device_error` are separate members.
+        it('classifies no response at all as a timeout with no code', async () => {
+            vi.useFakeTimers();
+            createSocketMock.mockReturnValue(createMockSocket());
+
+            const transport = new MiotTransport('192.168.1.1', TOKEN_HEX);
+            const pending = transport.callAction(DEVICE_ID, STAMP, 2, 1).catch((err: unknown) => err);
+            await vi.advanceTimersByTimeAsync(10_000);
+            const error = await pending;
+            vi.useRealTimers();
+
+            expect((error as MiotError).kind).toBe(MIOT_ERROR_TIMEOUT);
+            expect((error as MiotError).method).toBe(MIOT_METHOD_ACTION);
+            expect((error as MiotError).code).toBeUndefined();
         });
 
         it('rejects when send callback returns an error', async () => {

@@ -10,7 +10,7 @@ import { ConfigService } from './ConfigService.js';
 import { MqttTopicService } from './MqttTopicService.js';
 import { MqttTracingService } from './MqttTracingService.js';
 import { BaseLogger, Logger } from '@radoslavirha/tsed-logger';
-import { ATTR_MIOT_DEVICE_ID, ATTR_MIOT_PROPERTY } from '../otel/telemetry.js';
+import { ATTR_MIOT_DEVICE_ID, ATTR_MIOT_PROPERTY, identifierAttribute } from '../otel/telemetry.js';
 
 /** QoS used for outbound notification publishes. */
 const QOS = 1;
@@ -75,7 +75,7 @@ export class NotificationDispatchService {
                 topicTemplate: this.mqttTopicService.getNotificationsTopicTemplate(),
                 qos: QOS,
                 bodySize: Buffer.byteLength(message),
-                attributes: { [ATTR_MIOT_DEVICE_ID]: payload.deviceId, [ATTR_MIOT_PROPERTY]: payload.property }
+                attributes: { [ATTR_MIOT_DEVICE_ID]: identifierAttribute(payload.deviceId), [ATTR_MIOT_PROPERTY]: payload.property }
             },
             async (userProperties, span) => {
                 try {

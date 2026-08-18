@@ -91,7 +91,7 @@ describe('NotificationDispatchService', () => {
             'messaging.client.id': 'miot-bridge',
             'server.address': 'server.home',
             'server.port': 1883,
-            'miot.device.id': DEVICE_ID,
+            'miot.device.id': String(DEVICE_ID),
             'miot.property': 'vacuum:status'
         });
     });

@@ -139,7 +139,7 @@ describe('UdpListenerService', () => {
                 'network.transport': 'udp',
                 'network.peer.address': '127.0.0.1',
                 'network.local.port': port,
-                'miot.device.id': DEVICE_ID,
+                'miot.device.id': String(DEVICE_ID),
                 'miot.command': COMMAND,
                 'miot.operation': DeviceCommandOperation.GetProperty
             });

@@ -1,6 +1,17 @@
 import { createSocket } from 'dgram';
 import { CommonUtils } from '@radoslavirha/utils';
 import { MIOT_DEFAULT_PORT } from './Constants.js';
+import {
+    MiotError,
+    MIOT_ERROR_DEVICE_ERROR,
+    MIOT_ERROR_TIMEOUT,
+    MIOT_ERROR_TRANSPORT_ERROR,
+    MIOT_METHOD_ACTION,
+    MIOT_METHOD_GET_PROPERTIES,
+    MIOT_METHOD_HANDSHAKE,
+    MIOT_METHOD_SET_PROPERTIES,
+    type MiotMethod
+} from './MiotError.js';
 import { CONSOLE_LOGGER } from './consoleLogger.js';
 import { IncomingPacket, OutgoingPacket } from './packet/index.js';
 import type { DiscoverResult, GetPropertiesResult, ILogger } from './types.js';
@@ -17,6 +28,44 @@ interface MiotResponse {
     id: number;
     result?: string | number | unknown;
     error?: { code: number; message: string };
+}
+
+/** A miIO request body. `method` is typed so it can be carried onto the failure unchanged. */
+interface MiotRequestPayload extends Record<string, unknown> {
+    method: MiotMethod;
+    params: unknown;
+}
+
+/**
+ * A failure of the packet exchange rather than of the device: a socket error, a failed `send`, or
+ * a response that would not decrypt or parse.
+ *
+ * Every call site passes a raw throw from `dgram` or from packet parsing, never an
+ * already-classified failure — a device refusal is `reject`ed directly and never reaches a
+ * `catch` here. A late socket error arriving after the timeout already settled is dropped by the
+ * `settled` guard in `done`, so the timeout keeps its classification without needing one here.
+ */
+function transportError(method: MiotMethod, cause: unknown): MiotError {
+    return new MiotError(cause instanceof Error ? cause.message : String(cause), {
+        kind: MIOT_ERROR_TRANSPORT_ERROR,
+        method,
+        cause
+    });
+}
+
+/**
+ * A per-property refusal on a single-property call.
+ *
+ * The envelope was fine; the device answered with a non-zero `code` for this one property, which
+ * is the answer that says whether a spec entry is real. A missing result item has no code to
+ * report and stays `undefined` rather than being given a fake one.
+ */
+function propertyError(method: MiotMethod, code: number | undefined): MiotError {
+    return new MiotError(`${method} failed: code ${code ?? 'unknown'}`, {
+        kind: MIOT_ERROR_DEVICE_ERROR,
+        method,
+        code
+    });
 }
 
 /** UDP command/handshake timeout in milliseconds. */
@@ -63,7 +112,10 @@ export class MiotTransport {
             };
 
             const timer = setTimeout(() => {
-                done(new Error(`Handshake timeout: no response from ${this.address}:${this.port}`));
+                done(new MiotError(`Handshake timeout: no response from ${this.address}:${this.port}`, {
+                    kind: MIOT_ERROR_TIMEOUT,
+                    method: MIOT_METHOD_HANDSHAKE
+                }));
             }, MIOT_TIMEOUT_MS);
 
             socket.on('message', (msg) => {
@@ -77,19 +129,19 @@ export class MiotTransport {
                     const { deviceId, stamp } = IncomingPacket.parseHello(msg);
                     resolve({ deviceId, stamp });
                 } catch (err) {
-                    reject(err);
+                    reject(transportError(MIOT_METHOD_HANDSHAKE, err));
                 }
             });
 
             socket.on('error', (err) => {
                 clearTimeout(timer);
-                done(err);
+                done(transportError(MIOT_METHOD_HANDSHAKE, err));
             });
 
             socket.send(hello, 0, hello.length, this.port, this.address, (err) => {
                 if (err) {
                     clearTimeout(timer);
-                    done(err);
+                    done(transportError(MIOT_METHOD_HANDSHAKE, err));
                 }
             });
         });
@@ -102,7 +154,7 @@ export class MiotTransport {
         const did = String(deviceId);
         this.logger.debug(`get_properties`, { deviceId, siid, piid, stamp });
         const response = await this.sendCommand(deviceId, stamp, {
-            method: 'get_properties',
+            method: MIOT_METHOD_GET_PROPERTIES,
             params: [{ did, siid, piid }]
         });
 
@@ -110,7 +162,7 @@ export class MiotTransport {
         const item = results?.[0];
         if (CommonUtils.isNil(item) || item.code !== 0) {
             this.logger.error(`get_properties failed`, { deviceId, siid, piid, code: item?.code ?? 'unknown' });
-            throw new Error(`get_properties failed: code ${item?.code ?? 'unknown'}`);
+            throw propertyError(MIOT_METHOD_GET_PROPERTIES, item?.code);
         }
         return item.value;
     }
@@ -137,7 +189,7 @@ export class MiotTransport {
             const chunk = props.slice(i, i + maxChunkSize);
 
             const response = await this.sendCommand(deviceId, currentStamp, {
-                method: 'get_properties',
+                method: MIOT_METHOD_GET_PROPERTIES,
                 params: chunk.map(p => ({ did, siid: p.siid, piid: p.piid }))
             });
 
@@ -161,7 +213,7 @@ export class MiotTransport {
         const did = String(deviceId);
         this.logger.debug(`set_properties`, { deviceId, siid, piid, value, stamp });
         const response = await this.sendCommand(deviceId, stamp, {
-            method: 'set_properties',
+            method: MIOT_METHOD_SET_PROPERTIES,
             params: [{ did, siid, piid, value }]
         });
 
@@ -169,7 +221,7 @@ export class MiotTransport {
         const item = results?.[0];
         if (CommonUtils.isNil(item) || item.code !== 0) {
             this.logger.error(`set_properties failed`, { deviceId, siid, piid, code: item?.code ?? 'unknown' });
-            throw new Error(`set_properties failed: code ${item?.code ?? 'unknown'}`);
+            throw propertyError(MIOT_METHOD_SET_PROPERTIES, item?.code);
         }
     }
 
@@ -191,13 +243,14 @@ export class MiotTransport {
 
         this.logger.debug(`action`, { deviceId, siid, aiid, stamp });
         await this.sendCommand(deviceId, stamp, {
-            method: 'action',
+            method: MIOT_METHOD_ACTION,
             params: { did, siid, aiid, in: inArgs }
         });
     }
 
-    private async sendCommand(deviceId: number, stamp: number, payload: Record<string, unknown>): Promise<MiotResponse> {
-        this.logger.debug(`Sending command`, { deviceId, method: payload['method'], stamp });
+    private async sendCommand(deviceId: number, stamp: number, payload: MiotRequestPayload): Promise<MiotResponse> {
+        const method = payload.method;
+        this.logger.debug(`Sending command`, { deviceId, method, stamp });
         const raw = new OutgoingPacket({ token: this.token, deviceId, stamp, payload }).raw;
 
         return new Promise<MiotResponse>((resolve, reject) => {
@@ -216,7 +269,10 @@ export class MiotTransport {
             };
 
             const timer = setTimeout(() => {
-                done(new Error(`Command timeout: no response from ${this.address}:${this.port}`));
+                done(new MiotError(`Command timeout: no response from ${this.address}:${this.port}`, {
+                    kind: MIOT_ERROR_TIMEOUT,
+                    method
+                }));
             }, MIOT_TIMEOUT_MS);
 
             socket.on('message', (msg) => {
@@ -230,31 +286,43 @@ export class MiotTransport {
                     const packet = new IncomingPacket(msg, this.token);
                     const json = packet.json as unknown as MiotResponse | null;
                     if (CommonUtils.isNil(json)) {
-                        this.logger.error(`Empty response from device`, { address: this.address });
-                        reject(new Error('Empty response from device'));
+                        this.logger.error(`Empty response from device`, { address: this.address, method });
+                        reject(new MiotError('Empty response from device', { kind: MIOT_ERROR_TRANSPORT_ERROR, method }));
                         return;
                     }
                     if (CommonUtils.notNil(json.error)) {
-                        this.logger.error(`Device error`, { address: this.address, code: json.error.code, message: json.error.message });
-                        reject(new Error(`Device error ${json.error.code}: ${json.error.message}`));
+                        this.logger.error(`Device error`, {
+                            address: this.address,
+                            method,
+                            code: json.error.code,
+                            message: json.error.message
+                        });
+                        // The code is the payload, not decoration: it is the only thing that
+                        // separates "the device does not implement this property" from "the device
+                        // is busy" from "our token is wrong".
+                        reject(new MiotError(`Device error ${json.error.code}: ${json.error.message}`, {
+                            kind: MIOT_ERROR_DEVICE_ERROR,
+                            method,
+                            code: json.error.code
+                        }));
                         return;
                     }
                     this.logger.debug(`Command response received`, { deviceId, id: json.id });
                     resolve(json);
                 } catch (err) {
-                    reject(err);
+                    reject(transportError(method, err));
                 }
             });
 
             socket.on('error', (err) => {
                 clearTimeout(timer);
-                done(err);
+                done(transportError(method, err));
             });
 
             socket.send(raw, 0, raw.length, this.port, this.address, (err) => {
                 if (err) {
                     clearTimeout(timer);
-                    done(err);
+                    done(transportError(method, err));
                 }
             });
         });

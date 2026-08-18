@@ -13,7 +13,9 @@ import {
     SimpleSpanProcessor,
     type ReadableSpan
 } from '@opentelemetry/sdk-trace-node';
+import { MiotError, MIOT_ERROR_DEVICE_ERROR, MIOT_ERROR_TIMEOUT, MIOT_METHOD_GET_PROPERTIES } from '@radoslavirha/miot-device';
 import { METRIC_JOB_RUN_DURATION, METRIC_JOB_RUN_ITEMS, METRIC_JOB_RUN_SKIPS } from '@radoslavirha/otel';
+import type { BaseLogger } from '@radoslavirha/tsed-logger';
 import { CommonUtils } from '@radoslavirha/utils';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { DeviceNotification } from '../models/notifications/DeviceNotification.js';
@@ -115,7 +117,7 @@ const subscription = (): DeviceNotification =>
 
 const reading = (value: string): GetPropertiesResponse => ({
     miotDeviceId: MIOT_DEVICE_ID,
-    results: [{ key: PROPERTY, siid: 2, piid: 1, value, code: 0 }]
+    results: [{ key: PROPERTY, siid: 2, piid: 1, source: 'spec' as const, value, code: 0 }]
 });
 
 describe('DevicePropertyPollerService', () => {
@@ -241,7 +243,7 @@ describe('DevicePropertyPollerService', () => {
             expect(device.parentSpanContext?.spanId).toBe(tick.spanContext().spanId);
             expect(device.attributes).toMatchObject({
                 'miot.device.storage_id': STORAGE_ID,
-                'miot.device.id': MIOT_DEVICE_ID,
+                'miot.device.id': String(MIOT_DEVICE_ID),
                 'miot.property.count': 1
             });
         });
@@ -395,6 +397,52 @@ describe('DevicePropertyPollerService', () => {
     });
 
     describe('Device failures', () => {
+        /**
+         * Spies on the poller's own child logger.
+         *
+         * `logger.child()` returns a separate instance, so spying on the DI `Logger` sees nothing
+         * the poller writes.
+         */
+        const warnSpy = (): ReturnType<typeof vi.spyOn> =>
+            vi.spyOn((poller as unknown as { logger: BaseLogger }).logger, 'warn');
+
+        // Loki cannot regex a code out of prose reliably, and this is the line an operator lands on
+        // when a device starts misbehaving. The message stays readable; the classification and the
+        // code are fields.
+        it('Should log a device fault with the outcome and the code as structured fields', async () => {
+            const warn = warnSpy();
+            getProperties.mockRejectedValue(new MiotError('Device error -9999: Device error', {
+                kind: MIOT_ERROR_DEVICE_ERROR,
+                method: MIOT_METHOD_GET_PROPERTIES,
+                code: -9999
+            }));
+
+            await start();
+            await vi.waitUntil(() => warn.mock.calls.length > 0);
+
+            expect(warn.mock.calls[0][1]).toMatchObject({
+                deviceId: STORAGE_ID,
+                errorType: 'device_error',
+                statusCode: '-9999',
+                consecutiveErrors: 1
+            });
+        });
+
+        it('Should classify a timeout as timeout with no status code', async () => {
+            const warn = warnSpy();
+            getProperties.mockRejectedValue(new MiotError('Command timeout', {
+                kind: MIOT_ERROR_TIMEOUT,
+                method: MIOT_METHOD_GET_PROPERTIES
+            }));
+
+            await start();
+            await vi.waitUntil(() => warn.mock.calls.length > 0);
+
+            const fields = warn.mock.calls[0][1] as Record<string, unknown>;
+            expect(fields['errorType']).toBe('timeout');
+            expect(fields['statusCode']).toBeUndefined();
+        });
+
         it('Should mark the device span failed and keep polling', async () => {
             getProperties.mockRejectedValue(new Error('Command timeout: no response from 192.168.1.42:54321'));
 
