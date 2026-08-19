@@ -2,8 +2,17 @@ name: iot-miniservers
 version: 1.0.0
 description: APM project for iot-miniservers
 author: Radoslav Irha
+targets:
+  - claude
+  - copilot
 dependencies:
   apm:
     - radoslavirha/toolkit-hub/packages/utils
-  mcp: []
+  mcp:
+    - name: context7
+      registry: false
+      transport: http
+      url: https://mcp.context7.com/mcp
+      headers:
+        CONTEXT7_API_KEY: ${input:context7_api_key}
 scripts: {}

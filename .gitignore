@@ -25,3 +25,5 @@ ui/**/src/**/*.js
 
 .agents
 .claude
+.github/instructions
+.mcp.json
