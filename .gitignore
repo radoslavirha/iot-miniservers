@@ -23,3 +23,5 @@ ui/**/*.d.ts
 ui/**/*.tsbuildinfo
 ui/**/src/**/*.js
 
+.agents
+.claude

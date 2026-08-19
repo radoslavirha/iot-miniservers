@@ -1,13 +1,283 @@
 lockfile_version: '1'
-generated_at: '2026-04-25T05:39:29.561215+00:00'
-dependencies: []
+generated_at: '2026-08-19T19:15:44.711365+00:00'
+apm_version: 0.28.0
+dependencies:
+- repo_url: radoslavirha/toolkit-hub
+  name: utils
+  host: github.com
+  resolved_commit: 313181e10bb797eefa7be32348cf77aecc817bf4
+  version: 0.8.5
+  virtual_path: packages/utils
+  is_virtual: true
+  package_type: apm_package
+  deployed_files:
+  - .agents/skills/using-utils
+  - .agents/skills/using-utils/SKILL.md
+  - .claude/skills/using-utils
+  - .claude/skills/using-utils/SKILL.md
+  deployed_file_hashes:
+    .agents/skills/using-utils/SKILL.md: sha256:6506ee33a27b658de6dcac1f03a2f2c9b45429c962df5fdb9a5b606cf97eb968
+    .claude/skills/using-utils/SKILL.md: sha256:6506ee33a27b658de6dcac1f03a2f2c9b45429c962df5fdb9a5b606cf97eb968
+  content_hash: sha256:29ee520d2d810e3595c7796c526e22401630821e5671e8eea69bcfb4bc8340a6
+  declared_license: MIT
+deployments:
+- kind: project-relative
+  target: agents
+  value: .agents/skills/add-workspace-member
+  runtime: null
+  scope: project
+  owners:
+  - .
+  active_owner: .
+  content_hash: null
+- kind: project-relative
+  target: agents
+  value: .agents/skills/add-workspace-member/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - .
+  active_owner: .
+  content_hash: sha256:24aeb5fbe74906fab08ceba7006ccfd68ede513f088795ec79120c056ff54b2c
+- kind: project-relative
+  target: agents
+  value: .agents/skills/instrument-entry-point
+  runtime: null
+  scope: project
+  owners:
+  - .
+  active_owner: .
+  content_hash: null
+- kind: project-relative
+  target: agents
+  value: .agents/skills/instrument-entry-point/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - .
+  active_owner: .
+  content_hash: sha256:dde43317847d390b4f6d3515d52e8d6ab6d99adce9533f3507f4e99597a80f79
+- kind: project-relative
+  target: agents
+  value: .agents/skills/onboard-to-homelab
+  runtime: null
+  scope: project
+  owners:
+  - .
+  active_owner: .
+  content_hash: null
+- kind: project-relative
+  target: agents
+  value: .agents/skills/onboard-to-homelab/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - .
+  active_owner: .
+  content_hash: sha256:a54228237bc4bd763d183c678b5e907f0f5e324a6ad347579b347e0cac016c84
+- kind: project-relative
+  target: agents
+  value: .agents/skills/update-docs
+  runtime: null
+  scope: project
+  owners:
+  - .
+  active_owner: .
+  content_hash: null
+- kind: project-relative
+  target: agents
+  value: .agents/skills/update-docs/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - .
+  active_owner: .
+  content_hash: sha256:7a1d94bcdfecfdb6dbabde23c41994664a6a343ddc04ed755b847ec60cdcd43e
+- kind: project-relative
+  target: agents
+  value: .agents/skills/using-utils
+  runtime: null
+  scope: project
+  owners:
+  - radoslavirha/toolkit-hub/packages/utils
+  active_owner: radoslavirha/toolkit-hub/packages/utils
+  content_hash: null
+- kind: project-relative
+  target: agents
+  value: .agents/skills/using-utils/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - radoslavirha/toolkit-hub/packages/utils
+  active_owner: radoslavirha/toolkit-hub/packages/utils
+  content_hash: sha256:6506ee33a27b658de6dcac1f03a2f2c9b45429c962df5fdb9a5b606cf97eb968
+- kind: project-relative
+  target: claude
+  value: .claude/rules/react-testing.md
+  runtime: null
+  scope: project
+  owners:
+  - .
+  active_owner: .
+  content_hash: sha256:45a4ab8588aa844636eef05b55e54948497e4394f2cfbc4cacb5ed1544153b68
+- kind: project-relative
+  target: claude
+  value: .claude/rules/tsed-testing.md
+  runtime: null
+  scope: project
+  owners:
+  - .
+  active_owner: .
+  content_hash: sha256:36917ee79d421096a6ac3b99428ae9429e26e08771e80ee8d538ddbb7c48a889
+- kind: project-relative
+  target: claude
+  value: .claude/skills/add-workspace-member
+  runtime: null
+  scope: project
+  owners:
+  - .
+  active_owner: .
+  content_hash: null
+- kind: project-relative
+  target: claude
+  value: .claude/skills/add-workspace-member/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - .
+  active_owner: .
+  content_hash: sha256:24aeb5fbe74906fab08ceba7006ccfd68ede513f088795ec79120c056ff54b2c
+- kind: project-relative
+  target: claude
+  value: .claude/skills/instrument-entry-point
+  runtime: null
+  scope: project
+  owners:
+  - .
+  active_owner: .
+  content_hash: null
+- kind: project-relative
+  target: claude
+  value: .claude/skills/instrument-entry-point/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - .
+  active_owner: .
+  content_hash: sha256:dde43317847d390b4f6d3515d52e8d6ab6d99adce9533f3507f4e99597a80f79
+- kind: project-relative
+  target: claude
+  value: .claude/skills/onboard-to-homelab
+  runtime: null
+  scope: project
+  owners:
+  - .
+  active_owner: .
+  content_hash: null
+- kind: project-relative
+  target: claude
+  value: .claude/skills/onboard-to-homelab/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - .
+  active_owner: .
+  content_hash: sha256:a54228237bc4bd763d183c678b5e907f0f5e324a6ad347579b347e0cac016c84
+- kind: project-relative
+  target: claude
+  value: .claude/skills/update-docs
+  runtime: null
+  scope: project
+  owners:
+  - .
+  active_owner: .
+  content_hash: null
+- kind: project-relative
+  target: claude
+  value: .claude/skills/update-docs/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - .
+  active_owner: .
+  content_hash: sha256:7a1d94bcdfecfdb6dbabde23c41994664a6a343ddc04ed755b847ec60cdcd43e
+- kind: project-relative
+  target: claude
+  value: .claude/skills/using-utils
+  runtime: null
+  scope: project
+  owners:
+  - radoslavirha/toolkit-hub/packages/utils
+  active_owner: radoslavirha/toolkit-hub/packages/utils
+  content_hash: null
+- kind: project-relative
+  target: claude
+  value: .claude/skills/using-utils/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - radoslavirha/toolkit-hub/packages/utils
+  active_owner: radoslavirha/toolkit-hub/packages/utils
+  content_hash: sha256:6506ee33a27b658de6dcac1f03a2f2c9b45429c962df5fdb9a5b606cf97eb968
+- kind: project-relative
+  target: copilot
+  value: .github/instructions/react-testing.instructions.md
+  runtime: null
+  scope: project
+  owners:
+  - .
+  active_owner: .
+  content_hash: sha256:43b715b7aba6c6313f67d6307e53e3ae9f0318f5cb32aae190a7fcbc677cc50a
+- kind: project-relative
+  target: copilot
+  value: .github/instructions/tsed-testing.instructions.md
+  runtime: null
+  scope: project
+  owners:
+  - .
+  active_owner: .
+  content_hash: sha256:4e463eeb75f8e046ac243d4a53f1fc3391e278b18ae224d4f347345859e78807
+- kind: project-relative
+  target: copilot
+  value: .github/skills/onboard-to-homelab
+  runtime: null
+  scope: project
+  owners:
+  - .
+  active_owner: .
+  content_hash: null
 local_deployed_files:
+- .agents/skills/add-workspace-member
+- .agents/skills/add-workspace-member/SKILL.md
+- .agents/skills/instrument-entry-point
+- .agents/skills/instrument-entry-point/SKILL.md
+- .agents/skills/onboard-to-homelab
+- .agents/skills/onboard-to-homelab/SKILL.md
+- .agents/skills/update-docs
+- .agents/skills/update-docs/SKILL.md
 - .claude/rules/react-testing.md
 - .claude/rules/tsed-testing.md
+- .claude/skills/add-workspace-member
+- .claude/skills/add-workspace-member/SKILL.md
+- .claude/skills/instrument-entry-point
+- .claude/skills/instrument-entry-point/SKILL.md
 - .claude/skills/onboard-to-homelab
+- .claude/skills/onboard-to-homelab/SKILL.md
+- .claude/skills/update-docs
+- .claude/skills/update-docs/SKILL.md
+- .github/instructions/react-testing.instructions.md
 - .github/instructions/tsed-testing.instructions.md
 - .github/skills/onboard-to-homelab
 local_deployed_file_hashes:
+  .agents/skills/add-workspace-member/SKILL.md: sha256:24aeb5fbe74906fab08ceba7006ccfd68ede513f088795ec79120c056ff54b2c
+  .agents/skills/instrument-entry-point/SKILL.md: sha256:dde43317847d390b4f6d3515d52e8d6ab6d99adce9533f3507f4e99597a80f79
+  .agents/skills/onboard-to-homelab/SKILL.md: sha256:a54228237bc4bd763d183c678b5e907f0f5e324a6ad347579b347e0cac016c84
+  .agents/skills/update-docs/SKILL.md: sha256:7a1d94bcdfecfdb6dbabde23c41994664a6a343ddc04ed755b847ec60cdcd43e
   .claude/rules/react-testing.md: sha256:45a4ab8588aa844636eef05b55e54948497e4394f2cfbc4cacb5ed1544153b68
   .claude/rules/tsed-testing.md: sha256:36917ee79d421096a6ac3b99428ae9429e26e08771e80ee8d538ddbb7c48a889
+  .claude/skills/add-workspace-member/SKILL.md: sha256:24aeb5fbe74906fab08ceba7006ccfd68ede513f088795ec79120c056ff54b2c
+  .claude/skills/instrument-entry-point/SKILL.md: sha256:dde43317847d390b4f6d3515d52e8d6ab6d99adce9533f3507f4e99597a80f79
+  .claude/skills/onboard-to-homelab/SKILL.md: sha256:a54228237bc4bd763d183c678b5e907f0f5e324a6ad347579b347e0cac016c84
+  .claude/skills/update-docs/SKILL.md: sha256:7a1d94bcdfecfdb6dbabde23c41994664a6a343ddc04ed755b847ec60cdcd43e
+  .github/instructions/react-testing.instructions.md: sha256:43b715b7aba6c6313f67d6307e53e3ae9f0318f5cb32aae190a7fcbc677cc50a
   .github/instructions/tsed-testing.instructions.md: sha256:4e463eeb75f8e046ac243d4a53f1fc3391e278b18ae224d4f347345859e78807
