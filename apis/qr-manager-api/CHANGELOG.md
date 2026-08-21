@@ -1,5 +1,69 @@
 # qr-manager-api
 
+## 0.5.5
+
+### Patch Changes
+
+- [`b14ef8c`](https://github.com/radoslavirha/iot-miniservers/commit/b14ef8cedc63a488bc7dbfb62791601135129443) Thanks [@radoslavirha](https://github.com/radoslavirha)! - Enable the `@radoslavirha/utils` reuse lint rules in every workspace that depends on `utils`.
+  
+  The rules flag a hand-written check that the toolkit already provides a type predicate for —
+  `=== null`, `=== undefined`, `typeof x === 'string' | 'boolean' | 'number' | 'function'`,
+  `instanceof Date`, `Array.isArray`, `JSON.parse(JSON.stringify(...))` — and a `lodash` import that
+  should come from `utils` instead. Each message names the replacement and what it narrows to.
+  
+  They ship from `@radoslavirha/utils/eslint`, **not** `@radoslavirha/config-eslint`, so that a rule
+  and the method it recommends are released together and a project can never be advised to call
+  something its installed version lacks. Nothing needed installing — `utils` is already a dependency
+  at the required version everywhere the rules are now enabled; this is wiring only:
+  
+  ```js
+  import PreferUtils from '@radoslavirha/utils/eslint';
+  
+  export default config(...Config, ...PreferUtils);
+  ```
+  
+  Enabled in the seven workspaces that depend on `utils`, and deliberately not in the four that do
+  not (`health`, `resilience`, `tsed-resilience`, `ui-*`), where the rules would only produce noise.
+  The ruleset already excludes `*.spec.ts`: `expect(Array.isArray(x)).toBe(true)` is asserting a raw
+  fact about a value, and routing it through a toolkit guard would partly test the toolkit.
+  
+  Every finding is fixed rather than suppressed, so the baseline is **zero warnings** and
+  `--max-warnings 0` passes today. That is the point of doing it this way: the rules are graded
+  `warn` because a raw check is occasionally the clearer choice, but a permanently-warning baseline
+  makes the next real finding invisible and forces every reader to re-derive which of the standing
+  warnings were deliberate. A clean baseline keeps the signal, and leaves the option of enforcing it.
+
+- [`8026b4f`](https://github.com/radoslavirha/iot-miniservers/commit/8026b4f7cf12742daf881790796bb06f14e61074) Thanks [@radoslavirha](https://github.com/radoslavirha)! - Update packages
+
+- [`b14ef8c`](https://github.com/radoslavirha/iot-miniservers/commit/b14ef8cedc63a488bc7dbfb62791601135129443) Thanks [@radoslavirha](https://github.com/radoslavirha)! - Use `@radoslavirha/utils` guards instead of hand-written ones in backend code.
+  
+  Every package here already depends on `@radoslavirha/utils`, but a number of call sites still
+  wrote the check by hand: `!== undefined`, `typeof x === 'string'`, `typeof x === 'function'`,
+  `Array.isArray(x)`. The toolkit ships type predicates for all of them, so the hand-written form is
+  a second implementation of something the dependency already provides — and the place the
+  difference shows is narrowing, which the predicates carry and an ad-hoc check only reproduces by
+  accident.
+  
+  All raw guards in the packages that depend on `utils` are now replaced, so the repo is clean under
+  the reuse rules adopted alongside this change. `ui/*` is out of scope — those bundles do not
+  depend on `utils` — as are `health`, `resilience` and `tsed-resilience`, which do not either.
+  
+  Two of the replacements are not the obvious ones, and both would have been behaviour changes:
+  
+  - **`MiotTransport.callAction` keeps its explicit branches** rather than collapsing into
+    `ArrayUtils.toArray`, which looks like a drop-in and is not: `toArray` maps `null` to `[]`, where
+    the existing code wraps it as `[null]` and sends it to the device as an action argument.
+  - **`resolveUrl` keeps its `=== ''` comparisons.** `CommonUtils.isEmpty` covers both cases in one
+    call but returns a plain `boolean`, not a type predicate, so folding the two together would have
+    dropped the narrowing that the following `ABSOLUTE_URL.test(url)` depends on.
+  
+  One site needed restructuring rather than substitution. In `attachRequestLogging`, TypeScript
+  narrows `requestConfig` itself through `requestConfig?._logStartedAt === undefined` — a special
+  rule for optional-chain comparisons that a user-defined predicate does not get. Hoisting the value
+  to a local gives the narrowing something to attach to, and shortens the expression.
+- Updated dependencies [[`b14ef8c`](https://github.com/radoslavirha/iot-miniservers/commit/b14ef8cedc63a488bc7dbfb62791601135129443), [`b14ef8c`](https://github.com/radoslavirha/iot-miniservers/commit/b14ef8cedc63a488bc7dbfb62791601135129443), [`b14ef8c`](https://github.com/radoslavirha/iot-miniservers/commit/b14ef8cedc63a488bc7dbfb62791601135129443)]:
+  - @radoslavirha/otel@0.6.1
+
 ## 0.5.4
 
 ### Patch Changes
