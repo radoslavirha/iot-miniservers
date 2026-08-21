@@ -1,6 +1,6 @@
 {
     "name": "@radoslavirha/tsed-http-provider",
-    "version": "0.2.2",
+    "version": "0.2.3",
     "description": "Ts.ED wiring for @radoslavirha/http-provider: config-driven external API clients with request/response logging",
     "private": true,
     "type": "module",

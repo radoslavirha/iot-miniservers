@@ -1,6 +1,6 @@
 {
     "name": "@radoslavirha/miot-device",
-    "version": "0.6.0",
+    "version": "0.6.1",
     "description": "Stateful MIoT device client with per-device stamp management",
     "private": true,
     "type": "module",
