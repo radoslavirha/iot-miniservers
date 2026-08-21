@@ -4,36 +4,36 @@ packages:
   - ui/*
 
 catalog:
-  '@radoslavirha/config-eslint': ^0.4.4
+  '@radoslavirha/config-eslint': ^0.4.7
   '@radoslavirha/config-tsdown': 0.2.2
-  '@radoslavirha/config-typescript': ^1.1.3
-  '@radoslavirha/config-vitest': ^0.4.3
-  '@radoslavirha/redaction': ^0.2.0
-  '@radoslavirha/tsed-common': ^0.5.4
-  '@radoslavirha/tsed-configuration': ^0.8.0
-  '@radoslavirha/tsed-logger': ^0.6.0
-  '@radoslavirha/tsed-platform': ^4.1.0
-  '@radoslavirha/tsed-swagger': ^9.1.0
-  '@radoslavirha/utils': ^0.8.4
-  '@radoslavirha/tsed-mongoose': ^5.0.4
-  '@types/node': ^26.1.2
+  '@radoslavirha/config-typescript': ^1.1.4
+  '@radoslavirha/config-vitest': ^0.4.5
+  '@radoslavirha/redaction': ^0.2.2
+  '@radoslavirha/tsed-common': ^0.5.7
+  '@radoslavirha/tsed-configuration': ^0.8.4
+  '@radoslavirha/tsed-logger': ^0.6.3
+  '@radoslavirha/tsed-platform': ^5.0.0
+  '@radoslavirha/tsed-swagger': ^9.1.4
+  '@radoslavirha/utils': ^0.9.0
+  '@radoslavirha/tsed-mongoose': ^5.0.7
+  '@types/node': ^26.2.0
   '@types/supertest': ^7.2.1
-  '@vitest/coverage-v8': ^4.1.10
+  '@vitest/coverage-v8': ^4.1.11
   axios: ^1.19.0
   cockatiel: ^4.0.0
   cross-env: ^10.1.0
   dotenv: ^17.4.2
-  esbuild: ^0.28.1
-  eslint: ^10.8.0
-  jose: ^6.2.8
-  mongoose: ^9.9.1
+  esbuild: ^0.28.2
+  eslint: ^10.8.1
+  jose: ^6.2.9
+  mongoose: ^9.9.3
   nodemon: ^3.1.14
   supertest: ^7.2.2
   tsdown: 0.22.14
   tslib: ^2.8.1
   typescript: ^6.0.3
-  typescript-eslint: ^8.66.0
-  vitest: ^4.1.10
+  typescript-eslint: ^8.67.0
+  vitest: ^4.1.11
   zod: 4.4.3
 
 catalogs:
@@ -69,42 +69,42 @@ catalogs:
     '@opentelemetry/semantic-conventions': ^1.43.0
     '@opentelemetry/winston-transport': ^0.31.0
   react:
-    '@testing-library/jest-dom': ^7.0.0
+    '@testing-library/jest-dom': ^7.0.1
     '@testing-library/react': ^16.3.2
-    '@testing-library/user-event': ^14.6.3
+    '@testing-library/user-event': ^14.6.5
     '@types/react': ^19.2.18
     '@types/react-dom': ^19.2.4
-    '@vitejs/plugin-react': ^6.0.5
+    '@vitejs/plugin-react': ^6.1.0
     jsdom: ^30.0.1
     react: ^19.2.8
     react-dom: ^19.2.8
     react-router-dom: ^7.18.2
-    vite: ^8.2.1
+    vite: ^8.2.2
   swc:
     '@swc-node/register': ^1.12.1
     '@swc/cli': ^0.8.1
-    '@swc/core': ^1.15.47
+    '@swc/core': ^1.16.1
     '@swc/helpers': ^0.5.23
   tsed:
-    '@tsed/ajv': ^8.37.1
-    '@tsed/core': ^8.37.1
-    '@tsed/di': ^8.37.1
-    '@tsed/engines': ^8.37.1
-    '@tsed/exceptions': ^8.37.1
-    '@tsed/json-mapper': ^8.37.1
-    '@tsed/mongoose': ^8.37.1
-    '@tsed/openspec': ^8.37.1
-    '@tsed/platform-cache': ^8.37.1
-    '@tsed/platform-exceptions': ^8.37.1
-    '@tsed/platform-express': ^8.37.1
-    '@tsed/platform-http': ^8.37.1
-    '@tsed/platform-middlewares': ^8.37.1
-    '@tsed/platform-params': ^8.37.1
-    '@tsed/platform-response-filter': ^8.37.1
-    '@tsed/platform-views': ^8.37.1
-    '@tsed/schema': ^8.37.1
-    '@tsed/swagger': ^8.37.1
-    '@tsed/testcontainers-mongo': ^8.37.1
+    '@tsed/ajv': ^8.38.0
+    '@tsed/core': ^8.38.0
+    '@tsed/di': ^8.38.0
+    '@tsed/engines': ^8.38.0
+    '@tsed/exceptions': ^8.38.0
+    '@tsed/json-mapper': ^8.38.0
+    '@tsed/mongoose': ^8.38.0
+    '@tsed/openspec': ^8.38.0
+    '@tsed/platform-cache': ^8.38.0
+    '@tsed/platform-exceptions': ^8.38.0
+    '@tsed/platform-express': ^8.38.0
+    '@tsed/platform-http': ^8.38.0
+    '@tsed/platform-middlewares': ^8.38.0
+    '@tsed/platform-params': ^8.38.0
+    '@tsed/platform-response-filter': ^8.38.0
+    '@tsed/platform-views': ^8.38.0
+    '@tsed/schema': ^8.38.0
+    '@tsed/swagger': ^8.38.0
+    '@tsed/testcontainers-mongo': ^8.38.0
     ajv: ^8.20.0
 
 injectWorkspacePackages: true

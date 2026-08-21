@@ -39,12 +39,13 @@ try {
         serverUrl: config.api.publicURL
     });
     const configuration: ServerConfiguration = {
+        rootModule: Server,
         ...config.server,
         api: config.api,
         swagger: new SwaggerProvider(swaggerConfig).config
     };
 
-    const platform = await Platform.bootstrap(Server, configuration);
+    const platform = await Platform.bootstrap(configuration);
     await platform.listen();
 
     // Flips /health/ready to 503, waits for in-flight requests, then stops. Ts.ED has no
