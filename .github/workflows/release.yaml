@@ -36,7 +36,7 @@ jobs:
         id: set-apps-matrix
         shell: bash
         run: |
-          packages='${{ steps.changesets.outputs.publishedPackages }}'
+          packages='${{ steps.changesets.outputs.published-packages }}'
           if [ -z "$packages" ] || [ "$packages" = "null" ] || [ "$packages" = "[]" ]; then
             echo "json={}" >> "$GITHUB_OUTPUT"
             exit 0
