@@ -1,5 +1,11 @@
 # miot-bridge
 
+## 0.22.3
+
+### Patch Changes
+
+- [`3d969d2`](https://github.com/radoslavirha/iot-miniservers/commit/3d969d2d51fa57ff9ac117e7520e836c698b94cf) Thanks [@radoslavirha](https://github.com/radoslavirha)! - Fix changeset release
+
 ## 0.22.2
 
 ### Patch Changes
