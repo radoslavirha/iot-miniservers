@@ -5,20 +5,29 @@
   "enabledManagers": ["npm"],
   "platformAutomerge": false,
   "automergeStrategy": "squash",
+  "prHourlyLimit": 2,
+  "prConcurrentLimit": 10,
   "vulnerabilityAlerts": {
-    "description": "Off deliberately: this repo automates @radoslavirha/* only, and a security PR for any other dependency would land without a matching review workflow. Revisit if the scope below widens.",
-    "enabled": false
+    "description": "Security fixes reach every dependency, not just the toolkit. Renovate injects this object as a `force` block on the vulnerable dep, and force outranks packageRules, so the dashboard-approval rule below cannot hold a security PR back. dependencyDashboardApproval is repeated here on purpose: force carries only the keys written in this object, so without it the rule below would still apply and a security PR would sit waiting for a tick. Dependabot's own automated security fixes are deliberately left disabled so only one bot opens security PRs.",
+    "enabled": true,
+    "dependencyDashboardApproval": false
+  },
+  "lockFileMaintenance": {
+    "description": "Weekly refresh of pnpm-lock.yaml to the newest in-range versions. This is the only mechanism here that reaches transitive dependencies: a version PR bumps declared ranges and a security PR needs a fixed version it is allowed to select, but neither moves a transitive dep whose parent range already permits the fixed version. That is the class of alert that accumulates otherwise.",
+    "enabled": true,
+    "schedule": ["before 6am on monday"],
+    "dependencyDashboardApproval": false
   },
   "packageRules": [
     {
-      "description": "Nothing is automated by default. @radoslavirha/* is opted back in below; every other dependency stays a deliberate manual bump.",
+      "description": "Everything outside the toolkit is listed on the Dependency Dashboard and opens a PR only when ticked there. This replaces a blanket `enabled: false`, which suppressed the lookup entirely and left non-toolkit dependencies invisible rather than merely unautomated.",
       "matchPackageNames": ["**"],
-      "enabled": false
+      "dependencyDashboardApproval": true
     },
     {
-      "description": "toolkit-hub packages are released together and consumed only through the pnpm catalog, so they travel as a single PR. rangeStrategy 'bump' is what makes the catalog track releases at all: under the default 'replace' an in-range release (^0.5.7 -> 0.5.8) would change only pnpm-lock.yaml and the catalog entry would silently drift behind. registryUrls is not redundant with the root .npmrc: Renovate attaches a package file's .npmrc to package.json files only, so catalog entries in pnpm-workspace.yaml would otherwise be looked up on registry.npmjs.org and every one of them would 404.",
+      "description": "toolkit-hub packages are released together and consumed only through the pnpm catalog, so they travel as a single PR, and they are the one group that does not wait for a dashboard tick. rangeStrategy 'bump' is what makes the catalog track releases at all: under the default 'replace' an in-range release (^0.5.7 -> 0.5.8) would change only pnpm-lock.yaml and the catalog entry would silently drift behind. registryUrls is not redundant with the root .npmrc: Renovate attaches a package file's .npmrc to package.json files only, so catalog entries in pnpm-workspace.yaml would otherwise be looked up on registry.npmjs.org and every one of them would 404.",
       "matchPackageNames": ["@radoslavirha/**"],
-      "enabled": true,
+      "dependencyDashboardApproval": false,
       "groupName": "toolkit-hub",
       "groupSlug": "toolkit-hub",
       "rangeStrategy": "bump",
