@@ -1,7 +1,133 @@
 lockfile_version: '1'
-generated_at: '2026-08-19T19:23:48.290246+00:00'
+generated_at: '2026-08-21T17:44:35.419864+00:00'
 apm_version: 0.28.0
 dependencies:
+- repo_url: radoslavirha/toolkit-hub
+  name: toolkit-adoption
+  host: github.com
+  resolved_commit: 19028f3612299462a9fcad73c01bc762f6489948
+  version: 0.1.0
+  virtual_path: apm-plugins/adoption
+  is_virtual: true
+  package_type: apm_package
+  deployed_files:
+  - .agents/skills/adopting-toolkit-hub
+  - .agents/skills/adopting-toolkit-hub/SKILL.md
+  - .claude/skills/adopting-toolkit-hub
+  - .claude/skills/adopting-toolkit-hub/SKILL.md
+  deployed_file_hashes:
+    .agents/skills/adopting-toolkit-hub/SKILL.md: sha256:0a8beb3fb375e8ca2ccdb39b727d542796c06d4d8c98f5d14722009be90ecd6e
+    .claude/skills/adopting-toolkit-hub/SKILL.md: sha256:0a8beb3fb375e8ca2ccdb39b727d542796c06d4d8c98f5d14722009be90ecd6e
+  content_hash: sha256:7bb434dc80c451feb3fea504e0408a920c2552a83911466781a70ed0a90d2e4e
+  declared_license: MIT
+- repo_url: radoslavirha/toolkit-hub
+  name: tsed-service
+  host: github.com
+  resolved_commit: 19028f3612299462a9fcad73c01bc762f6489948
+  version: 0.2.0
+  virtual_path: apm-plugins/tsed-service
+  is_virtual: true
+  package_type: apm_package
+  deployed_files:
+  - .agents/skills/building-a-tsed-service
+  - .agents/skills/building-a-tsed-service/SKILL.md
+  - .claude/skills/building-a-tsed-service
+  - .claude/skills/building-a-tsed-service/SKILL.md
+  deployed_file_hashes:
+    .agents/skills/building-a-tsed-service/SKILL.md: sha256:d0d1c490ef94d02b58019c8688a354d5b9298405aaa9eb2ec7d72127ae390775
+    .claude/skills/building-a-tsed-service/SKILL.md: sha256:d0d1c490ef94d02b58019c8688a354d5b9298405aaa9eb2ec7d72127ae390775
+  content_hash: sha256:7b2e3c3609c9386bbe6e22633270e261c4325c42faabd94ff85a7e031e928c16
+  declared_license: MIT
+- repo_url: radoslavirha/toolkit-hub
+  name: config-eslint
+  host: github.com
+  resolved_commit: 19028f3612299462a9fcad73c01bc762f6489948
+  version: 0.4.7
+  virtual_path: config/config-eslint
+  is_virtual: true
+  package_type: apm_package
+  deployed_files:
+  - .agents/skills/using-config-eslint
+  - .agents/skills/using-config-eslint/SKILL.md
+  - .claude/skills/using-config-eslint
+  - .claude/skills/using-config-eslint/SKILL.md
+  deployed_file_hashes:
+    .agents/skills/using-config-eslint/SKILL.md: sha256:eaaa31e21e558a5c762e3f377a6ccaa82201db44a5d10060e8bc3b4eea4a7b9a
+    .claude/skills/using-config-eslint/SKILL.md: sha256:eaaa31e21e558a5c762e3f377a6ccaa82201db44a5d10060e8bc3b4eea4a7b9a
+  content_hash: sha256:9d3c30c432a7f52e4858d6c4b35907825701649096001227e994c0c3d438eb20
+  declared_license: MIT
+- repo_url: radoslavirha/toolkit-hub
+  name: config-tsdown
+  host: github.com
+  resolved_commit: 19028f3612299462a9fcad73c01bc762f6489948
+  version: 0.2.2
+  virtual_path: config/config-tsdown
+  is_virtual: true
+  package_type: apm_package
+  deployed_files:
+  - .agents/skills/using-config-tsdown
+  - .agents/skills/using-config-tsdown/SKILL.md
+  - .claude/skills/using-config-tsdown
+  - .claude/skills/using-config-tsdown/SKILL.md
+  deployed_file_hashes:
+    .agents/skills/using-config-tsdown/SKILL.md: sha256:76350e7d3bb6e041562d493e4d2995043e96f1847699ad7fb78486e49da59b24
+    .claude/skills/using-config-tsdown/SKILL.md: sha256:76350e7d3bb6e041562d493e4d2995043e96f1847699ad7fb78486e49da59b24
+  content_hash: sha256:1aff757ec436c4b31d11c52c61518e1b843c5f81312ca4f9d8b2a93fd0c83529
+  declared_license: MIT
+- repo_url: radoslavirha/toolkit-hub
+  name: config-typescript
+  host: github.com
+  resolved_commit: 19028f3612299462a9fcad73c01bc762f6489948
+  version: 1.1.4
+  virtual_path: config/config-typescript
+  is_virtual: true
+  package_type: apm_package
+  deployed_files:
+  - .agents/skills/using-config-typescript
+  - .agents/skills/using-config-typescript/SKILL.md
+  - .claude/skills/using-config-typescript
+  - .claude/skills/using-config-typescript/SKILL.md
+  deployed_file_hashes:
+    .agents/skills/using-config-typescript/SKILL.md: sha256:d2c95454a5c7beafba15acde0fa673c0e79741c714d102e24b6159b9323bf4cc
+    .claude/skills/using-config-typescript/SKILL.md: sha256:d2c95454a5c7beafba15acde0fa673c0e79741c714d102e24b6159b9323bf4cc
+  content_hash: sha256:33c3f62187662e0ad66e9b63e050c9817e9fc536b1a3afb752cc5608788ebaae
+  declared_license: MIT
+- repo_url: radoslavirha/toolkit-hub
+  name: config-vitest
+  host: github.com
+  resolved_commit: 19028f3612299462a9fcad73c01bc762f6489948
+  version: 0.4.5
+  virtual_path: config/config-vitest
+  is_virtual: true
+  package_type: apm_package
+  deployed_files:
+  - .agents/skills/using-config-vitest
+  - .agents/skills/using-config-vitest/SKILL.md
+  - .claude/skills/using-config-vitest
+  - .claude/skills/using-config-vitest/SKILL.md
+  deployed_file_hashes:
+    .agents/skills/using-config-vitest/SKILL.md: sha256:cc4000c1f2fd0e27cb957d74a0c40faa5ff137892848895238aa528fdd7fe7c9
+    .claude/skills/using-config-vitest/SKILL.md: sha256:cc4000c1f2fd0e27cb957d74a0c40faa5ff137892848895238aa528fdd7fe7c9
+  content_hash: sha256:1848323199e14bcc96b0b3c0315e9e4e2f22be800e9a239e6f42da610d58778d
+  declared_license: MIT
+- repo_url: radoslavirha/toolkit-hub
+  name: redaction
+  host: github.com
+  resolved_commit: 19028f3612299462a9fcad73c01bc762f6489948
+  version: 0.2.2
+  virtual_path: packages/redaction
+  is_virtual: true
+  package_type: apm_package
+  deployed_files:
+  - .agents/skills/using-redaction
+  - .agents/skills/using-redaction/SKILL.md
+  - .claude/skills/using-redaction
+  - .claude/skills/using-redaction/SKILL.md
+  deployed_file_hashes:
+    .agents/skills/using-redaction/SKILL.md: sha256:15c39b9a3f4f28a7c5db6536be7819a6b7fae44c7b016005f34b45a206288b4d
+    .claude/skills/using-redaction/SKILL.md: sha256:15c39b9a3f4f28a7c5db6536be7819a6b7fae44c7b016005f34b45a206288b4d
+  content_hash: sha256:46f124899a5d55455704e6b5415a2b2db9d5758f8861a2d15f115471d7a67f60
+  declared_license: MIT
 - repo_url: radoslavirha/toolkit-hub
   name: utils
   host: github.com
@@ -19,6 +145,114 @@ dependencies:
     .agents/skills/using-utils/SKILL.md: sha256:6506ee33a27b658de6dcac1f03a2f2c9b45429c962df5fdb9a5b606cf97eb968
     .claude/skills/using-utils/SKILL.md: sha256:6506ee33a27b658de6dcac1f03a2f2c9b45429c962df5fdb9a5b606cf97eb968
   content_hash: sha256:29ee520d2d810e3595c7796c526e22401630821e5671e8eea69bcfb4bc8340a6
+  declared_license: MIT
+- repo_url: radoslavirha/toolkit-hub
+  name: tsed-common
+  host: github.com
+  resolved_commit: 19028f3612299462a9fcad73c01bc762f6489948
+  version: 0.5.7
+  virtual_path: tsed/common
+  is_virtual: true
+  package_type: apm_package
+  deployed_files:
+  - .agents/skills/using-tsed-common
+  - .agents/skills/using-tsed-common/SKILL.md
+  - .claude/skills/using-tsed-common
+  - .claude/skills/using-tsed-common/SKILL.md
+  deployed_file_hashes:
+    .agents/skills/using-tsed-common/SKILL.md: sha256:985365efe87489bd4f4471381c18d02d53faed5ea767b17b2139b10ce5ffa7f4
+    .claude/skills/using-tsed-common/SKILL.md: sha256:985365efe87489bd4f4471381c18d02d53faed5ea767b17b2139b10ce5ffa7f4
+  content_hash: sha256:8d41126e1359c012d6158f94f18118a437a08aaf76aed9c0ccc714312ea8a928
+  declared_license: MIT
+- repo_url: radoslavirha/toolkit-hub
+  name: tsed-configuration
+  host: github.com
+  resolved_commit: 19028f3612299462a9fcad73c01bc762f6489948
+  version: 0.8.4
+  virtual_path: tsed/configuration
+  is_virtual: true
+  package_type: apm_package
+  deployed_files:
+  - .agents/skills/using-tsed-configuration
+  - .agents/skills/using-tsed-configuration/SKILL.md
+  - .claude/skills/using-tsed-configuration
+  - .claude/skills/using-tsed-configuration/SKILL.md
+  deployed_file_hashes:
+    .agents/skills/using-tsed-configuration/SKILL.md: sha256:6734efd5ebb7954497d08315294447b260e4904574187e0cb8b5d0436f4b1869
+    .claude/skills/using-tsed-configuration/SKILL.md: sha256:6734efd5ebb7954497d08315294447b260e4904574187e0cb8b5d0436f4b1869
+  content_hash: sha256:5d7c65687953af316faa72707f35f858d5ac8b8b1f198bc584206ef8437dd7e2
+  declared_license: MIT
+- repo_url: radoslavirha/toolkit-hub
+  name: tsed-logger
+  host: github.com
+  resolved_commit: 19028f3612299462a9fcad73c01bc762f6489948
+  version: 0.6.3
+  virtual_path: tsed/logger
+  is_virtual: true
+  package_type: apm_package
+  deployed_files:
+  - .agents/skills/using-tsed-logger
+  - .agents/skills/using-tsed-logger/SKILL.md
+  - .claude/skills/using-tsed-logger
+  - .claude/skills/using-tsed-logger/SKILL.md
+  deployed_file_hashes:
+    .agents/skills/using-tsed-logger/SKILL.md: sha256:66d036c4c2121d4cb9a5c67ff98172a67a0428cb5e36d85fd9eb0a6277393210
+    .claude/skills/using-tsed-logger/SKILL.md: sha256:66d036c4c2121d4cb9a5c67ff98172a67a0428cb5e36d85fd9eb0a6277393210
+  content_hash: sha256:6a8d5c8dabc311e130866f76d514f264356f99cbba2806ecbe56973e5519537f
+  declared_license: MIT
+- repo_url: radoslavirha/toolkit-hub
+  name: tsed-mongoose
+  host: github.com
+  resolved_commit: 19028f3612299462a9fcad73c01bc762f6489948
+  version: 5.0.7
+  virtual_path: tsed/mongoose
+  is_virtual: true
+  package_type: apm_package
+  deployed_files:
+  - .agents/skills/using-tsed-mongoose
+  - .agents/skills/using-tsed-mongoose/SKILL.md
+  - .claude/skills/using-tsed-mongoose
+  - .claude/skills/using-tsed-mongoose/SKILL.md
+  deployed_file_hashes:
+    .agents/skills/using-tsed-mongoose/SKILL.md: sha256:2b9fa8a41ea6237856094ded5e1868324f5df167f80770af834d4582bd5ba1da
+    .claude/skills/using-tsed-mongoose/SKILL.md: sha256:2b9fa8a41ea6237856094ded5e1868324f5df167f80770af834d4582bd5ba1da
+  content_hash: sha256:c88f71a3f134652acc776d99d06f8317b8ef2d1d8f2197f1fe49fe236b5fea80
+  declared_license: MIT
+- repo_url: radoslavirha/toolkit-hub
+  name: tsed-platform
+  host: github.com
+  resolved_commit: 19028f3612299462a9fcad73c01bc762f6489948
+  version: 5.0.0
+  virtual_path: tsed/platform
+  is_virtual: true
+  package_type: apm_package
+  deployed_files:
+  - .agents/skills/using-tsed-platform
+  - .agents/skills/using-tsed-platform/SKILL.md
+  - .claude/skills/using-tsed-platform
+  - .claude/skills/using-tsed-platform/SKILL.md
+  deployed_file_hashes:
+    .agents/skills/using-tsed-platform/SKILL.md: sha256:27c5dc5f09aa7f0ba82a12f05164ea50e0abd950d69f6affef4f437e7c988388
+    .claude/skills/using-tsed-platform/SKILL.md: sha256:27c5dc5f09aa7f0ba82a12f05164ea50e0abd950d69f6affef4f437e7c988388
+  content_hash: sha256:aab32329b78ce474e9fe620899a5397eec5745c38b7824f2532215f09be9b9a6
+  declared_license: MIT
+- repo_url: radoslavirha/toolkit-hub
+  name: tsed-swagger
+  host: github.com
+  resolved_commit: 19028f3612299462a9fcad73c01bc762f6489948
+  version: 9.1.4
+  virtual_path: tsed/swagger
+  is_virtual: true
+  package_type: apm_package
+  deployed_files:
+  - .agents/skills/using-tsed-swagger
+  - .agents/skills/using-tsed-swagger/SKILL.md
+  - .claude/skills/using-tsed-swagger
+  - .claude/skills/using-tsed-swagger/SKILL.md
+  deployed_file_hashes:
+    .agents/skills/using-tsed-swagger/SKILL.md: sha256:824b48a4d9160ccfb68a552cc9c1e8d602e16abe22c8cc64fab37b22999bb44f
+    .claude/skills/using-tsed-swagger/SKILL.md: sha256:824b48a4d9160ccfb68a552cc9c1e8d602e16abe22c8cc64fab37b22999bb44f
+  content_hash: sha256:f5c52e2be9d284d1ac7fd94af0b271f0be7b83247cb12a8a7edac17f29f67855
   declared_license: MIT
 deployments:
 - kind: project-relative
@@ -131,6 +365,42 @@ deployments:
   content_hash: sha256:24aeb5fbe74906fab08ceba7006ccfd68ede513f088795ec79120c056ff54b2c
 - kind: project-relative
   target: claude
+  value: .claude/skills/adopting-toolkit-hub
+  runtime: null
+  scope: project
+  owners:
+  - radoslavirha/toolkit-hub/apm-plugins/adoption
+  active_owner: radoslavirha/toolkit-hub/apm-plugins/adoption
+  content_hash: null
+- kind: project-relative
+  target: claude
+  value: .claude/skills/adopting-toolkit-hub/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - radoslavirha/toolkit-hub/apm-plugins/adoption
+  active_owner: radoslavirha/toolkit-hub/apm-plugins/adoption
+  content_hash: sha256:0a8beb3fb375e8ca2ccdb39b727d542796c06d4d8c98f5d14722009be90ecd6e
+- kind: project-relative
+  target: claude
+  value: .claude/skills/building-a-tsed-service
+  runtime: null
+  scope: project
+  owners:
+  - radoslavirha/toolkit-hub/apm-plugins/tsed-service
+  active_owner: radoslavirha/toolkit-hub/apm-plugins/tsed-service
+  content_hash: null
+- kind: project-relative
+  target: claude
+  value: .claude/skills/building-a-tsed-service/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - radoslavirha/toolkit-hub/apm-plugins/tsed-service
+  active_owner: radoslavirha/toolkit-hub/apm-plugins/tsed-service
+  content_hash: sha256:d0d1c490ef94d02b58019c8688a354d5b9298405aaa9eb2ec7d72127ae390775
+- kind: project-relative
+  target: claude
   value: .claude/skills/instrument-entry-point
   runtime: null
   scope: project
@@ -185,6 +455,204 @@ deployments:
   content_hash: sha256:7a1d94bcdfecfdb6dbabde23c41994664a6a343ddc04ed755b847ec60cdcd43e
 - kind: project-relative
   target: claude
+  value: .claude/skills/using-config-eslint
+  runtime: null
+  scope: project
+  owners:
+  - radoslavirha/toolkit-hub/config/config-eslint
+  active_owner: radoslavirha/toolkit-hub/config/config-eslint
+  content_hash: null
+- kind: project-relative
+  target: claude
+  value: .claude/skills/using-config-eslint/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - radoslavirha/toolkit-hub/config/config-eslint
+  active_owner: radoslavirha/toolkit-hub/config/config-eslint
+  content_hash: sha256:eaaa31e21e558a5c762e3f377a6ccaa82201db44a5d10060e8bc3b4eea4a7b9a
+- kind: project-relative
+  target: claude
+  value: .claude/skills/using-config-tsdown
+  runtime: null
+  scope: project
+  owners:
+  - radoslavirha/toolkit-hub/config/config-tsdown
+  active_owner: radoslavirha/toolkit-hub/config/config-tsdown
+  content_hash: null
+- kind: project-relative
+  target: claude
+  value: .claude/skills/using-config-tsdown/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - radoslavirha/toolkit-hub/config/config-tsdown
+  active_owner: radoslavirha/toolkit-hub/config/config-tsdown
+  content_hash: sha256:76350e7d3bb6e041562d493e4d2995043e96f1847699ad7fb78486e49da59b24
+- kind: project-relative
+  target: claude
+  value: .claude/skills/using-config-typescript
+  runtime: null
+  scope: project
+  owners:
+  - radoslavirha/toolkit-hub/config/config-typescript
+  active_owner: radoslavirha/toolkit-hub/config/config-typescript
+  content_hash: null
+- kind: project-relative
+  target: claude
+  value: .claude/skills/using-config-typescript/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - radoslavirha/toolkit-hub/config/config-typescript
+  active_owner: radoslavirha/toolkit-hub/config/config-typescript
+  content_hash: sha256:d2c95454a5c7beafba15acde0fa673c0e79741c714d102e24b6159b9323bf4cc
+- kind: project-relative
+  target: claude
+  value: .claude/skills/using-config-vitest
+  runtime: null
+  scope: project
+  owners:
+  - radoslavirha/toolkit-hub/config/config-vitest
+  active_owner: radoslavirha/toolkit-hub/config/config-vitest
+  content_hash: null
+- kind: project-relative
+  target: claude
+  value: .claude/skills/using-config-vitest/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - radoslavirha/toolkit-hub/config/config-vitest
+  active_owner: radoslavirha/toolkit-hub/config/config-vitest
+  content_hash: sha256:cc4000c1f2fd0e27cb957d74a0c40faa5ff137892848895238aa528fdd7fe7c9
+- kind: project-relative
+  target: claude
+  value: .claude/skills/using-redaction
+  runtime: null
+  scope: project
+  owners:
+  - radoslavirha/toolkit-hub/packages/redaction
+  active_owner: radoslavirha/toolkit-hub/packages/redaction
+  content_hash: null
+- kind: project-relative
+  target: claude
+  value: .claude/skills/using-redaction/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - radoslavirha/toolkit-hub/packages/redaction
+  active_owner: radoslavirha/toolkit-hub/packages/redaction
+  content_hash: sha256:15c39b9a3f4f28a7c5db6536be7819a6b7fae44c7b016005f34b45a206288b4d
+- kind: project-relative
+  target: claude
+  value: .claude/skills/using-tsed-common
+  runtime: null
+  scope: project
+  owners:
+  - radoslavirha/toolkit-hub/tsed/common
+  active_owner: radoslavirha/toolkit-hub/tsed/common
+  content_hash: null
+- kind: project-relative
+  target: claude
+  value: .claude/skills/using-tsed-common/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - radoslavirha/toolkit-hub/tsed/common
+  active_owner: radoslavirha/toolkit-hub/tsed/common
+  content_hash: sha256:985365efe87489bd4f4471381c18d02d53faed5ea767b17b2139b10ce5ffa7f4
+- kind: project-relative
+  target: claude
+  value: .claude/skills/using-tsed-configuration
+  runtime: null
+  scope: project
+  owners:
+  - radoslavirha/toolkit-hub/tsed/configuration
+  active_owner: radoslavirha/toolkit-hub/tsed/configuration
+  content_hash: null
+- kind: project-relative
+  target: claude
+  value: .claude/skills/using-tsed-configuration/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - radoslavirha/toolkit-hub/tsed/configuration
+  active_owner: radoslavirha/toolkit-hub/tsed/configuration
+  content_hash: sha256:6734efd5ebb7954497d08315294447b260e4904574187e0cb8b5d0436f4b1869
+- kind: project-relative
+  target: claude
+  value: .claude/skills/using-tsed-logger
+  runtime: null
+  scope: project
+  owners:
+  - radoslavirha/toolkit-hub/tsed/logger
+  active_owner: radoslavirha/toolkit-hub/tsed/logger
+  content_hash: null
+- kind: project-relative
+  target: claude
+  value: .claude/skills/using-tsed-logger/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - radoslavirha/toolkit-hub/tsed/logger
+  active_owner: radoslavirha/toolkit-hub/tsed/logger
+  content_hash: sha256:66d036c4c2121d4cb9a5c67ff98172a67a0428cb5e36d85fd9eb0a6277393210
+- kind: project-relative
+  target: claude
+  value: .claude/skills/using-tsed-mongoose
+  runtime: null
+  scope: project
+  owners:
+  - radoslavirha/toolkit-hub/tsed/mongoose
+  active_owner: radoslavirha/toolkit-hub/tsed/mongoose
+  content_hash: null
+- kind: project-relative
+  target: claude
+  value: .claude/skills/using-tsed-mongoose/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - radoslavirha/toolkit-hub/tsed/mongoose
+  active_owner: radoslavirha/toolkit-hub/tsed/mongoose
+  content_hash: sha256:2b9fa8a41ea6237856094ded5e1868324f5df167f80770af834d4582bd5ba1da
+- kind: project-relative
+  target: claude
+  value: .claude/skills/using-tsed-platform
+  runtime: null
+  scope: project
+  owners:
+  - radoslavirha/toolkit-hub/tsed/platform
+  active_owner: radoslavirha/toolkit-hub/tsed/platform
+  content_hash: null
+- kind: project-relative
+  target: claude
+  value: .claude/skills/using-tsed-platform/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - radoslavirha/toolkit-hub/tsed/platform
+  active_owner: radoslavirha/toolkit-hub/tsed/platform
+  content_hash: sha256:27c5dc5f09aa7f0ba82a12f05164ea50e0abd950d69f6affef4f437e7c988388
+- kind: project-relative
+  target: claude
+  value: .claude/skills/using-tsed-swagger
+  runtime: null
+  scope: project
+  owners:
+  - radoslavirha/toolkit-hub/tsed/swagger
+  active_owner: radoslavirha/toolkit-hub/tsed/swagger
+  content_hash: null
+- kind: project-relative
+  target: claude
+  value: .claude/skills/using-tsed-swagger/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - radoslavirha/toolkit-hub/tsed/swagger
+  active_owner: radoslavirha/toolkit-hub/tsed/swagger
+  content_hash: sha256:824b48a4d9160ccfb68a552cc9c1e8d602e16abe22c8cc64fab37b22999bb44f
+- kind: project-relative
+  target: claude
   value: .claude/skills/using-utils
   runtime: null
   scope: project
@@ -201,6 +669,240 @@ deployments:
   - radoslavirha/toolkit-hub/packages/utils
   active_owner: radoslavirha/toolkit-hub/packages/utils
   content_hash: sha256:6506ee33a27b658de6dcac1f03a2f2c9b45429c962df5fdb9a5b606cf97eb968
+- kind: project-relative
+  target: copilot
+  value: .agents/skills/adopting-toolkit-hub
+  runtime: null
+  scope: project
+  owners:
+  - radoslavirha/toolkit-hub/apm-plugins/adoption
+  active_owner: radoslavirha/toolkit-hub/apm-plugins/adoption
+  content_hash: null
+- kind: project-relative
+  target: copilot
+  value: .agents/skills/adopting-toolkit-hub/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - radoslavirha/toolkit-hub/apm-plugins/adoption
+  active_owner: radoslavirha/toolkit-hub/apm-plugins/adoption
+  content_hash: sha256:0a8beb3fb375e8ca2ccdb39b727d542796c06d4d8c98f5d14722009be90ecd6e
+- kind: project-relative
+  target: copilot
+  value: .agents/skills/building-a-tsed-service
+  runtime: null
+  scope: project
+  owners:
+  - radoslavirha/toolkit-hub/apm-plugins/tsed-service
+  active_owner: radoslavirha/toolkit-hub/apm-plugins/tsed-service
+  content_hash: null
+- kind: project-relative
+  target: copilot
+  value: .agents/skills/building-a-tsed-service/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - radoslavirha/toolkit-hub/apm-plugins/tsed-service
+  active_owner: radoslavirha/toolkit-hub/apm-plugins/tsed-service
+  content_hash: sha256:d0d1c490ef94d02b58019c8688a354d5b9298405aaa9eb2ec7d72127ae390775
+- kind: project-relative
+  target: copilot
+  value: .agents/skills/using-config-eslint
+  runtime: null
+  scope: project
+  owners:
+  - radoslavirha/toolkit-hub/config/config-eslint
+  active_owner: radoslavirha/toolkit-hub/config/config-eslint
+  content_hash: null
+- kind: project-relative
+  target: copilot
+  value: .agents/skills/using-config-eslint/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - radoslavirha/toolkit-hub/config/config-eslint
+  active_owner: radoslavirha/toolkit-hub/config/config-eslint
+  content_hash: sha256:eaaa31e21e558a5c762e3f377a6ccaa82201db44a5d10060e8bc3b4eea4a7b9a
+- kind: project-relative
+  target: copilot
+  value: .agents/skills/using-config-tsdown
+  runtime: null
+  scope: project
+  owners:
+  - radoslavirha/toolkit-hub/config/config-tsdown
+  active_owner: radoslavirha/toolkit-hub/config/config-tsdown
+  content_hash: null
+- kind: project-relative
+  target: copilot
+  value: .agents/skills/using-config-tsdown/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - radoslavirha/toolkit-hub/config/config-tsdown
+  active_owner: radoslavirha/toolkit-hub/config/config-tsdown
+  content_hash: sha256:76350e7d3bb6e041562d493e4d2995043e96f1847699ad7fb78486e49da59b24
+- kind: project-relative
+  target: copilot
+  value: .agents/skills/using-config-typescript
+  runtime: null
+  scope: project
+  owners:
+  - radoslavirha/toolkit-hub/config/config-typescript
+  active_owner: radoslavirha/toolkit-hub/config/config-typescript
+  content_hash: null
+- kind: project-relative
+  target: copilot
+  value: .agents/skills/using-config-typescript/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - radoslavirha/toolkit-hub/config/config-typescript
+  active_owner: radoslavirha/toolkit-hub/config/config-typescript
+  content_hash: sha256:d2c95454a5c7beafba15acde0fa673c0e79741c714d102e24b6159b9323bf4cc
+- kind: project-relative
+  target: copilot
+  value: .agents/skills/using-config-vitest
+  runtime: null
+  scope: project
+  owners:
+  - radoslavirha/toolkit-hub/config/config-vitest
+  active_owner: radoslavirha/toolkit-hub/config/config-vitest
+  content_hash: null
+- kind: project-relative
+  target: copilot
+  value: .agents/skills/using-config-vitest/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - radoslavirha/toolkit-hub/config/config-vitest
+  active_owner: radoslavirha/toolkit-hub/config/config-vitest
+  content_hash: sha256:cc4000c1f2fd0e27cb957d74a0c40faa5ff137892848895238aa528fdd7fe7c9
+- kind: project-relative
+  target: copilot
+  value: .agents/skills/using-redaction
+  runtime: null
+  scope: project
+  owners:
+  - radoslavirha/toolkit-hub/packages/redaction
+  active_owner: radoslavirha/toolkit-hub/packages/redaction
+  content_hash: null
+- kind: project-relative
+  target: copilot
+  value: .agents/skills/using-redaction/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - radoslavirha/toolkit-hub/packages/redaction
+  active_owner: radoslavirha/toolkit-hub/packages/redaction
+  content_hash: sha256:15c39b9a3f4f28a7c5db6536be7819a6b7fae44c7b016005f34b45a206288b4d
+- kind: project-relative
+  target: copilot
+  value: .agents/skills/using-tsed-common
+  runtime: null
+  scope: project
+  owners:
+  - radoslavirha/toolkit-hub/tsed/common
+  active_owner: radoslavirha/toolkit-hub/tsed/common
+  content_hash: null
+- kind: project-relative
+  target: copilot
+  value: .agents/skills/using-tsed-common/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - radoslavirha/toolkit-hub/tsed/common
+  active_owner: radoslavirha/toolkit-hub/tsed/common
+  content_hash: sha256:985365efe87489bd4f4471381c18d02d53faed5ea767b17b2139b10ce5ffa7f4
+- kind: project-relative
+  target: copilot
+  value: .agents/skills/using-tsed-configuration
+  runtime: null
+  scope: project
+  owners:
+  - radoslavirha/toolkit-hub/tsed/configuration
+  active_owner: radoslavirha/toolkit-hub/tsed/configuration
+  content_hash: null
+- kind: project-relative
+  target: copilot
+  value: .agents/skills/using-tsed-configuration/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - radoslavirha/toolkit-hub/tsed/configuration
+  active_owner: radoslavirha/toolkit-hub/tsed/configuration
+  content_hash: sha256:6734efd5ebb7954497d08315294447b260e4904574187e0cb8b5d0436f4b1869
+- kind: project-relative
+  target: copilot
+  value: .agents/skills/using-tsed-logger
+  runtime: null
+  scope: project
+  owners:
+  - radoslavirha/toolkit-hub/tsed/logger
+  active_owner: radoslavirha/toolkit-hub/tsed/logger
+  content_hash: null
+- kind: project-relative
+  target: copilot
+  value: .agents/skills/using-tsed-logger/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - radoslavirha/toolkit-hub/tsed/logger
+  active_owner: radoslavirha/toolkit-hub/tsed/logger
+  content_hash: sha256:66d036c4c2121d4cb9a5c67ff98172a67a0428cb5e36d85fd9eb0a6277393210
+- kind: project-relative
+  target: copilot
+  value: .agents/skills/using-tsed-mongoose
+  runtime: null
+  scope: project
+  owners:
+  - radoslavirha/toolkit-hub/tsed/mongoose
+  active_owner: radoslavirha/toolkit-hub/tsed/mongoose
+  content_hash: null
+- kind: project-relative
+  target: copilot
+  value: .agents/skills/using-tsed-mongoose/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - radoslavirha/toolkit-hub/tsed/mongoose
+  active_owner: radoslavirha/toolkit-hub/tsed/mongoose
+  content_hash: sha256:2b9fa8a41ea6237856094ded5e1868324f5df167f80770af834d4582bd5ba1da
+- kind: project-relative
+  target: copilot
+  value: .agents/skills/using-tsed-platform
+  runtime: null
+  scope: project
+  owners:
+  - radoslavirha/toolkit-hub/tsed/platform
+  active_owner: radoslavirha/toolkit-hub/tsed/platform
+  content_hash: null
+- kind: project-relative
+  target: copilot
+  value: .agents/skills/using-tsed-platform/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - radoslavirha/toolkit-hub/tsed/platform
+  active_owner: radoslavirha/toolkit-hub/tsed/platform
+  content_hash: sha256:27c5dc5f09aa7f0ba82a12f05164ea50e0abd950d69f6affef4f437e7c988388
+- kind: project-relative
+  target: copilot
+  value: .agents/skills/using-tsed-swagger
+  runtime: null
+  scope: project
+  owners:
+  - radoslavirha/toolkit-hub/tsed/swagger
+  active_owner: radoslavirha/toolkit-hub/tsed/swagger
+  content_hash: null
+- kind: project-relative
+  target: copilot
+  value: .agents/skills/using-tsed-swagger/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - radoslavirha/toolkit-hub/tsed/swagger
+  active_owner: radoslavirha/toolkit-hub/tsed/swagger
+  content_hash: sha256:824b48a4d9160ccfb68a552cc9c1e8d602e16abe22c8cc64fab37b22999bb44f
 - kind: project-relative
   target: copilot
   value: .agents/skills/using-utils

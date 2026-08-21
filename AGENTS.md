@@ -1,10 +1,11 @@
 # AGENTS.md — AI Agent Instructions
 
-All agentic tools (skill, instruction, agents,..) must be added to `.apm` folder. Never update/add skills/instructions/agents `.github`/`.claude` (GitHub actions and related files allowed). Example Structure:
+All agentic tools (skill, instruction, agents,..) authored **in this repository** must be added to the `.apm` folder. Example Structure:
 ```
 repository/
-+-- apm.yml // do not modify
-+-- .apm/
++-- apm.yml            // APM manifest - edit only via the `apm` CLI
++-- apm.lock.yaml      // resolved commits - generated, committed
++-- .apm/              // repo-authored sources - tracked in git
 |   +-- skills/
 |   |   +-- example-skill/
 |   |       +-- SKILL.md
@@ -12,6 +13,13 @@ repository/
 |   |   +-- example.agent.md
 |   +-- instructions/
 ```
+
+`apm install` deploys those sources, plus every installed toolkit-hub plugin, into
+`.agents/`, `.claude/` and `.github/instructions/`. **Those three directories are generated
+and gitignored — never edit a file in them.** APM refuses to manage a file it did not write,
+so the edit is lost on the next `apm install`/`apm update` and never reaches anyone else.
+Change the source under `.apm/` (or the upstream toolkit-hub plugin) and redeploy instead.
+Run `apm install` after cloning to materialise them.
 
 ## Repository Overview
 
@@ -34,6 +42,41 @@ All `@radoslavirha/*` packages are hosted on **GitHub Packages** (`npm.pkg.githu
 - `NODE_AUTH_TOKEN` must be set in the environment before running `pnpm install`, it's in `.env`
 
 Always use [toolkit-hub](https://github.com/radoslavirha/toolkit-hub) where possible and avoid creating own logic if already exist in toolkit-hub. All `@radoslavirha/*` libraries are provided there.
+
+## Toolkit-hub Agent Skills
+
+Every toolkit package this repo depends on ships its own skill, installed from the
+`toolkit-hub` APM marketplace. **Read the skill before writing code against a package** —
+they document the current API, including renames the old shapes leave traps behind for.
+
+| Skill | Read it when |
+| --- | --- |
+| `adopting-toolkit-hub` | adding/updating/removing a `@radoslavirha/*` dependency, or an install returns 401/404 from GitHub Packages |
+| `building-a-tsed-service` | starting a new service — which packages a shape needs, layer order, bootstrap sequence |
+| `using-utils` | any null/undefined/empty guard, `buildModel*`, `MappingUtils` |
+| `using-tsed-platform` | `Server` class, `Platform.bootstrap`, middleware, `BaseHandler` |
+| `using-tsed-configuration` | config schema, adding a config value, `ConfigProvider` |
+| `using-tsed-common` | `BaseModel`, `Serializer`, `JSONSchemaValidator` / `ZodValidator` |
+| `using-tsed-mongoose` | documents, mappers, repositories, refs and populated fields |
+| `using-tsed-swagger` | OpenAPI versions, security schemes, `SwaggerProvider` |
+| `using-tsed-logger` | injecting `Logger`, `child()` scopes, subclassing the toolkit logger |
+| `using-redaction` | logging anything that may carry secrets |
+| `using-config-eslint` / `-typescript` / `-vitest` / `-tsdown` | adding or changing a package's `eslint.config.mjs`, `tsconfig.json`, `vitest.config.ts`, `tsdown.config.ts` |
+
+Repo-local skills live in `.apm/skills/`: `add-workspace-member`, `instrument-entry-point`,
+`onboard-to-homelab`, `update-docs`.
+
+Managing them:
+
+```bash
+apm install                                    # deploy everything in apm.yml
+apm marketplace browse toolkit-hub             # see the full plugin catalog
+apm install <name>@toolkit-hub --target claude,copilot
+apm update                                     # move unpinned deps forward
+```
+
+Dependencies are intentionally unpinned, so `apm install` warns about drift — `apm.lock.yaml`
+pins the resolved commit, and guidance should not lag the code it describes.
 
 ## Monorepo Structure
 

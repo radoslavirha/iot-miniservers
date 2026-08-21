@@ -8,6 +8,19 @@ targets:
 dependencies:
   apm:
     - radoslavirha/toolkit-hub/packages/utils
+    - radoslavirha/toolkit-hub/tsed/platform
+    - radoslavirha/toolkit-hub/tsed/configuration
+    - radoslavirha/toolkit-hub/tsed/common
+    - radoslavirha/toolkit-hub/tsed/mongoose
+    - radoslavirha/toolkit-hub/tsed/swagger
+    - radoslavirha/toolkit-hub/tsed/logger
+    - radoslavirha/toolkit-hub/packages/redaction
+    - radoslavirha/toolkit-hub/config/config-eslint
+    - radoslavirha/toolkit-hub/config/config-tsdown
+    - radoslavirha/toolkit-hub/config/config-typescript
+    - radoslavirha/toolkit-hub/config/config-vitest
+    - radoslavirha/toolkit-hub/apm-plugins/tsed-service
+    - radoslavirha/toolkit-hub/apm-plugins/adoption
   mcp:
     - name: context7
       registry: false
