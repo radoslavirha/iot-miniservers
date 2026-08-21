@@ -1,5 +1,11 @@
 # interactive-map-feeder
 
+## 0.11.10
+
+### Patch Changes
+
+- [#75](https://github.com/radoslavirha/iot-miniservers/pull/75) [`67cf7d6`](https://github.com/radoslavirha/iot-miniservers/commit/67cf7d6d1ad6d99c8afcfe42ef4101190d7e3276) Thanks [@radoslavirha](https://github.com/radoslavirha)! - Rebuild and redeploy after the changesets v3 upgrade skipped three release cycles
+
 ## 0.11.9
 
 ### Patch Changes
