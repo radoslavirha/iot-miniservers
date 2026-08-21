@@ -1,0 +1,9 @@
+---
+# Root dependency files. A change here can affect every workspace member, so it
+# triggers one whole-workspace verify rather than the per-app / per-package
+# matrix, which keys off app and package directories and would match nothing.
+deps:
+  - pnpm-workspace.yaml
+  - pnpm-lock.yaml
+  - package.json
+  - .npmrc

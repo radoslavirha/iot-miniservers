@@ -43,6 +43,24 @@ All `@radoslavirha/*` packages are hosted on **GitHub Packages** (`npm.pkg.githu
 
 Always use [toolkit-hub](https://github.com/radoslavirha/toolkit-hub) where possible and avoid creating own logic if already exist in toolkit-hub. All `@radoslavirha/*` libraries are provided there.
 
+### Catalog updates are automated
+
+`renovate.json` keeps the `@radoslavirha/*` entries in the `pnpm-workspace.yaml` catalog
+moving on their own — **do not hand-bump them**. Renovate opens one grouped `toolkit-hub` PR,
+and patch/minor merge themselves once the `Verify workspace` CI job is green. Majors wait for
+a review. Every other dependency in this repo is still a deliberate manual bump.
+
+Two things there are load-bearing and easy to break:
+
+- The rule carries an explicit `registryUrls`. Renovate attaches a package file's `.npmrc` to
+  `package.json` files only, so without it the catalog entries get looked up on
+  `registry.npmjs.org` and every one of them 404s — silently, as "no updates found".
+- `rangeStrategy` is `bump`, so a release inside the existing range (`^0.5.7` -> `0.5.8`) still
+  moves the catalog entry. The default `replace` would touch only `pnpm-lock.yaml`.
+
+Local `packages/*` are also named `@radoslavirha/*`, but they are consumed as `workspace:*`
+and Renovate skips them.
+
 ## Toolkit-hub Agent Skills
 
 Every toolkit package this repo depends on ships its own skill, installed from the

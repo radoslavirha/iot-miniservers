@@ -1,0 +1,34 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended"],
+  "timezone": "Europe/Prague",
+  "enabledManagers": ["npm"],
+  "platformAutomerge": false,
+  "automergeStrategy": "squash",
+  "vulnerabilityAlerts": {
+    "description": "Off deliberately: this repo automates @radoslavirha/* only, and a security PR for any other dependency would land without a matching review workflow. Revisit if the scope below widens.",
+    "enabled": false
+  },
+  "packageRules": [
+    {
+      "description": "Nothing is automated by default. @radoslavirha/* is opted back in below; every other dependency stays a deliberate manual bump.",
+      "matchPackageNames": ["**"],
+      "enabled": false
+    },
+    {
+      "description": "toolkit-hub packages are released together and consumed only through the pnpm catalog, so they travel as a single PR. rangeStrategy 'bump' is what makes the catalog track releases at all: under the default 'replace' an in-range release (^0.5.7 -> 0.5.8) would change only pnpm-lock.yaml and the catalog entry would silently drift behind. registryUrls is not redundant with the root .npmrc: Renovate attaches a package file's .npmrc to package.json files only, so catalog entries in pnpm-workspace.yaml would otherwise be looked up on registry.npmjs.org and every one of them would 404.",
+      "matchPackageNames": ["@radoslavirha/**"],
+      "enabled": true,
+      "groupName": "toolkit-hub",
+      "groupSlug": "toolkit-hub",
+      "rangeStrategy": "bump",
+      "registryUrls": ["https://npm.pkg.github.com/"]
+    },
+    {
+      "description": "Patch and minor merge themselves once the workspace verify job is green. Majors always wait for a human. platformAutomerge is off above because the repo has allow_auto_merge disabled and no branch protection, so Renovate must check the branch status itself rather than hand the merge to GitHub.",
+      "matchPackageNames": ["@radoslavirha/**"],
+      "matchUpdateTypes": ["patch", "minor"],
+      "automerge": true
+    }
+  ]
+}

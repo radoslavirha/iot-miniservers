@@ -17,6 +17,7 @@ jobs:
     outputs:
       apps: ${{ steps.filter-apps.outputs.changes }}
       packages: ${{ steps.filter-packages.outputs.changes }}
+      deps: ${{ steps.filter-deps.outputs.deps }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v7
@@ -30,6 +31,31 @@ jobs:
         id: filter-packages
         with:
           filters: .github/paths-filter-packages.yaml
+      - name: 📂 Detect changed root dependencies
+        uses: dorny/paths-filter@v3
+        id: filter-deps
+        with:
+          filters: .github/paths-filter-deps.yaml
+
+  # A dependency bump touches only pnpm-workspace.yaml and pnpm-lock.yaml, which
+  # match no app or package filter above, so the matrix jobs all skip and the
+  # branch goes green without building anything. This is the job that actually
+  # exercises the new versions, and the one Renovate automerge waits on.
+  verify-workspace:
+    name: Verify workspace
+    needs: changes
+    runs-on: ubuntu-latest
+    if: ${{ needs.changes.outputs.deps == 'true' }}
+    timeout-minutes: 45
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+      - name: Prepare repository
+        uses: ./.github/actions/prepare
+        with:
+          NODE_AUTH_TOKEN: ${{ secrets.TOOLKIT_HUB_PACKAGES }}
+      - name: Run verify
+        run: pnpm run verify
 
   # lint-yaml:
   #   name: YAML lint

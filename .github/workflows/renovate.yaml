@@ -1,0 +1,62 @@
+---
+name: Renovate
+
+# yamllint disable-line rule:truthy
+on:
+  schedule:
+    # Early enough that a green automerge has landed before the working day.
+    - cron: '0 4 * * *'
+  workflow_dispatch:
+    inputs:
+      logLevel:
+        description: Renovate log level
+        required: false
+        default: info
+        type: choice
+        options:
+          - info
+          - debug
+
+jobs:
+  renovate:
+    name: Renovate
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+      # RENOVATE_TOKEN has to be a PAT, never GITHUB_TOKEN: pull requests opened
+      # with GITHUB_TOKEN do not trigger workflow runs, so CI would never run on
+      # a Renovate branch and automerge would merge a bump nothing had verified.
+      # Failing loudly here beats discovering that after the first silent merge.
+      - name: Require a Renovate PAT
+        env:
+          RENOVATE_TOKEN: ${{ secrets.RENOVATE_TOKEN }}
+        run: |
+          if [ -z "$RENOVATE_TOKEN" ]; then
+            echo "::error::secrets.RENOVATE_TOKEN is not set. It must be a PAT with 'repo' scope."
+            exit 1
+          fi
+      - name: Self-hosted Renovate
+        uses: renovatebot/github-action@v46.2.2
+        with:
+          token: ${{ secrets.RENOVATE_TOKEN }}
+        env:
+          RENOVATE_PLATFORM: github
+          RENOVATE_REPOSITORIES: ${{ github.repository }}
+          # renovate.json is committed, so there is nothing to onboard and a
+          # missing config should fail the run rather than silently do nothing.
+          RENOVATE_ONBOARDING: 'false'
+          RENOVATE_REQUIRE_CONFIG: required
+          # @radoslavirha/* lives on GitHub Packages. The root .npmrc already
+          # points the scope at npm.pkg.github.com; this supplies the credential
+          # for both the version lookup and the pnpm lockfile update. It cannot
+          # live in renovate.json — repository config does not interpolate env
+          # vars, only the self-hosted config does.
+          RENOVATE_HOST_RULES: >-
+            [{"matchHost": "npm.pkg.github.com", "hostType": "npm",
+            "token": "${{ secrets.TOOLKIT_HUB_PACKAGES }}"}]
+          # Lets Renovate read toolkit-hub release notes into the PR body.
+          GITHUB_COM_TOKEN: ${{ secrets.RENOVATE_TOKEN }}
+          LOG_LEVEL: ${{ inputs.logLevel || 'info' }}
