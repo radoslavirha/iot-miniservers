@@ -5,6 +5,7 @@ import type {
     HttpRequestOptions,
     HttpResponseType
 } from './HttpClient.js';
+import { CommonUtils } from '@radoslavirha/utils';
 
 /** Our neutral response types mapped onto axios' vocabulary. */
 const RESPONSE_TYPES: Record<HttpResponseType, ResponseType> = {
@@ -62,11 +63,11 @@ export class AxiosHttpClient implements HttpClient {
         return {
             method: method ?? 'GET',
             url,
-            ...(body === undefined ? {} : { data: body }),
-            ...(headers === undefined ? {} : { headers }),
-            ...(params === undefined ? {} : { params }),
-            ...(signal === undefined ? {} : { signal }),
-            ...(responseType === undefined ? {} : { responseType: RESPONSE_TYPES[responseType] })
+            ...(CommonUtils.isUndefined(body) ? {} : { data: body }),
+            ...(CommonUtils.isUndefined(headers) ? {} : { headers }),
+            ...(CommonUtils.isUndefined(params) ? {} : { params }),
+            ...(CommonUtils.isUndefined(signal) ? {} : { signal }),
+            ...(CommonUtils.isUndefined(responseType) ? {} : { responseType: RESPONSE_TYPES[responseType] })
         };
     }
 }

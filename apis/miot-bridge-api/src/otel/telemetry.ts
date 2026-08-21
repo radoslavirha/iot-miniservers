@@ -10,6 +10,7 @@ import {
     MIOT_METHOD_SET_PROPERTIES,
     type MiotMethod
 } from '@radoslavirha/miot-device';
+import { CommonUtils } from '@radoslavirha/utils';
 
 /**
  * Every name this app puts on a span or a metric, in one place.
@@ -163,7 +164,7 @@ export const ATTR_MIOT_POLL_SUBSCRIPTION_COUNT = 'miot.poll.subscription.count';
 export function identifierAttribute(value: number | string): string;
 export function identifierAttribute(value: number | string | undefined): string | undefined;
 export function identifierAttribute(value: number | string | undefined): string | undefined {
-    return value === undefined ? undefined : String(value);
+    return CommonUtils.isUndefined(value) ? undefined : String(value);
 }
 
 /**
@@ -392,5 +393,5 @@ export function miotErrorType(error: unknown): MiotErrorType | undefined {
  * spans and on nothing else in the trace.
  */
 export function miotStatusCode(error: unknown): string | undefined {
-    return MiotError.is(error) && error.code !== undefined ? String(error.code) : undefined;
+    return MiotError.is(error) && CommonUtils.notUndefined(error.code) ? String(error.code) : undefined;
 }

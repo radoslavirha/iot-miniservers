@@ -1,3 +1,4 @@
+import { CommonUtils } from '@radoslavirha/utils';
 import { MiotTransport } from './MiotTransport.js';
 import {
     MiotError,
@@ -226,7 +227,7 @@ export class MiotDevice {
     }
 
     private requireDeviceId(): number {
-        if (this._deviceId === undefined) {
+        if (CommonUtils.isUndefined(this._deviceId)) {
             throw new Error('Device not connected. Call connect() or discover() first.');
         }
         return this._deviceId;

@@ -21,6 +21,8 @@
  * device is being addressed.
  */
 
+import { CommonUtils } from '@radoslavirha/utils';
+
 /** No response within the transport timeout. The device said nothing at all. */
 export const MIOT_ERROR_TIMEOUT = 'timeout';
 
@@ -114,7 +116,7 @@ export class MiotError extends Error {
     public readonly stampRefreshed: boolean;
 
     constructor(message: string, options: MiotErrorOptions) {
-        super(message, options.cause === undefined ? undefined : { cause: options.cause });
+        super(message, CommonUtils.isUndefined(options.cause) ? undefined : { cause: options.cause });
         this.name = 'MiotError';
         this.kind = options.kind;
         this.method = options.method;
@@ -130,8 +132,8 @@ export class MiotError extends Error {
      * of this class is that the classification survives the trip to the caller.
      */
     public static is(value: unknown): value is MiotError {
-        return value instanceof Error && (value as Partial<MiotError>).kind !== undefined
-            && (value as Partial<MiotError>).method !== undefined;
+        return value instanceof Error && CommonUtils.notUndefined((value as Partial<MiotError>).kind)
+            && CommonUtils.notUndefined((value as Partial<MiotError>).method);
     }
 
     /**

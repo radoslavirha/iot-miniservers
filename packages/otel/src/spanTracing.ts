@@ -9,6 +9,7 @@ import {
     type Span
 } from '@opentelemetry/api';
 import { suppressTracing } from '@opentelemetry/core';
+import { CommonUtils } from '@radoslavirha/utils';
 import { getTracer } from './telemetry.js';
 
 export interface WithSpanOptions {
@@ -99,7 +100,7 @@ export function withSpan<T>(options: WithSpanOptions, fn: (span: Span) => T): T 
  * actually contained trace context; otherwise the span is deliberately made a root.
  */
 export function withEntryPointSpan<T>(options: EntryPointSpanOptions, fn: (span: Span) => T): T {
-    return withSpan({ ...options, root: options.parent === undefined }, fn);
+    return withSpan({ ...options, root: CommonUtils.isUndefined(options.parent) }, fn);
 }
 
 /**
@@ -183,5 +184,5 @@ function endOnSettle<T>(span: Span, fn: (span: Span) => T): T {
  * @internal
  */
 export function isPromiseLike<T>(value: T): value is T & PromiseLike<unknown> {
-    return typeof (value as PromiseLike<unknown> | undefined)?.then === 'function';
+    return CommonUtils.isFunction((value as PromiseLike<unknown> | undefined)?.then);
 }

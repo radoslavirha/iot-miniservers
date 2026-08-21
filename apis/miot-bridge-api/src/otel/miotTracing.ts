@@ -15,6 +15,7 @@ import {
 } from '@opentelemetry/semantic-conventions/incubating';
 import { MiotError, MIOT_DEFAULT_PORT, MIOT_ERROR_DEVICE_ERROR, type MiotMethod } from '@radoslavirha/miot-device';
 import { getMeter, withClientSpan } from '@radoslavirha/otel';
+import { CommonUtils } from '@radoslavirha/utils';
 import {
     ATTR_MIOT_DEVICE_ID,
     ATTR_MIOT_PROPERTY_SOURCE,
@@ -141,7 +142,7 @@ export function withMiotCallSpan<T>(options: MiotCallSpanOptions, fn: (span: Spa
 
                 recordCall(options.method, startedAt, errorType);
 
-                if (options.propertySource !== undefined && MiotError.is(error) && error.kind === MIOT_ERROR_DEVICE_ERROR) {
+                if (CommonUtils.notUndefined(options.propertySource) && MiotError.is(error) && error.kind === MIOT_ERROR_DEVICE_ERROR) {
                     recordPropertyRejection({
                         method: options.method,
                         source: options.propertySource,
@@ -217,7 +218,7 @@ function miotInstruments(): MiotInstruments {
     const provider = metrics.getMeterProvider();
     const cached = instrumentsByProvider.get(provider);
 
-    if (cached !== undefined) {
+    if (CommonUtils.notUndefined(cached)) {
         return cached;
     }
 

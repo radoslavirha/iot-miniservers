@@ -1,5 +1,5 @@
 import type { AxiosInstance, AxiosResponse, InternalAxiosRequestConfig } from 'axios';
-import { ObjectUtils } from '@radoslavirha/utils';
+import { CommonUtils, ObjectUtils } from '@radoslavirha/utils';
 import { RedactionProfile } from '@radoslavirha/redaction';
 import type { ResolvedHttpLogConfig } from './logging.schema.js';
 import type { BaseLogger } from '@radoslavirha/tsed-logger';
@@ -83,14 +83,13 @@ export function attachRequestLogging(
         requestConfig: LoggedRequestConfig | undefined,
         response: AxiosResponse | undefined
     ): Record<string, unknown> => {
+        const startedAt = requestConfig?._logStartedAt;
         const meta: Record<string, unknown> = {
             provider: providerKey,
             method: requestConfig?.method?.toUpperCase(),
             url: resolveUrl(requestConfig),
             status: response?.status,
-            duration: requestConfig?._logStartedAt === undefined
-                ? undefined
-                : Date.now() - requestConfig._logStartedAt,
+            duration: CommonUtils.isUndefined(startedAt) ? undefined : Date.now() - startedAt,
             ...requestConfig?._logCaptured
         };
 
@@ -136,11 +135,11 @@ function resolveUrl(requestConfig: LoggedRequestConfig | undefined): string | un
     const url = requestConfig?.url;
     const baseURL = requestConfig?.baseURL;
 
-    if (url === undefined || url === '') {
+    if (CommonUtils.isUndefined(url) || url === '') {
         return baseURL;
     }
 
-    if (baseURL === undefined || baseURL === '' || ABSOLUTE_URL.test(url)) {
+    if (CommonUtils.isUndefined(baseURL) || baseURL === '' || ABSOLUTE_URL.test(url)) {
         return url;
     }
 
@@ -159,5 +158,5 @@ function isTextualContentType(contentType: string | undefined): boolean {
 function extractContentType(response: AxiosResponse | undefined): string | undefined {
     const headers = response?.headers as Record<string, unknown> | undefined;
     const value = headers?.['content-type'] ?? headers?.['Content-Type'];
-    return value === undefined ? undefined : String(value);
+    return CommonUtils.isUndefined(value) ? undefined : String(value);
 }

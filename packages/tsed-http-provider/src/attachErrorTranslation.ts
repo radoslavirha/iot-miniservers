@@ -1,5 +1,6 @@
 import { BadGateway, GatewayTimeout, ServiceUnavailable } from '@tsed/exceptions';
 import { isBrokenCircuitError, isTaskCancelledError } from '@radoslavirha/resilience';
+import { CommonUtils } from '@radoslavirha/utils';
 import axios, { type AxiosInstance } from 'axios';
 
 /**
@@ -38,7 +39,7 @@ function toHttpException(error: unknown, api: string): Error {
     }
 
     const status = axios.isAxiosError(error) ? error.response?.status : undefined;
-    const detail = status === undefined ? 'could not be reached' : `responded with ${status}`;
+    const detail = CommonUtils.isUndefined(status) ? 'could not be reached' : `responded with ${status}`;
 
     return new BadGateway(`External API "${api}" ${detail}.`, error);
 }

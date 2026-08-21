@@ -271,6 +271,14 @@ Every identifier goes through `identifierAttribute()` from `src/otel/telemetry.t
 ports stay numeric. A numeric identifier reaches Tempo as an `intValue` and crashes any Grafana
 table panel that `select()`s it, because the attribute is sparse across a trace's spans.
 
+**`packages/otel` takes no new dependencies.** Its dependency list is a budget, not a starting
+point — it is preloaded before app code via `node --import`, sits in every app's hot path, and
+conceals its own faults when it breaks (the traces and `trace_id`-bearing logs you would debug it
+with are the casualties). Using what it already declares is unrestricted. To instrument something
+it has no dependency on, pass the instrumentation in from the app via `init`'s
+`extraInstrumentations` and keep the dependency in the app's `package.json` — the way
+`MongooseInstrumentation` is wired. See [its README](./packages/otel/README.md#dependency-policy--do-not-add-dependencies-to-this-package).
+
 Full conventions — span kinds, naming, name constants in `src/otel/telemetry.ts`, attribute types,
 the metric set and its cardinality budget, why the namespace is `job.*` and not `faas.*`, which
 metrics a self-rescheduling vs fixed-rate scheduler can honestly emit, and the assertions a test

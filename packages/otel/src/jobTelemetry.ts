@@ -1,4 +1,5 @@
 import { metrics, type Attributes, type Counter, type Histogram, type MeterProvider, type Span } from '@opentelemetry/api';
+import { CommonUtils } from '@radoslavirha/utils';
 import { isPromiseLike, withEntryPointSpan } from './spanTracing.js';
 import { getMeter } from './telemetry.js';
 
@@ -237,7 +238,7 @@ function jobInstruments(): JobInstruments {
     const provider = metrics.getMeterProvider();
     const cached = instrumentsByProvider.get(provider);
 
-    if (cached !== undefined) {
+    if (CommonUtils.notUndefined(cached)) {
         return cached;
     }
 

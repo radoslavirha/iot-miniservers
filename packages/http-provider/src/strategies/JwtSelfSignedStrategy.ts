@@ -1,5 +1,6 @@
 import { readFile } from 'node:fs/promises';
 import { SignJWT, importPKCS8 } from 'jose';
+import { CommonUtils } from '@radoslavirha/utils';
 import type { JwtSelfSignedAuth } from '../schemas/auth.schema.js';
 import type { IAuthStrategy } from './IAuthStrategy.js';
 
@@ -16,7 +17,7 @@ export class JwtSelfSignedStrategy implements IAuthStrategy {
 
     public async getCredentials(): Promise<Record<string, string>> {
         const nowSeconds = Math.floor(Date.now() / 1000);
-        const isExpired = this.expiresAt !== undefined && nowSeconds >= this.expiresAt - EXPIRY_BUFFER_SECONDS;
+        const isExpired = CommonUtils.notUndefined(this.expiresAt) && nowSeconds >= this.expiresAt - EXPIRY_BUFFER_SECONDS;
 
         if (this.cachedToken && !isExpired) {
             return { value: this.cachedToken };

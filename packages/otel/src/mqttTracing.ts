@@ -11,6 +11,7 @@ import {
     MESSAGING_OPERATION_TYPE_VALUE_SEND
 } from '@opentelemetry/semantic-conventions/incubating';
 import { ATTR_SERVER_ADDRESS, ATTR_SERVER_PORT } from '@opentelemetry/semantic-conventions';
+import { ArrayUtils, CommonUtils } from '@radoslavirha/utils';
 import { withSpan } from './spanTracing.js';
 
 /**
@@ -122,7 +123,7 @@ export function withMqttConsumeSpan<T>(options: MqttConsumeSpanOptions, fn: (spa
  * propagate simply starts a new trace instead of failing.
  */
 export function extractMqttContext(userProperties?: MqttUserProperties): Context {
-    if (userProperties === undefined) {
+    if (CommonUtils.isUndefined(userProperties)) {
         return context.active();
     }
 
@@ -140,9 +141,9 @@ function toTextMap(userProperties: MqttUserProperties): Record<string, string> {
     const carrier: Record<string, string> = {};
 
     for (const [key, value] of Object.entries(userProperties)) {
-        const first = Array.isArray(value) ? value[0] : value;
+        const first = ArrayUtils.isArray(value) ? value[0] : value;
 
-        if (first !== undefined) {
+        if (CommonUtils.notUndefined(first)) {
             carrier[key] = first;
         }
     }
@@ -174,7 +175,7 @@ function buildAttributes(options: MqttSpanOptions, operationName: string, operat
  * span attribute.
  */
 function parseBroker(brokerUrl?: string): Attributes {
-    if (brokerUrl === undefined) {
+    if (CommonUtils.isUndefined(brokerUrl)) {
         return {};
     }
 

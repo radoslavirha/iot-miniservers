@@ -15,7 +15,7 @@
  * Reference: https://github.com/OpenMiHome/mihome-binary-protocol/blob/master/doc/PROTOCOL.md
  */
 
-import { CommonUtils } from '@radoslavirha/utils';
+import { CommonUtils, StringUtils } from '@radoslavirha/utils';
 import { createHash } from 'crypto';
 import { HEADER_SIZE, MAGIC } from '../Constants.js';
 
@@ -35,7 +35,7 @@ export class BasePacket {
         }
 
         if (CommonUtils.notNil(token)) {
-            this.token = typeof token === 'string'
+            this.token = StringUtils.isString(token)
                 ? Buffer.from(token, 'hex')
                 : Buffer.from(token);
 

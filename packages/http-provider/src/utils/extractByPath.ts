@@ -1,4 +1,4 @@
-import { ObjectUtils } from '@radoslavirha/utils';
+import { ObjectUtils, StringUtils } from '@radoslavirha/utils';
 
 /**
  * Extracts a value from an object by dot-notation path.
@@ -17,7 +17,7 @@ export function extractByPath(obj: unknown, path: string): string {
         }
         current = (current as Record<string, unknown>)[part];
     }
-    if (typeof current !== 'string') {
+    if (!StringUtils.isString(current)) {
         throw new Error(`Extracted value at path "${path}" is not a string (got ${typeof current})`);
     }
     return current;

@@ -1,5 +1,5 @@
 import { createSocket } from 'dgram';
-import { CommonUtils } from '@radoslavirha/utils';
+import { ArrayUtils, CommonUtils } from '@radoslavirha/utils';
 import { MIOT_DEFAULT_PORT } from './Constants.js';
 import {
     MiotError,
@@ -233,9 +233,9 @@ export class MiotTransport {
     async callAction(deviceId: number, stamp: number, siid: number, aiid: number, args?: unknown): Promise<void> {
         const did = String(deviceId);
         let inArgs: unknown[];
-        if (args === undefined) {
+        if (CommonUtils.isUndefined(args)) {
             inArgs = [];
-        } else if (Array.isArray(args)) {
+        } else if (ArrayUtils.isArray(args)) {
             inArgs = args;
         } else {
             inArgs = [args];

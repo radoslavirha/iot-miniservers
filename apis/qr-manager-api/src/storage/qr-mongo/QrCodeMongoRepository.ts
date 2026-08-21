@@ -2,6 +2,7 @@ import { Injectable, Inject, Scope, ProviderScope } from '@tsed/di';
 import type { MongooseModel } from '@tsed/mongoose';
 import { MongoRepository, MongoCreate, MongoUpdate } from '@radoslavirha/tsed-mongoose';
 import { createResiliencePolicy, type ResiliencePolicy } from '@radoslavirha/resilience';
+import { CommonUtils } from '@radoslavirha/utils';
 import type { QueryOptions } from 'mongoose';
 import { QrCodeMongoDTO } from './dto/QrCodeMongoDTO.js';
 import { QrType } from '../../models/QrType.enum.js';
@@ -36,10 +37,10 @@ export class QrCodeMongoRepository extends MongoRepository<QrCodeMongoDTO> {
 
     public async findAll(filter: QrCodeListFilter = {}): Promise<QrCodeMongoDTO[]> {
         const query: Pick<Partial<QrCodeMongoDTO>, 'type' | 'active'> = {};
-        if (filter.type !== undefined) {
+        if (CommonUtils.notUndefined(filter.type)) {
             query.type = filter.type;
         }
-        if (filter.active !== undefined) {
+        if (CommonUtils.notUndefined(filter.active)) {
             query.active = filter.active;
         }
         const results = await this.model.find(query).lean<QrCodeMongoDTO[]>();

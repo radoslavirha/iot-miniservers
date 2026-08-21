@@ -4,6 +4,7 @@ import axios, {
     type InternalAxiosRequestConfig
 } from 'axios';
 import { createResiliencePolicy, type CircuitStateLike, type ResiliencePolicy } from '@radoslavirha/resilience';
+import { CommonUtils } from '@radoslavirha/utils';
 import { AuthStrategy } from './schemas/auth.schema.js';
 import {
     HttpProviderEntrySchema,
@@ -38,7 +39,7 @@ function isRetriableHttpError(error: unknown, statusCodes: number[]): boolean {
         return false;
     }
     const status = error.response?.status;
-    if (status !== undefined) {
+    if (CommonUtils.notUndefined(status)) {
         return statusCodes.includes(status);
     }
     return error.code !== 'ERR_CANCELED';
@@ -186,7 +187,7 @@ export class HttpProviderFactory<K extends string> {
         // Retained so callers can read the breaker's state. It is the cheapest signal
         // there is about an external dependency — it comes from real traffic, so it
         // costs no extra request and cannot raise a false alarm while idle.
-        if (recordBreakerAs !== undefined && policy.breaker) {
+        if (CommonUtils.notUndefined(recordBreakerAs) && policy.breaker) {
             this.breakerStates.set(recordBreakerAs, policy.breaker);
         }
 
