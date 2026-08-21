@@ -25,14 +25,13 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.TOOLKIT_HUB_PACKAGES }}
       - name: Create Release Pull Request and Publish
         id: changesets
-        uses: changesets/action@v1
+        uses: changesets/action@v2
         with:
-          title: Release APPs
-          commit: Version APIs
-          version: pnpm changeset:version
-          publish: pnpm changeset:tag
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          pr-title: Release APPs
+          commit-message: Version APIs
+          version-script: pnpm changeset:version
+          publish-script: pnpm changeset:tag
+          github-token: ${{ secrets.GITHUB_TOKEN }}
       - name: Set APPs matrix
         id: set-apps-matrix
         shell: bash
