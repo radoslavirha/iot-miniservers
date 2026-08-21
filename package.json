@@ -9,7 +9,7 @@
   "type": "module",
   "scripts": {
     "build": "pnpm --stream --recursive run build",
-    "changeset:tag": "changeset tag",
+    "changeset:tag": "changeset git-tag",
     "changeset:version": "changeset version",
     "cleanup:all": "pnpm --stream --recursive run cleanup:all",
     "cleanup:artifacts": "pnpm --stream --recursive run cleanup:artifacts",
