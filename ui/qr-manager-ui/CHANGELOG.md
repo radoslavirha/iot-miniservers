@@ -1,5 +1,14 @@
 # qr-manager-ui
 
+## 0.7.2
+
+### Patch Changes
+
+- [`8046bc5`](https://github.com/radoslavirha/iot-miniservers/commit/8046bc5e20911838609caef053f1a5d209c3cd82) Thanks [@radoslavirha](https://github.com/radoslavirha)! - Update dependencies
+- Updated dependencies [[`8046bc5`](https://github.com/radoslavirha/iot-miniservers/commit/8046bc5e20911838609caef053f1a5d209c3cd82)]:
+  - @radoslavirha/ui-kit@1.0.1
+  - @radoslavirha/ui-runtime@0.2.1
+
 ## 0.7.1
 
 ### Patch Changes

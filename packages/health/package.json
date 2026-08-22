@@ -1,6 +1,6 @@
 {
     "name": "@radoslavirha/health",
-    "version": "0.1.0",
+    "version": "0.1.1",
     "description": "Framework-agnostic health check contract, registry and application/health+json reporting for Kubernetes probes",
     "private": true,
     "type": "module",

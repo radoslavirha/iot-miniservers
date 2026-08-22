@@ -1,6 +1,6 @@
 {
     "name": "@radoslavirha/nginx-runtime",
-    "version": "0.2.0",
+    "version": "0.2.1",
     "private": true,
     "description": "Shared nginx probe endpoint and runtime-config guard for the SPA images",
     "type": "module",
