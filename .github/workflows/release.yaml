@@ -43,7 +43,7 @@ jobs:
           set -euo pipefail
 
           fail() {
-            echo "::error title=Release guard::$1"
+            echo "::error title=Release guard::$*"
             exit 1
           }
 
@@ -54,7 +54,10 @@ jobs:
           for name in PUBLISHED HAS_CHANGESETS; do
             case "${!name}" in
               true | false) ;;
-              *) fail "changesets/action reported ${name}='${!name}', expected 'true' or 'false'. Its output contract changed - fix this workflow before releasing." ;;
+              *)
+                fail "changesets/action reported ${name}='${!name}', expected 'true' or 'false'." \
+                     "Its output contract changed - fix this workflow before releasing."
+                ;;
             esac
           done
 
@@ -73,7 +76,8 @@ jobs:
           # From here a release was published, so it has to yield something we can act on.
           packages="$PUBLISHED_PACKAGES"
           if ! echo "$packages" | jq -e 'type == "array" and length > 0' > /dev/null 2>&1; then
-            fail "A release was published but 'published-packages' is empty or malformed ('${packages}'). Refusing to skip the deploy."
+            fail "A release was published but 'published-packages' is empty or malformed" \
+                 "('${packages}'). Refusing to skip the deploy."
           fi
           echo "::notice title=Released::$(echo "$packages" | jq -r '[.[] | "\(.name)@\(.version)"] | join(", ")')"
 
@@ -93,7 +97,9 @@ jobs:
                 missing_deploy="${missing_deploy} ${app_dir}/${target}"
                 continue
               fi
-              include=$(echo "$include" | jq -c --arg p "${app_dir}/${target}" --arg v "$version" '. + [{"path": $p, "version": $v}]')
+              include=$(echo "$include" | jq -c \
+                --arg p "${app_dir}/${target}" --arg v "$version" \
+                '. + [{"path": $p, "version": $v}]')
             done
           done
 
