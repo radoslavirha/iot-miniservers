@@ -7,7 +7,7 @@ inputs:
     description: Target environment (sandbox or production)
     required: true
   packages:
-    description: 'JSON array of apps, e.g. [{"name":"miot-bridge-api","version":"0.2.3"}]'
+    description: 'JSON array of apps, e.g. [{"path":"apis/miot-bridge-api","version":"0.2.3"}]'
     required: true
   homelab_pat:
     description: PAT with contents:write on radoslavirha/homelab
@@ -59,7 +59,7 @@ runs:
         cd homelab
         git config user.name "github-actions[bot]"
         git config user.email "github-actions[bot]@users.noreply.github.com"
-        APPS=$(echo "$PACKAGES" | jq -r '[.[] | "\(.name)@\(.version)"] | join(", ")')
+        APPS=$(echo "$PACKAGES" | jq -r '[.[] | "\(.path)@\(.version)"] | join(", ")')
         git add .
         git diff --staged --quiet || git commit -m "chore(iot): deploy $ENV [$APPS]"
         git push

@@ -35,33 +35,91 @@ jobs:
       - name: Set APPs matrix
         id: set-apps-matrix
         shell: bash
+        env:
+          PUBLISHED: ${{ steps.changesets.outputs.published }}
+          HAS_CHANGESETS: ${{ steps.changesets.outputs.has-changesets }}
+          PUBLISHED_PACKAGES: ${{ steps.changesets.outputs.published-packages }}
         run: |
-          packages='${{ steps.changesets.outputs.published-packages }}'
-          if [ -z "$packages" ] || [ "$packages" = "null" ] || [ "$packages" = "[]" ]; then
+          set -euo pipefail
+
+          fail() {
+            echo "::error title=Release guard::$*"
+            exit 1
+          }
+
+          # Guard the action's output contract itself. Every silent release so far was
+          # an output that had been renamed upstream and therefore read as empty, which
+          # is indistinguishable from "nothing to release" unless we check. An output we
+          # cannot read is a defect, not a no-op.
+          for name in PUBLISHED HAS_CHANGESETS; do
+            case "${!name}" in
+              true | false) ;;
+              *)
+                fail "changesets/action reported ${name}='${!name}', expected 'true' or 'false'." \
+                     "Its output contract changed - fix this workflow before releasing."
+                ;;
+            esac
+          done
+
+          # No publish happened: either a version PR was created/updated, or this push
+          # carried no changesets at all. Both are ordinary and must not fail.
+          if [ "$PUBLISHED" != "true" ]; then
+            if [ "$HAS_CHANGESETS" = "true" ]; then
+              echo "::notice title=Release::Changesets pending - version PR created or updated. Nothing to deploy."
+            else
+              echo "::notice title=Release::No changesets and nothing left to publish. Nothing to deploy."
+            fi
             echo "json={}" >> "$GITHUB_OUTPUT"
             exit 0
           fi
+
+          # From here a release was published, so it has to yield something we can act on.
+          packages="$PUBLISHED_PACKAGES"
+          if ! echo "$packages" | jq -e 'type == "array" and length > 0' > /dev/null 2>&1; then
+            fail "A release was published but 'published-packages' is empty or malformed" \
+                 "('${packages}'). Refusing to skip the deploy."
+          fi
+          echo "::notice title=Released::$(echo "$packages" | jq -r '[.[] | "\(.name)@\(.version)"] | join(", ")')"
+
+          apps_seen=0
           include="[]"
+          missing_deploy=""
           for app_dir in apis ui; do
             for pkg_json in "${app_dir}"/*/package.json; do
               [ -f "$pkg_json" ] || continue
+              apps_seen=$((apps_seen + 1))
               dir=$(dirname "$pkg_json")
               target=$(basename "$dir")
-              if [ ! -f "${dir}/deploy.json" ]; then
-                continue
-              fi
               pkg_name=$(jq -r '.name' "$pkg_json")
               version=$(echo "$packages" | jq -r --arg n "$pkg_name" '.[] | select(.name == $n) | .version')
-              if [ -n "$version" ]; then
-                include=$(echo "$include" | jq -c --arg p "${app_dir}/${target}" --arg v "$version" '. + [{"path": $p, "version": $v}]')
+              [ -n "$version" ] || continue
+              if [ ! -f "${dir}/deploy.json" ]; then
+                missing_deploy="${missing_deploy} ${app_dir}/${target}"
+                continue
               fi
+              include=$(echo "$include" | jq -c \
+                --arg p "${app_dir}/${target}" --arg v "$version" \
+                '. + [{"path": $p, "version": $v}]')
             done
           done
-          if [ "$include" = "[]" ]; then
-            echo "json={}" >> "$GITHUB_OUTPUT"
-          else
-            echo "json={\"include\":$include}" >> "$GITHUB_OUTPUT"
+
+          # apis/ or ui/ moved and the matrix would quietly come out empty.
+          if [ "$apps_seen" -eq 0 ]; then
+            fail "No app package.json found under apis/ or ui/. The repository layout changed - fix this workflow."
           fi
+          if [ -n "$missing_deploy" ]; then
+            fail "Released app(s) without a deploy.json:${missing_deploy}. Add one or drop the app from the release."
+          fi
+
+          # Shared packages/* can be released on their own; that legitimately deploys nothing.
+          if [ "$include" = "[]" ]; then
+            echo "::notice title=Release::Only shared packages were released. Nothing to deploy."
+            echo "json={}" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "::notice title=Deploying::$(echo "$include" | jq -r '[.[] | "\(.path)@\(.version)"] | join(", ")')"
+          echo "json={\"include\":$include}" >> "$GITHUB_OUTPUT"
   build-app-images:
     name: Publish ${{ matrix.path }} ${{ matrix.version }}
     needs:
