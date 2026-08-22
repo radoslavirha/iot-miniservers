@@ -1,6 +1,6 @@
 {
     "name": "@radoslavirha/ui-runtime",
-    "version": "0.2.0",
+    "version": "0.2.1",
     "private": true,
     "description": "Runtime config loading and API status primitives for the browser apps",
     "type": "module",

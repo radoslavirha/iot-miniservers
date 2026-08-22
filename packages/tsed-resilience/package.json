@@ -1,6 +1,6 @@
 {
     "name": "@radoslavirha/tsed-resilience",
-    "version": "0.2.0",
+    "version": "0.2.1",
     "description": "Ts.ED request cancellation: a @RequestSignal() decorator injecting an AbortSignal tied to the HTTP request lifecycle",
     "private": true,
     "type": "module",

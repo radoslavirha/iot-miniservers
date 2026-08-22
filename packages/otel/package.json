@@ -1,6 +1,6 @@
 {
     "name": "@radoslavirha/otel",
-    "version": "0.6.1",
+    "version": "0.6.2",
     "description": "OpenTelemetry bootstrap and telemetry helpers",
     "private": true,
     "type": "module",
