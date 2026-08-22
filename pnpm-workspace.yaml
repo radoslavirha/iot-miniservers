@@ -5,17 +5,17 @@ packages:
 
 catalog:
   '@radoslavirha/config-eslint': ^0.4.7
-  '@radoslavirha/config-tsdown': 0.2.2
+  '@radoslavirha/config-tsdown': 0.2.3
   '@radoslavirha/config-typescript': ^1.1.4
   '@radoslavirha/config-vitest': ^0.4.5
   '@radoslavirha/redaction': ^0.2.2
-  '@radoslavirha/tsed-common': ^0.5.7
-  '@radoslavirha/tsed-configuration': ^0.8.4
-  '@radoslavirha/tsed-logger': ^0.6.3
-  '@radoslavirha/tsed-platform': ^5.0.0
-  '@radoslavirha/tsed-swagger': ^9.1.4
+  '@radoslavirha/tsed-common': ^0.5.8
+  '@radoslavirha/tsed-configuration': ^0.8.5
+  '@radoslavirha/tsed-logger': ^0.6.4
+  '@radoslavirha/tsed-platform': ^5.0.1
+  '@radoslavirha/tsed-swagger': ^9.1.5
   '@radoslavirha/utils': ^0.9.0
-  '@radoslavirha/tsed-mongoose': ^5.0.7
+  '@radoslavirha/tsed-mongoose': ^5.0.8
   '@types/node': ^26.2.0
   '@types/supertest': ^7.2.1
   '@vitest/coverage-v8': ^4.1.11
@@ -24,7 +24,7 @@ catalog:
   cross-env: ^10.1.0
   dotenv: ^17.4.2
   esbuild: ^0.28.2
-  eslint: ^10.8.1
+  eslint: ^10.9.0
   jose: ^6.2.9
   mongoose: ^9.9.3
   nodemon: ^3.1.14
@@ -86,25 +86,25 @@ catalogs:
     '@swc/core': ^1.16.1
     '@swc/helpers': ^0.5.23
   tsed:
-    '@tsed/ajv': ^8.38.0
-    '@tsed/core': ^8.38.0
-    '@tsed/di': ^8.38.0
-    '@tsed/engines': ^8.38.0
-    '@tsed/exceptions': ^8.38.0
-    '@tsed/json-mapper': ^8.38.0
-    '@tsed/mongoose': ^8.38.0
-    '@tsed/openspec': ^8.38.0
-    '@tsed/platform-cache': ^8.38.0
-    '@tsed/platform-exceptions': ^8.38.0
-    '@tsed/platform-express': ^8.38.0
-    '@tsed/platform-http': ^8.38.0
-    '@tsed/platform-middlewares': ^8.38.0
-    '@tsed/platform-params': ^8.38.0
-    '@tsed/platform-response-filter': ^8.38.0
-    '@tsed/platform-views': ^8.38.0
-    '@tsed/schema': ^8.38.0
-    '@tsed/swagger': ^8.38.0
-    '@tsed/testcontainers-mongo': ^8.38.0
+    '@tsed/ajv': ^8.38.2
+    '@tsed/core': ^8.38.2
+    '@tsed/di': ^8.38.2
+    '@tsed/engines': ^8.38.2
+    '@tsed/exceptions': ^8.38.2
+    '@tsed/json-mapper': ^8.38.2
+    '@tsed/mongoose': ^8.38.2
+    '@tsed/openspec': ^8.38.2
+    '@tsed/platform-cache': ^8.38.2
+    '@tsed/platform-exceptions': ^8.38.2
+    '@tsed/platform-express': ^8.38.2
+    '@tsed/platform-http': ^8.38.2
+    '@tsed/platform-middlewares': ^8.38.2
+    '@tsed/platform-params': ^8.38.2
+    '@tsed/platform-response-filter': ^8.38.2
+    '@tsed/platform-views': ^8.38.2
+    '@tsed/schema': ^8.38.2
+    '@tsed/swagger': ^8.38.2
+    '@tsed/testcontainers-mongo': ^8.38.2
     ajv: ^8.20.0
 
 injectWorkspacePackages: true
