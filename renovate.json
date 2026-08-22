@@ -2,7 +2,7 @@
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": ["config:recommended"],
   "timezone": "Europe/Prague",
-  "enabledManagers": ["npm"],
+  "enabledManagers": ["npm", "github-actions"],
   "platformAutomerge": false,
   "automergeStrategy": "squash",
   "prHourlyLimit": 2,
@@ -23,6 +23,11 @@
       "description": "Everything outside the toolkit is listed on the Dependency Dashboard and opens a PR only when ticked there. This replaces a blanket `enabled: false`, which suppressed the lookup entirely and left non-toolkit dependencies invisible rather than merely unautomated.",
       "matchPackageNames": ["**"],
       "dependencyDashboardApproval": true
+    },
+    {
+      "description": "GitHub Actions skip the dashboard tick and open PRs directly. The dashboard is the right default for npm, where a tick costs one click against hundreds of dependencies, but there are only nine actions here and seven of them float on a major tag (`@v7`), which Renovate re-resolves in place - so for those it proposes majors and nothing else. A major of a release-critical action is the exact failure this repo already had: @changesets/cli v3 needed changesets/action@v2, the workflow stayed on v1, and three releases cut tags while publishing no image. That update must arrive as a reviewable PR, not as a line on a dashboard nobody reads. Deliberately no automerge: majors are the only thing this manager will mostly produce, and majors are what broke it.",
+      "matchManagers": ["github-actions"],
+      "dependencyDashboardApproval": false
     },
     {
       "description": "toolkit-hub packages are released together and consumed only through the pnpm catalog, so they travel as a single PR, and they are the one group that does not wait for a dashboard tick. rangeStrategy 'bump' is what makes the catalog track releases at all: under the default 'replace' an in-range release (^0.5.7 -> 0.5.8) would change only pnpm-lock.yaml and the catalog entry would silently drift behind. registryUrls is not redundant with the root .npmrc: Renovate attaches a package file's .npmrc to package.json files only, so catalog entries in pnpm-workspace.yaml would otherwise be looked up on registry.npmjs.org and every one of them would 404.",
