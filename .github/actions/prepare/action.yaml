@@ -18,7 +18,7 @@ runs:
       with:
         version: 11
     - name: Set up Node.js v24
-      uses: actions/setup-node@v6
+      uses: actions/setup-node@v7
       with:
         node-version: 24
         cache: pnpm
