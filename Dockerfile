@@ -71,10 +71,10 @@ RUN apk add --no-cache jq=1.8.1-r0
 COPY --from=build-homelab-dashboard-ui /usr/src/app/ui/homelab-dashboard-ui/dist /usr/share/nginx/html
 COPY packages/nginx-runtime/conf.d/healthz.conf /etc/nginx/snippets/healthz.conf
 COPY packages/nginx-runtime/docker-entrypoint.d/05-validate-runtime-config.sh /docker-entrypoint.d/
-COPY ui/homelab-dashboard-ui/docker-entrypoint.d/10-derive-unifi-host.envsh /docker-entrypoint.d/
+COPY ui/homelab-dashboard-ui/docker-entrypoint.d/10-require-unifi-env.sh /docker-entrypoint.d/
 # The stock entrypoint renders /etc/nginx/templates/*.template into conf.d.
 COPY ui/homelab-dashboard-ui/nginx.conf.template /etc/nginx/templates/default.conf.template
-RUN chmod +x /docker-entrypoint.d/05-validate-runtime-config.sh /docker-entrypoint.d/10-derive-unifi-host.envsh
+RUN chmod +x /docker-entrypoint.d/05-validate-runtime-config.sh /docker-entrypoint.d/10-require-unifi-env.sh
 EXPOSE 80
 # ENTRYPOINT / CMD / STOPSIGNAL are inherited from the base image on purpose:
 # STOPSIGNAL SIGQUIT is what makes nginx shut down gracefully instead of

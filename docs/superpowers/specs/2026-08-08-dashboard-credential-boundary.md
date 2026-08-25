@@ -14,7 +14,7 @@
 | --- | --- | --- |
 | [`specs/2026-08-06-iot-app-health-checks-frontend.md`](./2026-08-06-iot-app-health-checks-frontend.md) | this repo | Built the config-validation machinery this changes the shape of |
 | [`specs/2026-08-08-nginx-ipv6-listener.md`](./2026-08-08-nginx-ipv6-listener.md) | this repo | Touches the same four nginx files. Independent, but land one before starting the other |
-| *(to be written — see [Homelab hand-off](#homelab-hand-off))* | `homelab` | Values changes. **Must be written after this is implemented**, not before |
+| [`plans/2026-08-25-dashboard-credential-boundary-homelab.md`](../../../../homelab/docs/superpowers/plans/2026-08-25-dashboard-credential-boundary-homelab.md) | `homelab` | Values changes. Written 2026-08-25 after implementation; step 1 of its rollout gate is applied |
 
 ---
 
@@ -118,13 +118,13 @@ After the change the dev proxy injects the header itself, from a gitignored loca
 
 ### 1. nginx
 
-- [ ] `ui/homelab-dashboard-ui/nginx.conf.template` — add `proxy_set_header X-Api-Key "${SECRET_UNIFI_API_KEY}";` to the `/proxy/network/` location, with a comment that the credential is deliberately server-side and that `proxy_set_header` also overrides any client-supplied value.
-- [ ] `ui/homelab-dashboard-ui/nginx.conf` — the static fallback has no `/proxy/network/` block and needs none; confirm rather than assume, and leave a comment saying the fallback is for bare `docker run` and does not proxy.
+- [x] `ui/homelab-dashboard-ui/nginx.conf.template` — add `proxy_set_header X-Api-Key "${SECRET_UNIFI_API_KEY}";` to the `/proxy/network/` location, with a comment that the credential is deliberately server-side and that `proxy_set_header` also overrides any client-supplied value.
+- [x] `ui/homelab-dashboard-ui/nginx.conf` — the static fallback has no `/proxy/network/` block and needs none; confirm rather than assume, and leave a comment saying the fallback is for bare `docker run` and does not proxy.
 
 ### 2. The env guard
 
-- [ ] Delete `ui/homelab-dashboard-ui/docker-entrypoint.d/10-derive-unifi-host.envsh`.
-- [ ] Add `ui/homelab-dashboard-ui/docker-entrypoint.d/10-require-unifi-env.sh`:
+- [x] Delete `ui/homelab-dashboard-ui/docker-entrypoint.d/10-derive-unifi-host.envsh`.
+- [x] Add `ui/homelab-dashboard-ui/docker-entrypoint.d/10-require-unifi-env.sh`:
 
 ```sh
 #!/bin/sh
@@ -144,20 +144,20 @@ fatal() { echo "[homelab-dashboard-ui] FATAL: $*" >&2; exit 1; }
 echo "[homelab-dashboard-ui] Unifi proxy configuration present"
 ```
 
-- [ ] `Dockerfile` — update the `COPY` and `chmod` for the renamed hook.
-- [ ] Numbering: it must run **before** `20-envsubst-on-templates.sh`, which is what substitutes both values into the template. `10-` keeps that.
+- [x] `Dockerfile` — update the `COPY` and `chmod` for the renamed hook.
+- [x] Numbering: it must run **before** `20-envsubst-on-templates.sh`, which is what substitutes both values into the template. `10-` keeps that.
 
 ### 3. Schema and browser code
 
-- [ ] `src/runtime/RuntimeConfig.ts` — drop `unifi.host` and `unifi.apiKey` from `AppConfigSchema`. `unifi` reduces to `{ site }`; keep it nested rather than flattening, so the values files and `config.example.json` change shape as little as possible.
-- [ ] `src/lib/unifi.ts` — remove the `X-Api-Key` header and the `apiKey` destructure. `fetchDnsRecords` keeps `site`.
-- [ ] `src/App.tsx` — status message loses the host: `Connecting to the Unifi controller…`.
-- [ ] `src/App.tsx` — the `UnifiAuthError` guidance currently says "Check `unifi.apiKey` in config.json", which becomes wrong. It is now a server-side secret: point at the secret and the proxy instead.
-- [ ] `public/config.json` and `public/config.example.json` — remove both fields.
+- [x] `src/runtime/RuntimeConfig.ts` — drop `unifi.host` and `unifi.apiKey` from `AppConfigSchema`. `unifi` reduces to `{ site }`; keep it nested rather than flattening, so the values files and `config.example.json` change shape as little as possible.
+- [x] `src/lib/unifi.ts` — remove the `X-Api-Key` header and the `apiKey` destructure. `fetchDnsRecords` keeps `site`.
+- [x] `src/App.tsx` — status message loses the host: `Connecting to the Unifi controller…`.
+- [x] `src/App.tsx` — the `UnifiAuthError` guidance currently says "Check `unifi.apiKey` in config.json", which becomes wrong. It is now a server-side secret: point at the secret and the proxy instead.
+- [x] `public/config.json` and `public/config.example.json` — remove both fields.
 
 ### 4. Dev proxy
 
-- [ ] `vite.config.ts` — replace `unifiHost()` (which reads `public/config.json`) with `loadEnv`, and inject the header in the proxy so dev matches production:
+- [x] `vite.config.ts` — replace `unifiHost()` (which reads `public/config.json`) with `loadEnv`, and inject the header in the proxy so dev matches production:
 
 ```ts
 const env = loadEnv(mode, process.cwd(), '');
@@ -173,41 +173,72 @@ const proxy = {
 ```
 
   - `defineConfig` must take the function form to receive `mode`.
-- [ ] `.gitignore` — it currently ignores `.env` but **not** `.env.local` or `.env.*.local`. Add them before telling anyone to put a key there.
-- [ ] `ui/homelab-dashboard-ui/README.md` — document the two dev variables and that `public/config.json` must never contain a credential again.
+- [x] `.gitignore` — it currently ignores `.env` but **not** `.env.local` or `.env.*.local`. Add them before telling anyone to put a key there.
+- [x] `ui/homelab-dashboard-ui/README.md` — document the two dev variables and that `public/config.json` must never contain a credential again.
 
 ### 5. Tests
 
-- [ ] `src/lib/unifi.spec.ts` — invert the credential assertion: the request must be made **without** an `X-Api-Key` header. A test that fails if the browser starts sending a credential again is the durable guard here.
-- [ ] `src/runtime/RuntimeConfig.spec.ts` — drop the `unifi.host` / `unifi.apiKey` cases; add one asserting a config containing a stray `apiKey` still parses (Zod strips unknown keys), because that is what makes the rollout ordering below safe.
-- [ ] `src/App.spec.tsx` — fixtures built via `AppConfigSchema.parse()` already, so they follow the schema; update the status-message assertion.
+- [x] `src/lib/unifi.spec.ts` — invert the credential assertion: the request must be made **without** an `X-Api-Key` header. A test that fails if the browser starts sending a credential again is the durable guard here.
+- [x] `src/runtime/RuntimeConfig.spec.ts` — drop the `unifi.host` / `unifi.apiKey` cases; add one asserting a config containing a stray `apiKey` still parses (Zod strips unknown keys), because that is what makes the rollout ordering below safe.
+- [x] `src/App.spec.tsx` — fixtures built via `AppConfigSchema.parse()` already, so they follow the schema; update the status-message assertion.
 
 ---
 
 ## Verification
 
-- [ ] **The key is not served.** `curl http://<dashboard>/config.json` — no `apiKey`, no `host`. Grep the built `dist/` for the key value too: `grep -r "$KEY" dist/` → nothing.
+> Ticked items were verified locally on 2026-08-25. The unticked ones need a
+> running deployment or a built image and are gated on the rollout below.
+
+- [x] **The key is not served.** `curl http://<dashboard>/config.json` — no `apiKey`, no `host`. Grep the built `dist/` for the key value too: `grep -r "$KEY" dist/` → nothing.
 - [ ] **The proxy still works.** Load the dashboard; DNS records render. In devtools, the request to `/proxy/network/...` carries **no** `X-Api-Key` from the browser.
 - [ ] **The upstream still gets it.** Records rendering *is* the proof, since Unifi 401s without a valid key.
-- [ ] **Fail-fast on a missing secret.** Run the image with `SECRET_UNIFI_API_KEY` unset → container exits non-zero naming the variable, value not echoed. Repeat for `UNIFI_HOST`.
+- [x] **Fail-fast on a missing secret.** Run the image with `SECRET_UNIFI_API_KEY` unset → container exits non-zero naming the variable, value not echoed. Repeat for `UNIFI_HOST`.
 - [ ] **No leak in logs.** `docker logs` and `kubectl logs` contain neither value. Plant a sentinel key in a local run and grep for it.
 - [ ] **Dev parity.** `pnpm dev` with `.env.local` set works, and the browser request carries no key.
 
 ---
 
-## Rollout ordering — this is a config-contract change
+## Rollout — single coordinated change
 
-`AGENTS.md` is explicit: *"Treat configuration as a versioned contract... All config changes must be backward compatible for rolling deployments... Assume a new ConfigMap can be applied before all old pods are replaced."* This change has both an old and a new contract, so it needs three steps rather than one commit:
+> **Superseded 2026-08-25.** This section originally specified a three-step ordering to keep the
+> rollout backward compatible. The repo owner has since ruled that **backwards compatibility is not
+> required here and brief downtime is acceptable**, so the gate is dropped. The original reasoning is
+> preserved below because it is still correct about *why* the ordering existed.
 
-1. **Add `UNIFI_HOST` to the app's `env:` in the values file.** Harmless to the running old image, which ignores it.
-2. **Bump `image.tag` to the new version.** The new image needs the env vars — now present. `config.json` still carries the old `unifi.host` / `apiKey`; Zod's default behaviour **strips unknown keys**, so the new validator accepts it. (This is also why `AGENTS.md` says not to enforce strict rejection of unknown keys.)
-3. **Only then remove `unifi.host` and `unifi.apiKey`** from `templates.config.content`.
+Values and image tag apply together in one ArgoCD sync: the `env: UNIFI_HOST` block, the removal of
+`unifi.host` / `unifi.apiKey` from `templates.config.content`, and the `image.tag` bump.
 
-Doing 3 before 2 breaks the old pod: the old validator still requires `apiKey`, so the pod fails init. It fails closed — the old pod keeps serving — but it stalls the rollout for no reason.
+**The accepted risk:** if Reloader restarts the old pod after the ConfigMap changes but before the new
+image is running, the old validating initContainer rejects a config with no `unifi.apiKey` and that pod
+will not start. It fails closed rather than serving something broken. This is understood and accepted.
+
+**This change is what closes the exposure — not the tag bump.** The ConfigMap holds only the
+`{{ SECRET_UNIFI_API_KEY }}` placeholder; jinja-init renders the real value into an emptyDir that nginx
+serves as `/config.json`. So until `templates.config.content` loses the field, nginx keeps serving the
+key regardless of which image is running.
 
 - [ ] Rotate the Unifi API key afterwards. It has been readable by anything that could reach the dashboard, so the old value should be considered disclosed regardless of who actually looked.
 
----
+<details>
+<summary>Original three-step ordering (no longer required)</summary>
+
+`AGENTS.md` is explicit: *"Treat configuration as a versioned contract... All config changes must be
+backward compatible for rolling deployments... Assume a new ConfigMap can be applied before all old pods
+are replaced."* Under that rule this change had both an old and a new contract, so it needed three steps:
+
+1. **Add `UNIFI_HOST` to the app's `env:` in the values file.** Harmless to the running old image.
+2. **Bump `image.tag`.** The new image needs the env vars — now present. `config.json` still carries the
+   old fields; Zod strips unknown keys, so the new validator accepts it.
+3. **Only then remove `unifi.host` and `unifi.apiKey`** from `templates.config.content`.
+
+Doing 3 before 2 breaks the old pod: the old validator still requires `apiKey`, so the pod fails init.
+It fails closed — the old pod keeps serving — but it stalls the rollout.
+
+The app-side property that made this safe still holds and is still worth keeping: the new schema strips
+unknown keys, so the new image runs against either config shape. That is asserted by a test in
+`src/runtime/RuntimeConfig.spec.ts`.
+
+</details>
 
 ## Homelab hand-off
 
@@ -225,8 +256,8 @@ It needs to cover:
 
 ## Release
 
-- [ ] Changeset: **minor** for `homelab-dashboard-ui` — the runtime config contract changes, which is more than a patch even though no browser-visible behaviour moves.
-- [ ] `pnpm run verify`.
+- [x] Changeset: **minor** for `homelab-dashboard-ui` — the runtime config contract changes, which is more than a patch even though no browser-visible behaviour moves.
+- [x] `pnpm run verify`.
 - [ ] The dashboard has **no sandbox**; its tag bump rolls the live dashboard on server3. The env guard means a missing variable fails init rather than serving a broken page, so with `maxUnavailable: 0` the old pod keeps serving — but watch the first rollout.
 
 ---

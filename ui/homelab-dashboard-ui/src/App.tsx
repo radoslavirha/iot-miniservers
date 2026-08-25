@@ -16,7 +16,7 @@ export function App({ config }: Props) {
     const [clusters, setClusters] = useState<Cluster[]>([]);
     const [status, setStatus] = useState<StatusState>({
         state: 'loading',
-        message: `Connecting to ${config.unifi.host}…`
+        message: 'Connecting to the Unifi controller…'
     });
     const [query, setQuery] = useState('');
     const searchRef = useRef<HTMLInputElement>(null);
@@ -76,8 +76,10 @@ export function App({ config }: Props) {
                         state: 'error',
                         message: err instanceof UnifiAuthError
                             // A rejected key is a config fault: say so, rather
-                            // than implying the controller is down.
-                            ? `${err.message} Check unifi.apiKey in config.json.`
+                            // than implying the controller is down. The key is
+                            // server-side now, so point at the secret and the
+                            // proxy rather than at config.json.
+                            ? `${err.message} Check the SECRET_UNIFI_API_KEY secret behind the proxy.`
                             : err instanceof Error ? err.message : String(err)
                     });
                 }

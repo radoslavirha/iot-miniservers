@@ -21,14 +21,21 @@ server {
     }
 
     # Proxy all Unifi Network-app requests to the controller.
-    # ${UNIFI_HOST} is substituted by envsubst at container start
-    # (set UNIFI_HOST env var, e.g. https://192.168.1.1).
+    # ${UNIFI_HOST} and ${SECRET_UNIFI_API_KEY} are substituted by envsubst at
+    # container start; 10-require-unifi-env.sh has already refused to boot if
+    # either is empty.
     location /proxy/network/ {
         proxy_pass         ${UNIFI_HOST}/proxy/network/;
         proxy_http_version 1.1;
         proxy_set_header   Host              $proxy_host;
         proxy_set_header   X-Real-IP         $remote_addr;
         proxy_set_header   X-Forwarded-For   $proxy_add_x_forwarded_for;
+        # The credential is deliberately server-side: a browser is an untrusted
+        # execution environment, so the key lives at the first server-side hop
+        # instead of in config.json. proxy_set_header also *replaces* any
+        # client-supplied X-Api-Key, so a visitor cannot inject their own.
+        # Note: `nginx -T` prints this rendered config, key included.
+        proxy_set_header   X-Api-Key         "${SECRET_UNIFI_API_KEY}";
         proxy_ssl_verify   off;
     }
 }

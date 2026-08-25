@@ -23,17 +23,20 @@ export async function fetchDnsRecords(
     cfg: AppConfig,
     options: FetchDnsRecordsOptions = {}
 ): Promise<DnsRecord[]> {
-    const { apiKey, site = 'default' } = cfg.unifi;
-    // Header name confirmed from kashalls/external-dns-unifi-webhook source
-    const headers: Record<string, string> = { 'X-Api-Key': apiKey };
+    const { site = 'default' } = cfg.unifi;
 
+    // No credential is sent from here, deliberately. The X-Api-Key header is
+    // attached by the server-side hop — nginx proxy_set_header in production,
+    // the Vite proxy in dev — so the browser never holds the key.
+    // (Header name confirmed from kashalls/external-dns-unifi-webhook source.)
+    //
     // Always use relative paths so the same code works in all environments:
     //   dev     → Vite server.proxy forwards /proxy/network/* to Unifi
     //   preview → Vite preview.proxy forwards /proxy/network/* to Unifi
     //   Docker  → nginx proxy_pass forwards /proxy/network/* to Unifi
     let res: Response;
     try {
-        res = await fetch(`/proxy/network/v2/api/site/${site}/static-dns`, { headers });
+        res = await fetch(`/proxy/network/v2/api/site/${site}/static-dns`);
     } catch (error) {
         options.onOutcome?.(classifyError());
         throw error;

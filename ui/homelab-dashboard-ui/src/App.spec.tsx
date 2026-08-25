@@ -8,7 +8,7 @@ import { AppConfigSchema } from './runtime/RuntimeConfig.js';
 // will actually be handed at runtime.
 const config = AppConfigSchema.parse({
     title: 'test-lab',
-    unifi: { host: 'https://192.168.1.1', apiKey: 'test-key', site: 'default' },
+    unifi: { site: 'default' },
     serverPattern: '^server(\\d+)\\.home$',
     scheme: 'http'
 });

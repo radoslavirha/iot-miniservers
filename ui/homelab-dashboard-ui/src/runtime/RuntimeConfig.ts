@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { httpUrl, loadRuntimeConfig } from '@radoslavirha/ui-runtime';
+import { loadRuntimeConfig } from '@radoslavirha/ui-runtime';
 
 /**
  * The dashboard's runtime configuration contract.
@@ -10,18 +10,15 @@ import { httpUrl, loadRuntimeConfig } from '@radoslavirha/ui-runtime';
  */
 export const AppConfigSchema = z.object({
     title: z.string().optional(),
+    /**
+     * `host` and `apiKey` deliberately do NOT live here. config.json is served
+     * to the browser, so anything in it is public; both moved to the UNIFI_HOST
+     * and SECRET_UNIFI_API_KEY env vars, which nginx consumes server-side.
+     * Zod strips unknown keys, so a ConfigMap still carrying the old fields
+     * parses fine — the image works against either config shape.
+     */
     unifi: z.object({
-        /**
-         * Absolute URL — nginx proxy_passes to it, and the entrypoint derives
-         * UNIFI_HOST from this exact value.
-         */
-        host: httpUrl(),
-        /**
-         * Rendered from the homelab-dashboard-ui-unifi-credentials secret. The
-         * old entrypoint checked only `host`, so an empty substitution here
-         * booted a pod where every Unifi request 401s.
-         */
-        apiKey: z.string().min(1),
+        /** Path segment only, not a secret. */
         site: z.string().min(1).default('default')
     }),
     /** Capture group 1 must be the numeric server index. */

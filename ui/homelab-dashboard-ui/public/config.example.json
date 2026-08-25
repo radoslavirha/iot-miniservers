@@ -1,8 +1,6 @@
 {
     "title": "homelab",
     "unifi": {
-        "host": "https://192.168.1.1",
-        "apiKey": "your-api-key-here",
         "site": "default"
     },
     "serverPattern": "^server(\\d+)\\.home$",

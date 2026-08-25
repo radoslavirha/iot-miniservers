@@ -1,35 +1,34 @@
 import { describe, expect, it } from 'vitest';
 import { AppConfigSchema } from './RuntimeConfig.js';
 
-const minimal = { unifi: { host: 'https://192.168.1.1', apiKey: 'test-key' } };
+const minimal = { unifi: {} };
 
 describe('AppConfigSchema', () => {
     it('accepts a minimal config and applies defaults', () => {
         const config = AppConfigSchema.parse(minimal);
 
-        expect(config.unifi).toEqual({ host: 'https://192.168.1.1', apiKey: 'test-key', site: 'default' });
+        expect(config.unifi).toEqual({ site: 'default' });
         expect(config.serverPattern).toBe('^server(\\d+)\\.home$');
         expect(config.scheme).toBe('http');
         expect(config.exclude).toEqual([]);
         expect(config.paths).toEqual({});
     });
 
-    it('rejects a missing unifi.host', () => {
-        expect(AppConfigSchema.safeParse({ unifi: { apiKey: 'key' } }).success).toBe(false);
+    it('accepts a config still carrying the old host/apiKey fields', () => {
+        // Zod strips unknown keys, so this image runs against a config.json
+        // that still carries the old credential fields. Keeps a stale ConfigMap
+        // from failing the validating initContainer, and means the ConfigMap and
+        // the image can be updated in either order.
+        const result = AppConfigSchema.safeParse({
+            unifi: { host: 'https://192.168.1.1', apiKey: 'stale-key', site: 'default' }
+        });
+
+        expect(result.success).toBe(true);
+        expect(result.data?.unifi).toEqual({ site: 'default' });
     });
 
-    it('rejects a missing unifi.apiKey', () => {
-        expect(AppConfigSchema.safeParse({ unifi: { host: 'https://192.168.1.1' } }).success).toBe(false);
-    });
-
-    it('rejects an empty unifi.apiKey — the old entrypoint never checked this', () => {
-        const result = AppConfigSchema.safeParse({ unifi: { host: 'https://192.168.1.1', apiKey: '' } });
-
-        expect(result.success).toBe(false);
-    });
-
-    it('rejects a unifi.host that is not an absolute http(s) URL', () => {
-        expect(AppConfigSchema.safeParse({ unifi: { host: '192.168.1.1', apiKey: 'k' } }).success).toBe(false);
+    it('rejects an empty unifi.site', () => {
+        expect(AppConfigSchema.safeParse({ unifi: { site: '' } }).success).toBe(false);
     });
 
     it('rejects a serverPattern that is not a valid regex', () => {
@@ -44,7 +43,7 @@ describe('AppConfigSchema', () => {
 
     it('never puts a config value in the error output', () => {
         const sentinel = 'sup3r-s3cret-sentinel';
-        const result = AppConfigSchema.safeParse({ unifi: { host: sentinel, apiKey: '' } });
+        const result = AppConfigSchema.safeParse({ unifi: { site: '' }, scheme: sentinel });
 
         expect(result.success).toBe(false);
         expect(JSON.stringify(result.error?.issues)).not.toContain(sentinel);
