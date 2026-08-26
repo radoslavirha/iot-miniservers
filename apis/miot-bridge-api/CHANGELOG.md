@@ -1,5 +1,11 @@
 # miot-bridge
 
+## 0.22.6
+
+### Patch Changes
+
+- [`e1178c2`](https://github.com/radoslavirha/iot-miniservers/commit/e1178c221f404f28fdd956fb3cd61b009c65fd25) Thanks [@radoslavirha](https://github.com/radoslavirha)! - Swagger enum update to lowercase
+
 ## 0.22.5
 
 ### Patch Changes
