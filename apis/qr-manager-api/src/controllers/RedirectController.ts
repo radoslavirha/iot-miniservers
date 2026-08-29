@@ -29,7 +29,9 @@ import { SwaggerDocs } from '../models/SwaggerDocs.enum.js';
  * - `qr.home` is redirect-only because of this: `/qr-codes` and `/api/docs`
  *   arrive prefixed and match nothing. Admin access lives on the other route.
  *
- * Rationale: `docs/superpowers/specs/2026-08-29-qr-redirect-route-shape.md`.
+ * Full rationale, including why the gateway could not simply match the slug
+ * path instead: `homelab`,
+ * `gitops/k8s-manifests/server1/qr-manager-api/production/Middleware.addprefix-qr.yaml`.
  *
  * The `@Pattern` decorator rejects any input that does not match the slug shape
  * with 400 before the handler runs.
