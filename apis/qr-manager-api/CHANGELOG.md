@@ -1,5 +1,11 @@
 # qr-manager-api
 
+## 0.6.0
+
+### Minor Changes
+
+- [`e33dc87`](https://github.com/radoslavirha/iot-miniservers/commit/e33dc870f4d81ef17c43ec26f173bcd70e9df047) Thanks [@radoslavirha](https://github.com/radoslavirha)! - Slug route is /r
+
 ## 0.5.9
 
 ### Patch Changes
