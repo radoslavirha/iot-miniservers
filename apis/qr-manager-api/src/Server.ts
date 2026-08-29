@@ -17,12 +17,12 @@ import { ObjectUtils } from '@radoslavirha/utils';
         // HealthController stays at '/' so the probe path is identical across every app —
         // the chart's probe block is copy-paste only while that holds.
         //
-        // ORDER MATTERS HERE. RedirectController is @Controller('/') with @Get('/:slug'),
-        // which matches any single-segment path — including `/health`. Express resolves in
-        // registration order, so HealthController must come first or `/health` degrades
-        // into a slug lookup and 404s. `/health/live` and `/health/ready` are two segments
-        // and unaffected, so the probes would keep passing while the human-facing endpoint
-        // silently broke. Pinned by a test in Server.integration.spec.ts.
+        // Mount order is NOT load-bearing. It used to be: RedirectController was
+        // @Controller('/') with @Get('/:slug'), which matched any single-segment path
+        // including `/health`, so a reorder left every probe green while the human-facing
+        // `/health` degraded into a slug lookup. It now mounts at `/r` and cannot shadow
+        // anything. Server.integration.spec.ts pins the invariant rather
+        // than the ordering, so re-introducing a root catch-all fails there.
         '/': [SwaggerController, HealthController, ...ObjectUtils.values(rest)]
     }
 })

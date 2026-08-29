@@ -9,13 +9,33 @@ import { RedirectHandler } from '../handlers/RedirectHandler.js';
 import { SwaggerDocs } from '../models/SwaggerDocs.enum.js';
 
 /**
- * Public redirect endpoint. Static admin paths (`/qr-codes`, Swagger UI at `/`)
- * win the route match before this dynamic `:slug` parameter, so this controller
- * only handles top-level scan targets. The `@Pattern` decorator rejects any
- * input that does not match the slug shape with 400 before the handler runs.
+ * Public redirect endpoint, mounted at `/r` rather than at the root. Mount order
+ * is irrelevant here: `/r/:slug` cannot shadow `/health`, `/qr-codes` or the
+ * Swagger UI, because it is one segment deeper than all of them.
+ *
+ * **The printed URL does not contain the `/r`.** A label reads
+ * `http://qr.home/x7k2`; a Traefik `addPrefix` middleware on the `qr.home`
+ * HTTPRoute — `homelab`,
+ * `gitops/k8s-manifests/server1/qr-manager-api/production/` — prepends it, so the
+ * request arrives here as `/r/x7k2`. Adding the prefix at the gateway rather than
+ * to the printed string is what keeps the QR physically small.
+ *
+ * Two consequences worth knowing before "fixing" anything:
+ *
+ * - `redirect.baseURL` is `http://qr.home` with **no** `/r`, and that is correct.
+ *   Adding one there would double the prefix and break every printed label. A
+ *   host that has no such middleware (the shared `api.<domain>/iot/qr-manager`
+ *   route) must carry the `/r` in its `baseURL` instead.
+ * - `qr.home` is redirect-only because of this: `/qr-codes` and `/api/docs`
+ *   arrive prefixed and match nothing. Admin access lives on the other route.
+ *
+ * Rationale: `docs/superpowers/specs/2026-08-29-qr-redirect-route-shape.md`.
+ *
+ * The `@Pattern` decorator rejects any input that does not match the slug shape
+ * with 400 before the handler runs.
  */
 @Description('Public redirect endpoint. Resolves a 4-character slug to its target URL.')
-@Controller('/')
+@Controller('/r')
 @Scope(ProviderScope.SINGLETON)
 @Docs(SwaggerDocs.API)
 export class RedirectController {

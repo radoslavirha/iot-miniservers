@@ -262,11 +262,14 @@ Every API exposes `/health/live`, `/health/ready` and `/health` via `HealthContr
 - **Mount `HealthController` at `/`**, never under a version prefix — the probe path must be
   identical across apps or the Helm chart's probe block stops being copy-paste.
   `interactive-map-feeder-api` mounts its own controllers at `/v1` and health still at `/`.
-- **Mind mount order against catch-all routes.** `qr-manager-api`'s `RedirectController` is
-  `@Controller('/')` with `@Get('/:slug')`, which matches `/health` too. `HealthController`
-  must come first in the `mount` array. `/health/live` and `/health/ready` are two segments
-  and keep working either way, so a reorder leaves every probe green while `/health`
-  silently becomes a slug lookup.
+- **Never mount a single-segment catch-all at the root.** `@Controller('/')` with
+  `@Get('/:slug')` matches every literal top-level path, `/health` included, and Express
+  resolves in registration order — so the `mount` array becomes load-bearing and a reorder
+  leaves every probe green (`/health/live` and `/health/ready` are two segments) while
+  `/health` silently becomes a slug lookup. Mount the dynamic route one segment deeper
+  instead. `qr-manager-api` puts its redirect under `/r` and gets the short printed URL back
+  from a Traefik `addPrefix` middleware in `homelab`; `Server.integration.spec.ts` pins the
+  invariant by walking `Platform.getLayers()` rather than pinning one pair's order.
 - **Set `critical` deliberately.** `true` only for dependencies without which this pod can
   do nothing (its own database, its own broker). `false` for anything you cannot fix by
   restarting or rescheduling this pod — third-party APIs above all, since failing readiness

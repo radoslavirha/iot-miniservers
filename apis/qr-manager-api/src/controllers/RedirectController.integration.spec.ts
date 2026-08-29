@@ -36,7 +36,7 @@ describe('RedirectController (integration)', () => {
         expect.assertions(1);
         vi.spyOn(qrCodeService, 'getBySlug').mockResolvedValue(sampleModel());
 
-        const response = await request.get('/x7k2').expect(302);
+        const response = await request.get('/r/x7k2').expect(302);
 
         expect(response.headers['location']).toBe('https://iot-ui.home/devices/shelf-1');
     });
@@ -44,16 +44,16 @@ describe('RedirectController (integration)', () => {
     it('returns 404 when the slug is not found', async () => {
         vi.spyOn(qrCodeService, 'getBySlug').mockResolvedValue(undefined);
 
-        await request.get('/x7k2').expect(404);
+        await request.get('/r/x7k2').expect(404);
     });
 
     it('returns 404 when the slug is deactivated', async () => {
         vi.spyOn(qrCodeService, 'getBySlug').mockResolvedValue(sampleModel({ active: false }));
 
-        await request.get('/x7k2').expect(404);
+        await request.get('/r/x7k2').expect(404);
     });
 
     it('returns 400 when the slug does not match the 4-character alphanumeric pattern', async () => {
-        await request.get('/toolong').expect(400);
+        await request.get('/r/toolong').expect(400);
     });
 });

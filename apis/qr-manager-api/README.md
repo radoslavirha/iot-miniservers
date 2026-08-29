@@ -7,7 +7,7 @@ Use case: print a QR code once; change the target URL at any time without reprin
 ## Consumed By
 
 - `qr-manager-ui`: admin CRUD operations
-- Phone / scanner: `GET /:slug` → 302 redirect to `targetURL`
+- Phone / scanner: `GET /r/:slug` → 302 redirect to `targetURL`. Printed labels read `http://qr.home/<slug>`; the `/r` is added by a Traefik `addPrefix` middleware on the `qr.home` HTTPRoute in `homelab`
 - Other services (e.g. future IoT management API): `POST /qr-codes` to allocate a slug, store it, embed `qrURL` in printed labels
 
 ## External Dependencies
@@ -20,7 +20,7 @@ Use case: print a QR code once; change the target URL at any time without reprin
 
 | Method | Path | Description |
 |--------|------|-------------|
-| GET | `/:slug` | Resolve slug → `302 Location: targetURL`. `404` if unknown or inactive |
+| GET | `/r/:slug` | Resolve slug → `302 Location: targetURL`. `404` if unknown or inactive, `400` if not 4-char alphanumeric |
 | POST | `/qr-codes` | Allocate slug, persist record |
 | GET | `/qr-codes` | List records. Query: `type`, `active` |
 | GET | `/qr-codes/:id` | Get record by MongoDB id |
