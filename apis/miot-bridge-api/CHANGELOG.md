@@ -1,5 +1,11 @@
 # miot-bridge
 
+## 0.23.0
+
+### Minor Changes
+
+- [`ea18069`](https://github.com/radoslavirha/iot-miniservers/commit/ea18069886553c2d3a21caf97662138b23645b08) Thanks [@radoslavirha](https://github.com/radoslavirha)! - Fix model names and trace errors
+
 ## 0.22.6
 
 ### Patch Changes
