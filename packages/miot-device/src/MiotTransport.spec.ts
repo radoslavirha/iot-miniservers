@@ -256,13 +256,34 @@ describe('MiotTransport', () => {
     });
 
     describe('getProperties()', () => {
-        it('collects all results in a single chunk', async () => {
-            const result = [
-                { did: String(DEVICE_ID), siid: 2, piid: 1, value: 100, code: 0 },
-                { did: String(DEVICE_ID), siid: 2, piid: 2, value: 50, code: 0 }
-            ];
+        it('reads a single property in one command', async () => {
+            const result = [{ did: String(DEVICE_ID), siid: 2, piid: 1, value: 100, code: 0 }];
             const response = buildCommandResponse({ id: 1, result });
             createSocketMock.mockReturnValue(createMockSocket(response));
+
+            const transport = new MiotTransport('192.168.1.1', TOKEN_HEX);
+            const { results, finalStamp } = await transport.getProperties(DEVICE_ID, STAMP, [{ siid: 2, piid: 1 }]);
+
+            expect(results).toHaveLength(1);
+            expect(results[0].value).toBe(100);
+            expect(finalStamp).toBe(STAMP);
+        });
+
+        // The behaviour the whole change is about: never more than one property per datagram,
+        // because a multi-property read on the house vacuum returned unchanged values across a
+        // real change while a single-property one did not.
+        it('issues one command per property and never batches them', async () => {
+            const makeResponse = (siid: number, piid: number, value: number) =>
+                buildCommandResponse({
+                    id: 1,
+                    result: [{ did: String(DEVICE_ID), siid, piid, value, code: 0 }]
+                });
+
+            const sockets = [
+                createMockSocket(makeResponse(2, 1, 10)),
+                createMockSocket(makeResponse(2, 2, 20))
+            ];
+            createSocketMock.mockReturnValueOnce(sockets[0]).mockReturnValueOnce(sockets[1]);
 
             const transport = new MiotTransport('192.168.1.1', TOKEN_HEX);
             const { results, finalStamp } = await transport.getProperties(
@@ -271,35 +292,13 @@ describe('MiotTransport', () => {
                 [{ siid: 2, piid: 1 }, { siid: 2, piid: 2 }]
             );
 
-            expect(results).toHaveLength(2);
-            expect(results[0].value).toBe(100);
-            expect(results[1].value).toBe(50);
-            expect(finalStamp).toBe(STAMP);
-        });
-
-        it('issues multiple commands when props exceed maxChunkSize', async () => {
-            const makeResponse = (siid: number, piid: number, value: number) =>
-                buildCommandResponse({
-                    id: 1,
-                    result: [{ did: String(DEVICE_ID), siid, piid, value, code: 0 }]
-                });
-
-            // Two calls needed for 2 props with maxChunkSize=1
-            createSocketMock
-                .mockReturnValueOnce(createMockSocket(makeResponse(2, 1, 10)))
-                .mockReturnValueOnce(createMockSocket(makeResponse(2, 2, 20)));
-
-            const transport = new MiotTransport('192.168.1.1', TOKEN_HEX);
-            const { results } = await transport.getProperties(
-                DEVICE_ID,
-                STAMP,
-                [{ siid: 2, piid: 1 }, { siid: 2, piid: 2 }],
-                1
-            );
-
+            expect(createSocketMock).toHaveBeenCalledTimes(2);
             expect(results).toHaveLength(2);
             expect(results[0].value).toBe(10);
             expect(results[1].value).toBe(20);
+            // One increment between the two packets, as the chunk loop did — stamp semantics
+            // are deliberately untouched by this change.
+            expect(finalStamp).toBe(STAMP + 1);
         });
 
         it('handles null result from device gracefully (covers raw ?? [] fallback)', async () => {

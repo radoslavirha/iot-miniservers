@@ -168,29 +168,39 @@ export class MiotTransport {
     }
 
     /**
-     * Reads multiple property values from the device, split into sequential chunks.
+     * Reads multiple property values from the device, **one property per packet**.
      *
-     * @param props        - Properties to read.
-     * @param stamp        - Starting stamp.
-     * @param maxChunkSize - Max properties per UDP call (default 14).
+     * The protocol permits several properties in a single `get_properties` — this deliberately
+     * does not use that. On 2026-08-30 a 5-property read fed the poller unchanged values for 11
+     * minutes across a property change made through the Xiaomi app, while a single-property read
+     * issued in the same minute returned the new value. The device is a black box and the reason
+     * is not established; what is established is that the one-property call shape reflects
+     * changes and the multi-property one did not.
+     *
+     * That trade was never worth taking: batching saved four datagrams per poll cycle against one
+     * LAN device, at the cost of a read whose correctness this library cannot verify per device.
+     * A polling loop over consumer hardware should not depend on an optimisation it cannot check.
+     * Reinstating batching needs evidence from a real device, not a reading of the spec.
+     *
+     * Stamp handling is unchanged: one increment between packets, exactly as the chunk loop did.
+     *
+     * @param props - Properties to read.
+     * @param stamp - Starting stamp.
      * @returns All results and the last stamp actually used.
      */
     async getProperties(
         deviceId: number,
         stamp: number,
-        props: Array<{ siid: number; piid: number }>,
-        maxChunkSize = 14
+        props: Array<{ siid: number; piid: number }>
     ): Promise<{ results: GetPropertiesResult[]; finalStamp: number }> {
         const did = String(deviceId);
         const results: GetPropertiesResult[] = [];
         let currentStamp = stamp;
 
-        for (let i = 0; i < props.length; i += maxChunkSize) {
-            const chunk = props.slice(i, i + maxChunkSize);
-
+        for (const [index, prop] of props.entries()) {
             const response = await this.sendCommand(deviceId, currentStamp, {
                 method: MIOT_METHOD_GET_PROPERTIES,
-                params: chunk.map(p => ({ did, siid: p.siid, piid: p.piid }))
+                params: [{ did, siid: prop.siid, piid: prop.piid }]
             });
 
             const raw = response.result as MiotPropertyResult[];
@@ -198,7 +208,7 @@ export class MiotTransport {
                 results.push({ siid: item.siid, piid: item.piid, value: item.value, code: item.code });
             }
 
-            if (i + maxChunkSize < props.length) {
+            if (index < props.length - 1) {
                 currentStamp++;
             }
         }

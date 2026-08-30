@@ -95,17 +95,18 @@ export class MiotDevice {
     }
 
     /**
-     * Bulk-reads multiple properties in chunked UDP calls.
+     * Reads multiple properties, one UDP call per property, under a single stamp cycle.
      *
-     * @param props        - Properties to read, identified by siid + piid.
-     * @param maxChunkSize - Max properties per UDP call (default 14).
+     * Kept as a set-shaped call rather than folded into {@link getProperty} because the caller
+     * wants the per-property `code`: `getProperty` raises on a non-zero one, which is the wrong
+     * shape for a poller that must tolerate one refused entry and still report the rest. See
+     * `MiotTransport.getProperties` for why the multi-property packet is not used.
+     *
+     * @param props - Properties to read, identified by siid + piid.
      */
-    async getProperties(
-        props: Array<{ siid: number; piid: number }>,
-        maxChunkSize = 14
-    ): Promise<GetPropertiesResult[]> {
+    async getProperties(props: Array<{ siid: number; piid: number }>): Promise<GetPropertiesResult[]> {
         return this.runWithStamp(MIOT_METHOD_GET_PROPERTIES, async (stamp, deviceId) => {
-            const { results, finalStamp } = await this.transport.getProperties(deviceId, stamp, props, maxChunkSize);
+            const { results, finalStamp } = await this.transport.getProperties(deviceId, stamp, props);
             return { result: results, finalStamp };
         });
     }
