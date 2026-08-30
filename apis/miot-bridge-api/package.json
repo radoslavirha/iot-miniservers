@@ -1,6 +1,6 @@
 {
   "name": "miot-bridge-api",
-  "version": "0.23.0",
+  "version": "0.23.1",
   "private": true,
   "description": "Bridge between Loxone/other controllers and Xiaomi devices via miot protocol",
   "type": "module",
