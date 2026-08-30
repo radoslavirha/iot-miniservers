@@ -1,5 +1,12 @@
 # miot-bridge
 
+## 0.23.1
+
+### Patch Changes
+
+- Updated dependencies [[`ebe9612`](https://github.com/radoslavirha/iot-miniservers/commit/ebe9612aa7fe3263efb91f8488171aab4be7263b)]:
+  - @radoslavirha/miot-device@0.7.0
+
 ## 0.23.0
 
 ### Minor Changes
