@@ -36,6 +36,7 @@ import { SimplifiedMiotSpecV2Mapper } from '../mappers/SimplifiedMiotSpecV2Mappe
 import {
     METRIC_MIOT_CLIENT_CALL_DURATION,
     METRIC_MIOT_PROPERTY_REJECTIONS,
+    METRIC_MIOT_PROPERTY_UNRESOLVED,
     MIOT_PROPERTY_SOURCE_VALUE_OVERRIDE,
     MIOT_PROPERTY_SOURCE_VALUE_SPEC,
     SPAN_MIOT_ACTION,
@@ -53,6 +54,8 @@ const ADDRESS = '192.168.1.42';
 
 const PROPERTY_KEY = 'vacuum:status';
 const ACTION_KEY = 'vacuum:start-sweep';
+/** Subscribed, absent from the merged spec — the shape a stale override row leaves behind. */
+const UNRESOLVED_KEY = 'vacuum:sweep-mode';
 
 const exporter = new InMemorySpanExporter();
 
@@ -90,6 +93,12 @@ const calls = async (attributes: Attributes): Promise<number> => {
 
 const rejections = async (attributes: Attributes): Promise<number> => {
     const match = await point(METRIC_MIOT_PROPERTY_REJECTIONS, attributes);
+
+    return (match?.value as number | undefined) ?? 0;
+};
+
+const unresolvable = async (attributes: Attributes): Promise<number> => {
+    const match = await point(METRIC_MIOT_PROPERTY_UNRESOLVED, attributes);
 
     return (match?.value as number | undefined) ?? 0;
 };
@@ -366,6 +375,61 @@ describe('DeviceCommandService', () => {
 
         expect(await rejections({ 'rpc.response.status_code': '-4004' })).toBe(1);
         expect(await calls({ 'rpc.method': 'get_properties' })).toBe(1);
+    });
+
+    // One step earlier than a refusal and a different fault: the key never becomes a siid/piid, so
+    // no packet carries it and the device has nothing to refuse. The bulk read still has to serve
+    // the keys that do resolve — one dead subscription must not fail the other five — which is what
+    // made dropping them the obvious thing to do, and what kept `vacuum:sweep-mode` unread for
+    // months behind a green span and a `success` job outcome.
+    it('Should report a key the spec cannot resolve while still reading the rest', async () => {
+        const { results } = await service.getProperties(STORAGE_ID, [PROPERTY_KEY, UNRESOLVED_KEY]);
+
+        expect(results).toHaveLength(1);
+        expect(results[0].key).toBe(PROPERTY_KEY);
+        expect(miotDevice.getProperties).toHaveBeenCalledWith([{ siid: 2, piid: 1 }]);
+
+        const { attributes } = spanNamed(SPAN_MIOT_GET_PROPERTIES);
+        expect(attributes['miot.property.unresolved']).toEqual([UNRESOLVED_KEY]);
+        expect(attributes['miot.property.unresolved.count']).toBe(1);
+        expect(attributes['miot.property.count']).toBe(1);
+
+        expect(await unresolvable({ 'rpc.method': 'get_properties' })).toBe(1);
+    });
+
+    // The case the metric exists for. No key resolves, so there is no call and no span to hang an
+    // attribute on — a poller whose every subscription has gone stale would otherwise emit nothing
+    // at all while reporting itself healthy.
+    it('Should count unresolvable keys on a read that never reaches the device', async () => {
+        const { results } = await service.getProperties(STORAGE_ID, [UNRESOLVED_KEY, 'vacuum:absent']);
+
+        expect(results).toHaveLength(0);
+        expect(miotDevice.getProperties).not.toHaveBeenCalled();
+        expect(spans()).toHaveLength(0);
+
+        expect(await unresolvable({ 'rpc.method': 'get_properties' })).toBe(2);
+    });
+
+    // Absent, not `[]`: an attribute every healthy span carries is one nobody can filter on.
+    it('Should leave the unresolved attributes off a read where every key resolves', async () => {
+        await service.getProperties(STORAGE_ID, [PROPERTY_KEY]);
+
+        const { attributes } = spanNamed(SPAN_MIOT_GET_PROPERTIES);
+        expect(attributes['miot.property.unresolved']).toBeUndefined();
+        expect(attributes['miot.property.unresolved.count']).toBeUndefined();
+    });
+
+    // The log is deduplicated per device+key because an unresolved key is a state, not an event: it
+    // recurs every 5s tick forever. The metric is what stays countable, so it must not dedupe.
+    it('Should count every occurrence but warn once per device and key', async () => {
+        const warn = vi.spyOn(service['logger'], 'warn');
+
+        await service.getProperties(STORAGE_ID, [UNRESOLVED_KEY]);
+        await service.getProperties(STORAGE_ID, [UNRESOLVED_KEY]);
+        await service.getProperties(STORAGE_ID, [UNRESOLVED_KEY]);
+
+        expect(warn).toHaveBeenCalledTimes(1);
+        expect(await unresolvable({ 'rpc.method': 'get_properties' })).toBe(3);
     });
 
     // A device that silently drops an unknown siid/piid answers the same question a -4004 does,

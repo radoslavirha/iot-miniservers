@@ -23,7 +23,7 @@ import {
     type MiotMethod
 } from '@radoslavirha/miot-device';
 import { Logger, type BaseLogger } from '@radoslavirha/tsed-logger';
-import { recordMiotLocalRejection, recordPropertyRejection, withMiotCallSpan } from '../otel/miotTracing.js';
+import { recordMiotLocalRejection, recordPropertyRejection, recordPropertyUnresolved, withMiotCallSpan } from '../otel/miotTracing.js';
 import {
     ATTR_MIOT_AIID,
     ATTR_MIOT_COMMAND,
@@ -31,6 +31,8 @@ import {
     ATTR_MIOT_PROPERTY_COUNT,
     ATTR_MIOT_PROPERTY_REJECTED,
     ATTR_MIOT_PROPERTY_REJECTED_COUNT,
+    ATTR_MIOT_PROPERTY_UNRESOLVED,
+    ATTR_MIOT_PROPERTY_UNRESOLVED_COUNT,
     ATTR_MIOT_SIID,
     identifierAttribute,
     MIOT_ERROR_TYPE_VALUE_REJECTED_LOCALLY,
@@ -67,6 +69,9 @@ type ResolvedCommand =
 export class DeviceCommandService {
     private readonly logger: BaseLogger;
 
+    /** `${storageId}:${key}` pairs already warned about. See {@link reportUnresolvedProperties}. */
+    private readonly unresolvedLogged = new Set<string>();
+
     constructor(
         private readonly deviceStorageService: DeviceStorageService,
         private readonly simplifiedMiotSpecMapper: SimplifiedMiotSpecV2Mapper,
@@ -80,7 +85,10 @@ export class DeviceCommandService {
 
     /**
      * Bulk-reads a set of spec property keys for a device identified by its storage ID.
-     * Unresolvable keys are silently omitted from the result.
+     *
+     * Keys the merged spec cannot resolve are omitted from the read — one dead subscription must
+     * not fail the other five — but never in silence any more. See
+     * {@link reportUnresolvedProperties}.
      */
     async getProperties(storageId: string, keys: string[]): Promise<GetPropertiesResponse> {
         const device = await this.deviceStorageService.getById(storageId);
@@ -91,10 +99,20 @@ export class DeviceCommandService {
         const overrides = await this.modelPropertyOverrideService.getByModel(device.model);
         const spec = await this.simplifiedMiotSpecMapper.map(device.rawSpec, overrides);
         const props: Array<{ key: string; siid: number; piid: number; source: MiotPropertySource }> = [];
+        const unresolved: string[] = [];
         for (const key of keys) {
             const property = spec.properties.get(key);
-            if (property) props.push({ key, siid: property.siid, piid: property.piid, source: property.source });
+            if (property) {
+                props.push({ key, siid: property.siid, piid: property.piid, source: property.source });
+            } else {
+                unresolved.push(key);
+            }
         }
+
+        // Before the early return below, not after the call: the all-keys-unresolvable case raises
+        // no span and makes no call, and it is the one this reporting exists for.
+        this.reportUnresolvedProperties(storageId, device.model, unresolved);
+
         if (!props.length) return { miotDeviceId: device.deviceId, results: [] };
 
         const miotDevice = this.registry.getOrCreate(device);
@@ -104,7 +122,13 @@ export class DeviceCommandService {
             {
                 method: MIOT_METHOD_GET_PROPERTIES,
                 device,
-                attributes: { [ATTR_MIOT_PROPERTY_COUNT]: props.length }
+                attributes: {
+                    [ATTR_MIOT_PROPERTY_COUNT]: props.length,
+                    // Undefined rather than an empty array, so the attribute is absent on the
+                    // healthy reads instead of being a `[]` every span carries.
+                    [ATTR_MIOT_PROPERTY_UNRESOLVED]: unresolved.length ? unresolved : undefined,
+                    [ATTR_MIOT_PROPERTY_UNRESOLVED_COUNT]: unresolved.length ? unresolved.length : undefined
+                }
             },
             async (span) => {
                 const rawResults = await miotDevice.getProperties(props.map(p => ({ siid: p.siid, piid: p.piid })));
@@ -129,6 +153,42 @@ export class DeviceCommandService {
         );
 
         return { miotDeviceId: device.deviceId, results };
+    }
+
+    /**
+     * Reports the keys a bulk read asked for that the merged spec could not resolve.
+     *
+     * A different fault from a refusal and one step earlier: these keys never reach the device, so
+     * there is no `code`, the RPC call is clean, and `job.run.items` counts a success. The poller
+     * subscribes to what is in storage while the spec is assembled per read from `rawSpec` plus the
+     * model overrides, so a key that resolved when the subscription was created can stop resolving
+     * later — an override row that no longer matches its model is exactly that, and is how
+     * `vacuum:sweep-mode` went unread for months with every health signal green.
+     *
+     * **The metric is the always-on signal; the log is deduplicated per process.** An unresolved
+     * key is a state, not an event: it recurs on every tick, so a warn per occurrence would be
+     * ~17k identical lines a day at the production 5s interval. One line per device+key per process
+     * says it once, loudly, with the key and the model needed to fix it;
+     * {@link METRIC_MIOT_PROPERTY_UNRESOLVED} keeps counting for the windows that contain no
+     * restart. The dedupe set is bounded by the subscription count, and a restart re-arms it.
+     */
+    private reportUnresolvedProperties(storageId: string, model: string, unresolved: string[]): void {
+        if (!unresolved.length) return;
+
+        recordPropertyUnresolved({ method: MIOT_METHOD_GET_PROPERTIES, count: unresolved.length });
+
+        for (const key of unresolved) {
+            const seen = `${storageId}:${key}`;
+            if (this.unresolvedLogged.has(seen)) continue;
+            this.unresolvedLogged.add(seen);
+
+            this.logger.warn(`Property '${key}' does not resolve against the spec for device ${storageId}. It will not be read.`, {
+                storageId,
+                model,
+                property: key,
+                rpcMethod: MIOT_METHOD_GET_PROPERTIES
+            });
+        }
     }
 
     /**

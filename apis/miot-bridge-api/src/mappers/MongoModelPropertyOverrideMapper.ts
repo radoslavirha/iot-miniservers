@@ -32,7 +32,20 @@ export class MongoModelPropertyOverrideMapper extends MongoMapper<ModelPropertyO
 
     public async buildMongoCreate(entity: Omit<ModelPropertyOverride, 'id' | 'createdAt' | 'updatedAt'>): Promise<MongoCreate<ModelPropertyOverrideMongoDTO>> {
         return this.buildMongoPayload({
-            model: entity.model,
+            // `modelName`, not `model` — the document field, not the domain field.
+            //
+            // The rename of `ModelPropertyOverrideMongoDTO.model` to `modelName` moved the DTO,
+            // `findByModel`'s query and `mongoToModel` with it and left this one call site behind.
+            // Mongoose strips a key absent from the schema, so every override written since was
+            // stored with no `modelName` at all, matched `find({ modelName })` never, and vanished
+            // from the merged spec — silently, because an unresolvable key is dropped by
+            // `DeviceCommandService.getProperties` rather than raised.
+            //
+            // The type did not catch it and cannot: `buildMongoPayload<D extends MongoCreate<MONGO>>`
+            // infers `D` *from* this literal, so there is no assignment to a declared target and no
+            // excess property check. Every field in `MongoCreate` is optional on top of that, so a
+            // misspelling reads as "field omitted". Only the spec beside this file pins it.
+            modelName: entity.model,
             key: entity.key,
             siid: entity.siid,
             piid: entity.piid,

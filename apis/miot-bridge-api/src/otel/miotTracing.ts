@@ -23,6 +23,7 @@ import {
     identifierAttribute,
     METRIC_MIOT_CLIENT_CALL_DURATION,
     METRIC_MIOT_PROPERTY_REJECTIONS,
+    METRIC_MIOT_PROPERTY_UNRESOLVED,
     MIOT_CALL_DURATION_BUCKETS,
     MIOT_ERROR_TYPE_VALUE_REJECTED_LOCALLY,
     MIOT_METER_NAME,
@@ -191,6 +192,20 @@ export function recordPropertyRejection(options: {
     });
 }
 
+/**
+ * Records spec keys a bulk read asked for and could not resolve.
+ *
+ * Counted once per call with the number of keys, not once per key: the call is the event, and the
+ * keys themselves are on the span and in the log. No span is raised here — like
+ * {@link recordMiotLocalRejection}, nothing left the process, and when *every* key is unresolvable
+ * there is no device call to hang an attribute on at all. That case is the one this exists for.
+ */
+export function recordPropertyUnresolved(options: { readonly method: MiotMethod; readonly count: number }): void {
+    miotInstruments().propertyUnresolved.add(options.count, {
+        [ATTR_RPC_METHOD]: options.method
+    });
+}
+
 function recordCall(method: MiotMethod, startedAt: number, errorType?: string): void {
     miotInstruments().callDuration.record((performance.now() - startedAt) / 1_000, {
         [ATTR_RPC_METHOD]: method,
@@ -202,6 +217,7 @@ function recordCall(method: MiotMethod, startedAt: number, errorType?: string): 
 interface MiotInstruments {
     readonly callDuration: Histogram;
     readonly propertyRejections: Counter;
+    readonly propertyUnresolved: Counter;
 }
 
 /**
@@ -232,6 +248,10 @@ function miotInstruments(): MiotInstruments {
         propertyRejections: meter.createCounter(METRIC_MIOT_PROPERTY_REJECTIONS, {
             description: 'Spec entries a device refused, by status code and whether the entry is published or ours.',
             unit: '{rejection}'
+        }),
+        propertyUnresolved: meter.createCounter(METRIC_MIOT_PROPERTY_UNRESOLVED, {
+            description: 'Spec keys a bulk read asked for that the merged spec could not resolve, so they never reached the device.',
+            unit: '{property}'
         })
     };
 

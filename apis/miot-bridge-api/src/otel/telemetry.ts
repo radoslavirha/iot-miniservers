@@ -217,6 +217,22 @@ export const ATTR_MIOT_PROPERTY_REJECTED = 'miot.property.rejected';
 export const ATTR_MIOT_PROPERTY_REJECTED_COUNT = 'miot.property.rejected.count';
 
 /**
+ * Spec keys a bulk read asked for that the merged spec could not resolve, and how many.
+ *
+ * A step earlier than {@link ATTR_MIOT_PROPERTY_REJECTED} and a different fault: these keys never
+ * reach the device at all, so there is no `code` to report and nothing for the device to refuse.
+ * `getProperties` drops them and reads the rest, which is what a *bulk* read has to do — one dead
+ * subscription must not fail the other five — but until now it dropped them in silence.
+ *
+ * That silence is not hypothetical. `vacuum:sweep-mode` on the house vacuum resolved through a
+ * `ModelPropertyOverride`; a field rename left the stored row unmatchable by `findByModel`, the key
+ * stopped resolving, and the poller went on reporting `job.run.items{outcome="success"}` and zero
+ * rejections for months while one of six subscribed properties was never read.
+ */
+export const ATTR_MIOT_PROPERTY_UNRESOLVED = 'miot.property.unresolved';
+export const ATTR_MIOT_PROPERTY_UNRESOLVED_COUNT = 'miot.property.unresolved.count';
+
+/**
  * `error.type` values for a miot call — the outcome taxonomy, in the **stable semconv attribute**
  * rather than a `miot.*` name of our own.
  *
@@ -350,6 +366,28 @@ export const METRIC_MIOT_CLIENT_CALL_DURATION = 'miot.client.call.duration';
  * correlated. Worst case here is roughly `codes x 2 x 2` series.
  */
 export const METRIC_MIOT_PROPERTY_REJECTIONS = 'miot.property.rejections';
+
+/**
+ * Spec keys a bulk read could not resolve. Counter.
+ *
+ * The always-on half of {@link ATTR_MIOT_PROPERTY_UNRESOLVED}. It shares that attribute's stem on
+ * purpose — metric names and span attribute names are separate namespaces, and the pair reads the
+ * same way {@link METRIC_MIOT_PROPERTY_REJECTIONS} and {@link ATTR_MIOT_PROPERTY_REJECTED} do.
+ *
+ * **This is the signal, not the log.** An unresolved key is not an incident, it is a *state*: it
+ * repeats on every poll tick, at 5s intervals, until someone fixes the spec or the subscription.
+ * A warn per occurrence would be ~17k identical lines a day, so the log is deduplicated per
+ * process (see `DeviceCommandService.reportUnresolvedProperties`) and this counter is what stays
+ * queryable in a window that does not contain a restart — which is precisely the window the
+ * `sweep-mode` regression hid in.
+ *
+ * ### Attributes
+ *
+ * **`rpc.method` and nothing else.** Not the key, not the device: both are unbounded and both are
+ * already on the span and the log line, trace correlated. Not `miot.property.source` either — an
+ * unresolved key has no provenance, since failing to resolve is exactly the absence of one.
+ */
+export const METRIC_MIOT_PROPERTY_UNRESOLVED = 'miot.property.unresolved';
 
 /**
  * Bucket boundaries for {@link METRIC_MIOT_CLIENT_CALL_DURATION}, in seconds.
