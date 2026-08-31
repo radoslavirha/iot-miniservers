@@ -51,23 +51,45 @@ export class MqttListenerService implements OnInit {
             return;
         }
 
-        const pattern = this.mqttTopicService.getCommandSubscriptionPattern();
+        const client = this.mqttClient;
 
-        this.mqttClient.subscribe(pattern, { qos: QOS }, (err) => {
-            if (CommonUtils.notNil(err)) {
-                this.logger.error(`Failed to subscribe to MQTT topic ${pattern}: ${err.message}`);
-            } else {
-                this.logger.info(`Subscribed to MQTT topic ${pattern}`);
-            }
-        });
+        // Subscribe now, and again on every subsequent connect.
+        //
+        // The provider resolves only once the client has connected, so the first SUBSCRIBE has
+        // to be issued here rather than waited for — by the time this runs, the `connect` event
+        // that would trigger it has already fired.
+        //
+        // mqtt.js does resubscribe on its own: `resubscribe` defaults to true and `_resubscribe()`
+        // runs on any non-first connect while `clean` is true, which is also the default. This
+        // does not lean on that. Both are library-internal defaults that nothing in this repo
+        // asserts, and the failure mode if either changes is silent — the client stays connected,
+        // reports healthy, and simply stops receiving commands. SUBSCRIBE is idempotent, so
+        // issuing our own costs one packet per reconnect and removes the dependency.
+        this.subscribe(client);
+        client.on('connect', () => this.subscribe(client));
 
-        this.mqttClient.on('message', (topic: string, payload: Buffer, packet: IPublishPacket) => {
+        // Registered once, outside `subscribe`: handlers survive a reconnect, and re-adding this
+        // one per connect would deliver every message as many times as the link has dropped.
+        client.on('message', (topic: string, payload: Buffer, packet: IPublishPacket) => {
             const deviceId = this.mqttTopicService.extractDeviceIdFromCommandTopic(topic);
             if (CommonUtils.isNil(deviceId)) {
                 return;
             }
 
             void this.onMessage(topic, deviceId, payload, packet);
+        });
+    }
+
+    /** Issues the command subscription. Idempotent, and safe to repeat on every reconnect. */
+    private subscribe(client: MqttClient): void {
+        const pattern = this.mqttTopicService.getCommandSubscriptionPattern();
+
+        client.subscribe(pattern, { qos: QOS }, (err) => {
+            if (CommonUtils.notNil(err)) {
+                this.logger.error(`Failed to subscribe to MQTT topic ${pattern}: ${err.message}`);
+            } else {
+                this.logger.info(`Subscribed to MQTT topic ${pattern}`);
+            }
         });
     }
 

@@ -84,7 +84,10 @@ describe('MqttListenerService', () => {
         await PlatformTest.create({ imports: [{ token: MqttClientProvider, use: client }] });
         deviceCommandService = PlatformTest.get<DeviceCommandService>(DeviceCommandService);
         vi.spyOn(deviceCommandService, 'execute').mockResolvedValue(commandResponse());
-        PlatformTest.get<MqttListenerService>(MqttListenerService).$onInit();
+        // No explicit `$onInit()`: the DI container already ran it when the provider was
+        // resolved. Calling it again registered a second `message` handler, which made every
+        // command execute twice — invisible while the tests only asserted `toHaveBeenCalledWith`.
+        PlatformTest.get<MqttListenerService>(MqttListenerService);
     });
 
     afterEach(PlatformTest.reset);
@@ -97,6 +100,32 @@ describe('MqttListenerService', () => {
                 { qos: 1 },
                 expect.any(Function)
             );
+        });
+
+        // A broker restart drops the session — `clean_start=true`, `session_expiry_interval=0` —
+        // so the subscription has to be re-issued or the client sits there connected, healthy by
+        // every probe, and receiving no commands at all. mqtt.js would resubscribe on its own,
+        // but that is a library default nothing here asserts, and its failure mode is silence.
+        it('Should re-subscribe on every reconnect', () => {
+            expect(client.subscribe).toHaveBeenCalledTimes(1);
+
+            client.emit('connect');
+            client.emit('connect');
+
+            expect(client.subscribe).toHaveBeenCalledTimes(3);
+        });
+
+        // The message handler is registered once, outside the subscribe path. Re-adding it per
+        // connect would hand every later command to as many handlers as the link has dropped,
+        // executing it twice and publishing two responses.
+        it('Should not duplicate message handling after a reconnect', async () => {
+            client.emit('connect');
+            client.emit('connect');
+
+            await deliver(client, { command: 'vacuum:status', operation: DeviceCommandOperation.GetProperty });
+
+            expect(deviceCommandService.execute).toHaveBeenCalledTimes(1);
+            expect(client.publishAsync).toHaveBeenCalledTimes(1);
         });
     });
 

@@ -51,7 +51,22 @@ export const MqttClientProvider = injectable(Symbol.for('MqttClient'))
         }
 
         return new Promise<MqttClient>((resolve, reject) => {
-            let connected = false;
+            // Two flags, deliberately not one.
+            //
+            // `bootstrapped` gates the startup-failure path and nothing else. Once the promise
+            // has settled, an error is a live-connection problem and must never count toward
+            // MAX_STARTUP_ERRORS — that path calls `client.end(true)`, which would permanently
+            // kill a client that is merely between reconnects. So this is set once and never
+            // cleared, however many times the link drops afterwards.
+            //
+            // `everConnected` exists only to tell a first connect from a recovery. It is worth
+            // its own flag: this used to be `once('connect')`, so the first connection logged
+            // and every reconnection after it logged nothing. A client that had recovered and a
+            // client stuck retrying produced byte-identical logs — the last line either way was
+            // "reconnecting" — which is what makes restarting the app look like the only move
+            // after a broker roll.
+            let bootstrapped = false;
+            let everConnected = false;
             let startupErrorCount = 0;
 
             const client = connect(mqttConfig.url, {
@@ -62,14 +77,22 @@ export const MqttClientProvider = injectable(Symbol.for('MqttClient'))
                 reconnectPeriod: RECONNECT_PERIOD_MS
             });
 
-            client.once('connect', () => {
-                connected = true;
-                logger.info('MQTT client connected.', { url: mqttConfig.url, clientId: mqttConfig.clientId });
-                resolve(client);
+            client.on('connect', () => {
+                if (everConnected) {
+                    logger.info('MQTT client reconnected.', { url: mqttConfig.url, clientId: mqttConfig.clientId });
+                } else {
+                    everConnected = true;
+                    logger.info('MQTT client connected.', { url: mqttConfig.url, clientId: mqttConfig.clientId });
+                }
+
+                if (!bootstrapped) {
+                    bootstrapped = true;
+                    resolve(client);
+                }
             });
 
             client.on('error', (err: Error) => {
-                if (connected) {
+                if (bootstrapped) {
                     logger.error('MQTT client error.', { url: mqttConfig.url, message: err.message });
                     return;
                 }
