@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import type { ReactNode } from 'react';
 import { BrowserRouter, Link, NavLink, Navigate, Route, Routes } from 'react-router-dom';
 import { AppShell, ApiStatusBanner } from '@radoslavirha/ui-kit';
 import { useApiStatus } from '@radoslavirha/ui-runtime';
@@ -7,6 +8,7 @@ import { QrCodeListPage } from './pages/QrCodeListPage.js';
 import { QrCodeDetailPage } from './pages/QrCodeDetailPage.js';
 import { QrCodeCreatePage } from './pages/QrCodeCreatePage.js';
 import { CallbackPage } from './pages/CallbackPage.js';
+import { SignInPage } from './pages/SignInPage.js';
 import { RuntimeConfigProvider } from './runtime/RuntimeConfigContext.js';
 import { ApiStatusProvider } from './runtime/ApiStatusContext.js';
 import type { RuntimeConfig } from './runtime/RuntimeConfig.js';
@@ -16,16 +18,10 @@ interface Props {
 }
 
 const AuthControls = () => {
-    const { state, username, login, logout, signOutEverywhere } = useAuth();
+    const { username, logout, signOutEverywhere } = useAuth();
 
-    if (state === 'loading') {
-        return <span className="app-nav-link">…</span>;
-    }
-
-    if (state === 'anonymous') {
-        return <button className="app-nav-link" onClick={() => void login()}>Log in</button>;
-    }
-
+    // Only ever rendered inside <Protected>, so the user is authenticated by
+    // construction — there is no anonymous or loading branch to handle.
     return (
         <>
             <span className="app-nav-link">{username}</span>
@@ -37,6 +33,48 @@ const AuthControls = () => {
             */}
             <button className="app-nav-link" onClick={signOutEverywhere}>Sign out everywhere</button>
         </>
+    );
+};
+
+/**
+ * Nothing of the application renders until the user is known to be signed in.
+ *
+ * `loading` is not merely "waiting": the provider may be about to navigate the
+ * page to the IdP to pick up an existing SSO session. Rendering the app, or the
+ * sign-in page, during that window would flash the wrong thing every time.
+ */
+const Protected = ({ children }: { children: ReactNode }) => {
+    const { state } = useAuth();
+
+    if (state === 'loading') {
+        return <p className="app-loading">Loading…</p>;
+    }
+
+    if (state === 'anonymous') {
+        return <SignInPage />;
+    }
+
+    return <>{children}</>;
+};
+
+/** The nav is part of the application, so it stays hidden until sign-in too. */
+const HeaderNav = () => {
+    const { state } = useAuth();
+
+    if (state !== 'authenticated') {
+        return null;
+    }
+
+    return (
+        <nav className="app-nav">
+            <NavLink to="/admin" end className={({ isActive }) => `app-nav-link${isActive ? ' active' : ''}`}>
+                List
+            </NavLink>
+            <NavLink to="/admin/new" className={({ isActive }) => `app-nav-link${isActive ? ' active' : ''}`}>
+                New
+            </NavLink>
+            <AuthControls />
+        </nav>
     );
 };
 
@@ -56,31 +94,28 @@ export const App = ({ config }: Props) => {
                 headerLeft={
                     <Link to="/admin" className="app-logo">QR Manager</Link>
                 }
-                headerRight={
-                    <nav className="app-nav">
-                        <NavLink to="/admin" end className={({ isActive }) => `app-nav-link${isActive ? ' active' : ''}`}>
-                            List
-                        </NavLink>
-                        <NavLink to="/admin/new" className={({ isActive }) => `app-nav-link${isActive ? ' active' : ''}`}>
-                            New
-                        </NavLink>
-                        <AuthControls />
-                    </nav>
-                }
+                headerRight={<HeaderNav />}
             >
                 <ApiStatusBanner status={status} serviceName="QR Manager API" />
-                {/*
-                  No route is guarded. Access is decided at the IdP: a user
-                  outside qr-manager-server1-sandbox-admin never reaches the
-                  callback at all. A guard here would be duplicated policy that
-                  drifts away from the group membership that actually decides.
-                */}
                 <Routes>
-                    <Route path="/" element={<Navigate to="/admin" replace />} />
+                    {/*
+                      /callback is outside the gate on purpose: it is how a user
+                      BECOMES authenticated, so gating it would deadlock the login.
+                    */}
                     <Route path="/callback" element={<CallbackPage client={authClient} />} />
-                    <Route path="/admin" element={<QrCodeListPage />} />
-                    <Route path="/admin/new" element={<QrCodeCreatePage />} />
-                    <Route path="/admin/:id" element={<QrCodeDetailPage />} />
+                    <Route
+                        path="*"
+                        element={
+                            <Protected>
+                                <Routes>
+                                    <Route path="/" element={<Navigate to="/admin" replace />} />
+                                    <Route path="/admin" element={<QrCodeListPage />} />
+                                    <Route path="/admin/new" element={<QrCodeCreatePage />} />
+                                    <Route path="/admin/:id" element={<QrCodeDetailPage />} />
+                                </Routes>
+                            </Protected>
+                        }
+                    />
                 </Routes>
             </AppShell>
             </AuthProvider>

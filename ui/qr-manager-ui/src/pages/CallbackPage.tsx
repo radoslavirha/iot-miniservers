@@ -3,24 +3,23 @@ import { useNavigate } from 'react-router-dom';
 import { handleCallback, type AuthClient, type CallbackResult } from '@radoslavirha/ui-auth';
 
 /**
- * The one registered redirect URI, serving both a top-level login return and
- * the hidden iframe of a silent renewal. In the iframe case nothing is
- * rendered and no navigation happens — oidc-client-ts reads the result out of
- * the frame itself.
+ * The registered redirect URI. Always a top-level return — there is no iframe
+ * variant, because Authentik refuses to be framed at all.
  *
- * In practice `main.tsx` intercepts the framed case before <App> mounts, so
- * this component only ever runs top-level. The check stays because the two
- * guards fail in opposite directions, and this is the one that survives if the
- * app ever gains a static silent-renew.html.
+ * Three outcomes, and only one of them is an error:
+ *  - signed-in  the code was exchanged; go where the user was headed
+ *  - no-session the prompt=none probe found no SSO session. Ordinary: fall
+ *               through to the app, which renders the sign-in page
+ *  - failed     a replayed code or a stale state entry. Offer a retry
  */
 export const CallbackPage = ({ client }: { client: AuthClient }) => {
     const navigate = useNavigate();
     const [result, setResult] = useState<CallbackResult | undefined>();
 
     useEffect(() => {
-        void handleCallback(client, { isFramed: window.self !== window.top }).then(outcome => {
+        void handleCallback(client).then(outcome => {
             setResult(outcome);
-            if (outcome === 'signed-in') {
+            if (outcome === 'signed-in' || outcome === 'no-session') {
                 navigate('/admin', { replace: true });
             }
         });
