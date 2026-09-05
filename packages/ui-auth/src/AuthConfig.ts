@@ -26,7 +26,20 @@ export const AuthConfigSchema = z.object({
     issuer: httpUrl().refine(value => value.endsWith('/'), {
         message: 'issuer must keep its trailing slash'
     }),
-    clientId: z.string().min(1),
+    /**
+     * Empty-Jinja2-substitution guard, the same hazard `httpUrl` catches for
+     * apiBaseURL. These values are rendered per deployment from VAR_CLUSTER and
+     * NAMESPACE, and jinja renders an undefined variable as an empty string
+     * rather than failing — so a missing VAR_CLUSTER yields the well-formed and
+     * completely wrong `qr-manager--sandbox`, which reaches the IdP as an
+     * unknown client. `min(1)` alone would wave it through.
+     */
+    clientId: z
+        .string()
+        .min(1)
+        .refine(value => !value.includes('--'), {
+            message: 'clientId has an empty segment — a VAR_* did not substitute'
+        }),
     /**
      * Asserted rather than defaulted, because both omissions fail silently:
      * no `roles` means the API denies everything, and no `profile` means `aud`

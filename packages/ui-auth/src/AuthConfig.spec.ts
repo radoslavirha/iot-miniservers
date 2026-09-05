@@ -36,4 +36,11 @@ describe('AuthConfigSchema', () => {
     it('rejects an empty clientId', () => {
         expect(() => AuthConfigSchema.parse({ ...valid, clientId: '' })).toThrow();
     });
+
+    it('rejects a clientId with an empty segment, the unsubstituted-VAR case', () => {
+        // jinja renders an undefined variable as '', so a missing VAR_CLUSTER
+        // turns qr-manager-{{ VAR_CLUSTER }}-sandbox into qr-manager--sandbox:
+        // well-formed, non-empty, and an unknown client at the IdP.
+        expect(() => AuthConfigSchema.parse({ ...valid, clientId: 'qr-manager--sandbox' })).toThrow();
+    });
 });
