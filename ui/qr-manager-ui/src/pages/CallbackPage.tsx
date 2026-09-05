@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { handleCallback, type AuthClient, type CallbackResult } from '@radoslavirha/ui-auth';
+import { handleCallback, useAuth, type AuthClient, type CallbackResult } from '@radoslavirha/ui-auth';
 
 /**
  * The registered redirect URI. Always a top-level return — there is no iframe
@@ -14,16 +14,37 @@ import { handleCallback, type AuthClient, type CallbackResult } from '@radoslavi
  */
 export const CallbackPage = ({ client }: { client: AuthClient }) => {
     const navigate = useNavigate();
+    const { resolveAnonymous } = useAuth();
     const [result, setResult] = useState<CallbackResult | undefined>();
+    /**
+     * An authorization code is single-use: exchanging it twice returns 400
+     * invalid_grant. StrictMode double-invokes effects, so without this the
+     * second run fails and can flash the retry screen at a user who is already
+     * signed in. Observed as a 400 on every dev login.
+     */
+    const started = useRef(false);
 
     useEffect(() => {
+        if (started.current) {
+            return;
+        }
+        started.current = true;
+
         void handleCallback(client).then(outcome => {
             setResult(outcome);
-            if (outcome === 'signed-in' || outcome === 'no-session') {
+            if (outcome === 'signed-in') {
+                navigate('/admin', { replace: true });
+                return;
+            }
+            if (outcome === 'no-session') {
+                // No userLoaded event is coming, so the provider must be told
+                // to settle — otherwise it waits forever and the app shows
+                // Loading… where the sign-in page belongs.
+                resolveAnonymous();
                 navigate('/admin', { replace: true });
             }
         });
-    }, [client, navigate]);
+    }, [client, navigate, resolveAnonymous]);
 
     if (result === 'failed') {
         return (

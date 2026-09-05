@@ -31,7 +31,10 @@ const Probe = () => {
     );
 };
 
-afterEach(() => window.sessionStorage.clear());
+afterEach(() => {
+    window.sessionStorage.clear();
+    window.history.replaceState(null, '', '/');
+});
 
 describe('AuthProvider', () => {
     it('probes the IdP for an existing SSO session on mount, top-level and with prompt=none', async () => {
@@ -47,6 +50,29 @@ describe('AuthProvider', () => {
         );
         // The page is navigating away; it must not flash the anonymous shell.
         expect(screen.getByTestId('state')).toHaveTextContent('loading');
+    });
+
+    it('does NOT probe while a callback is in flight — this was an infinite loop', async () => {
+        // Regression. login() clears the per-tab marker, so on return from the
+        // IdP the provider saw no user and no marker and redirected away before
+        // CallbackPage could exchange the code. Sign in, bounce, sign in, bounce.
+        window.history.replaceState(null, '', '/callback?code=abc&state=xyz');
+        const client = fakeClient();
+        render(<AuthProvider client={client}><Probe /></AuthProvider>);
+
+        await waitFor(() => expect(client.getUser).not.toHaveBeenCalled());
+        expect(client.signinRedirect).not.toHaveBeenCalled();
+        // Stays loading: the callback owns this page load, and the userLoaded
+        // event is what will settle it.
+        expect(screen.getByTestId('state')).toHaveTextContent('loading');
+    });
+
+    it('does not probe on an error callback either', async () => {
+        window.history.replaceState(null, '', '/callback?error=login_required&state=xyz');
+        const client = fakeClient();
+        render(<AuthProvider client={client}><Probe /></AuthProvider>);
+
+        await waitFor(() => expect(client.signinRedirect).not.toHaveBeenCalled());
     });
 
     it('probes only once per tab, so an anonymous visitor does not redirect-loop', async () => {
@@ -108,6 +134,23 @@ describe('AuthProvider', () => {
 
         await waitFor(() => expect(token).toBe('token-abc'));
         expect(window.localStorage.getItem('token-abc')).toBeNull();
+    });
+
+    it('settles as anonymous when the callback reports no session', async () => {
+        // Regression: the provider skips its probe on the callback and waits for
+        // userLoaded. On a no-session callback that event never comes, so without
+        // this the app sat on Loading… forever instead of showing the sign-in page.
+        window.sessionStorage.setItem('auth.sso-attempted', '1');
+        const client = fakeClient();
+        const Settler = () => {
+            const { state, resolveAnonymous } = useAuth();
+            return <><span data-testid="state">{state}</span><button onClick={resolveAnonymous}>settle</button></>;
+        };
+        render(<AuthProvider client={client}><Settler /></AuthProvider>);
+        await waitFor(() => expect(screen.getByTestId('state')).toHaveTextContent('anonymous'));
+
+        await userEvent.click(screen.getByText('settle'));
+        expect(screen.getByTestId('state')).toHaveTextContent('anonymous');
     });
 
     it('throws when used outside the provider', () => {

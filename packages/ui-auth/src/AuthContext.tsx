@@ -25,6 +25,16 @@ export interface AuthContextValue {
      * button here and not two.
      */
     logout(): Promise<void>;
+    /**
+     * Settles the provider as signed-out.
+     *
+     * The callback route owns its page load, so the provider deliberately does
+     * not probe there and waits for the userLoaded event instead. When the
+     * outcome is "no session" there IS no such event, and without this the
+     * provider would wait forever — a permanent Loading… where the sign-in page
+     * belongs. The callback reports that outcome here.
+     */
+    resolveAnonymous(): void;
     getAccessToken(): string | undefined;
 }
 
@@ -38,6 +48,22 @@ const AuthContext = createContext<AuthContextValue | null>(null);
  * secret, only the fact that the question has been asked once.
  */
 const SSO_ATTEMPTED = 'auth.sso-attempted';
+
+/**
+ * True while this page load IS the return leg of an authorization redirect.
+ *
+ * The provider must not probe here. The code in the URL has not been exchanged
+ * yet, and probing navigates the page away before the callback handler can run
+ * — which loops: sign in, come back with a code, get redirected off before the
+ * exchange, come back again, and so on.
+ *
+ * Reading the query directly keeps this self-contained; the alternative is
+ * teaching this package the app's route names.
+ */
+const isHandlingCallback = (): boolean => {
+    const params = new URLSearchParams(window.location.search);
+    return params.has('code') || params.has('error');
+};
 
 const ssoAlreadyAttempted = (): boolean => {
     try {
@@ -77,6 +103,12 @@ export const AuthProvider = ({ client, children }: { client: AuthClient; childre
         };
 
         const recover = async () => {
+            // Mid-handshake: CallbackPage owns this page load. Stay `loading`
+            // and wait for the userLoaded event rather than navigating away.
+            if (isHandlingCallback()) {
+                return;
+            }
+
             const existing = await client.getUser();
             if (existing && !existing.expired) {
                 rememberSsoAttempt(false);
@@ -91,7 +123,10 @@ export const AuthProvider = ({ client, children }: { client: AuthClient; childre
             // It is a TOP-LEVEL navigation, not an iframe: Authentik sets
             // X-Frame-Options: DENY. The page is leaving, so the state stays
             // `loading` and the app never flashes its anonymous shell.
-            if (!ssoAlreadyAttempted()) {
+            // `cancelled` is checked here too, not only in adopt(): StrictMode
+            // runs this effect twice, and a discarded run must not navigate the
+            // page out from under the live one.
+            if (!ssoAlreadyAttempted() && !cancelled) {
                 rememberSsoAttempt(true);
                 await client.signinRedirect({ prompt: 'none', state: { returnTo: window.location.pathname } });
                 return;
@@ -129,6 +164,11 @@ export const AuthProvider = ({ client, children }: { client: AuthClient; childre
         await client.signoutRedirect();
     }, [client]);
 
+    const resolveAnonymous = useCallback(() => {
+        setUser(null);
+        setState(current => (current === 'authenticated' ? current : 'anonymous'));
+    }, []);
+
     const getAccessToken = useCallback(() => user?.access_token, [user]);
 
     const value = useMemo<AuthContextValue>(
@@ -138,9 +178,10 @@ export const AuthProvider = ({ client, children }: { client: AuthClient; childre
             roles: (user?.profile.roles as string[] | undefined) ?? [],
             login,
             logout,
+            resolveAnonymous,
             getAccessToken
         }),
-        [state, user, login, logout, getAccessToken]
+        [state, user, login, logout, resolveAnonymous, getAccessToken]
     );
 
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
