@@ -1,8 +1,39 @@
 import { describe, expect, it, vi, afterEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
+import type { ReactNode } from 'react';
 import { App } from './App.js';
 import type { QrCode } from './api/types.js';
 import type { RuntimeConfig } from './runtime/RuntimeConfig.js';
+
+/**
+ * AuthProvider calls the IdP on mount. Left real, every test in this file would
+ * make a network attempt and pass only through the catch path, several seconds
+ * later. The identity control is what is under test here, so the hook is what
+ * gets faked.
+ */
+const { useAuth } = vi.hoisted(() => ({
+    useAuth: vi.fn(() => ({
+        state: 'anonymous',
+        roles: [],
+        login: vi.fn(),
+        logout: vi.fn(),
+        signOutEverywhere: vi.fn(),
+        getAccessToken: () => undefined
+    }))
+}));
+vi.mock('@radoslavirha/ui-auth', async importOriginal => ({
+    ...(await importOriginal<typeof import('@radoslavirha/ui-auth')>()),
+    useAuth,
+    AuthProvider: ({ children }: { children: ReactNode }) => children
+}));
+
+const auth = {
+    issuer: 'https://auth.irha.cz/application/o/qr-manager-server1-sandbox/',
+    clientId: 'qr-manager-server1-sandbox',
+    scope: 'openid profile email roles',
+    redirectUri: 'https://apps.sandbox.server1.homelab.irha.cz/qr-manager/callback',
+    postLogoutRedirectUri: 'https://apps.sandbox.server1.homelab.irha.cz/qr-manager/'
+};
 
 const sample: QrCode = {
     id: 'id1',
@@ -19,6 +50,7 @@ const sample: QrCode = {
 const config = (overrides: Partial<RuntimeConfig> = {}): RuntimeConfig => ({
     apiBaseURL: 'https://api.server.home/qr',
     basePath: '/',
+    auth,
     ...overrides
 });
 
@@ -98,5 +130,46 @@ describe('<App />', () => {
         // The page still renders its own error; only the global banner stays away.
         await waitFor(() => expect(screen.getByRole('alert')).toBeInTheDocument());
         expect(screen.queryByText(/Cannot reach|having problems/)).not.toBeInTheDocument();
+    });
+});
+
+describe('identity in the header', () => {
+    it('offers a log-in button when nobody is signed in', async () => {
+        Object.assign(globalThis, {
+            fetch: vi.fn().mockResolvedValue(new Response(JSON.stringify({ items: [] }), {
+                status: 200,
+                headers: { 'Content-Type': 'application/json' }
+            }))
+        });
+
+        window.history.replaceState(null, '', '/admin');
+        render(<App config={config()} />);
+
+        expect(await screen.findByRole('button', { name: /log in/i })).toBeInTheDocument();
+    });
+
+    it('shows the username, log out and sign out everywhere once signed in', async () => {
+        useAuth.mockReturnValue({
+            state: 'authenticated',
+            username: 'radoslav',
+            roles: ['qr-manager.admin'],
+            login: vi.fn(),
+            logout: vi.fn(),
+            signOutEverywhere: vi.fn(),
+            getAccessToken: () => 'token-abc'
+        } as unknown as ReturnType<typeof useAuth>);
+        Object.assign(globalThis, {
+            fetch: vi.fn().mockResolvedValue(new Response(JSON.stringify({ items: [] }), {
+                status: 200,
+                headers: { 'Content-Type': 'application/json' }
+            }))
+        });
+
+        window.history.replaceState(null, '', '/admin');
+        render(<App config={config()} />);
+
+        expect(await screen.findByText('radoslav')).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /log out/i })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /sign out everywhere/i })).toBeInTheDocument();
     });
 });
