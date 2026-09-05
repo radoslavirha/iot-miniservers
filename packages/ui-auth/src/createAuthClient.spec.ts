@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest';
-import { InMemoryWebStorage, WebStorageStateStore } from 'oidc-client-ts';
 import { createAuthClient } from './createAuthClient.js';
 import type { AuthConfig } from './AuthConfig.js';
 
@@ -29,10 +28,23 @@ describe('createAuthClient', () => {
         expect(settings.disablePKCE).toBe(false);
     });
 
-    it('keeps the user (and therefore the access token) out of web storage', () => {
+    it('keeps the user (and therefore the access token) out of web storage', async () => {
+        // Asserted through behaviour rather than by reaching for the store's
+        // private `_store` field, which does not type-check: the field exists on
+        // several constituents and is private in some, so the intersection
+        // reduces to `never` under tsc even though vitest runs it happily.
+        window.localStorage.clear();
+        window.sessionStorage.clear();
+
         const { settings } = createAuthClient(config);
-        const store = (settings.userStore as WebStorageStateStore & { _store: unknown })._store;
-        expect(store).toBeInstanceOf(InMemoryWebStorage);
+        await settings.userStore.set('probe', 'value');
+
+        // It stored the value somewhere...
+        await expect(settings.userStore.get('probe')).resolves.toBe('value');
+        // ...and that somewhere is not anything the browser persists. The store
+        // prefixes its keys, so scan both stores rather than guess the spelling.
+        expect(window.localStorage.length).toBe(0);
+        expect(window.sessionStorage.length).toBe(0);
     });
 
     it('renews silently against the registered redirect URI', () => {
