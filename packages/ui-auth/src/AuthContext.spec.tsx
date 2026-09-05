@@ -87,7 +87,7 @@ describe('AuthProvider', () => {
         );
     });
 
-    it('logs out through the IdP end-session endpoint', async () => {
+    it('logs out through the IdP end-session endpoint, which ends the SSO session', async () => {
         const client = fakeClient({ getUser: vi.fn().mockResolvedValue({ ...user, expired: false }) });
         render(<AuthProvider client={client}><Probe /></AuthProvider>);
         await waitFor(() => expect(screen.getByTestId('state')).toHaveTextContent('authenticated'));
@@ -108,25 +108,6 @@ describe('AuthProvider', () => {
 
         await waitFor(() => expect(token).toBe('token-abc'));
         expect(window.localStorage.getItem('token-abc')).toBeNull();
-    });
-
-    it('sends the browser to the IdP invalidation flow to sign out everywhere', async () => {
-        // RP-initiated logout leaves the Authentik session alive (trap 4), so
-        // this is the only action that actually ends it. It is a full-page
-        // navigation, not a client call — hence the assign() spy.
-        const assign = vi.fn();
-        vi.spyOn(window, 'location', 'get').mockReturnValue({ ...window.location, assign } as Location);
-
-        const client = fakeClient({ getUser: vi.fn().mockResolvedValue({ ...user, expired: false }) });
-        const Reader = () => {
-            const { signOutEverywhere } = useAuth();
-            return <button onClick={signOutEverywhere}>everywhere</button>;
-        };
-        render(<AuthProvider client={client}><Reader /></AuthProvider>);
-
-        await userEvent.click(screen.getByText('everywhere'));
-
-        expect(assign).toHaveBeenCalledWith('https://auth.irha.cz/flows/-/default/invalidation/');
     });
 
     it('throws when used outside the provider', () => {

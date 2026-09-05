@@ -18,20 +18,19 @@ interface Props {
 }
 
 const AuthControls = () => {
-    const { username, logout, signOutEverywhere } = useAuth();
+    const { username, logout } = useAuth();
 
     // Only ever rendered inside <Protected>, so the user is authenticated by
     // construction — there is no anonymous or loading branch to handle.
     return (
         <>
             <span className="app-nav-link">{username}</span>
-            <button className="app-nav-link" onClick={() => void logout()}>Log out</button>
             {/*
-              RP-initiated logout leaves the Authentik session alive, so Log out
-              then Log in signs you straight back in with no prompt. On a shared
-              browser that is not a logout, which is what this second action is for.
+              One button, and it really logs you out: the provider's invalidation
+              flow ends the IdP session, so this signs you out of every app behind
+              it rather than leaving a session that silently signs you back in.
             */}
-            <button className="app-nav-link" onClick={signOutEverywhere}>Sign out everywhere</button>
+            <button className="app-nav-link" onClick={() => void logout()}>Log out</button>
         </>
     );
 };

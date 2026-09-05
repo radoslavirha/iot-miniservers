@@ -14,19 +14,21 @@ export interface AuthContextValue {
     readonly username?: string;
     readonly roles: string[];
     login(): Promise<void>;
-    logout(): Promise<void>;
     /**
-     * Ends the Authentik session itself. RP-initiated logout does NOT — it
-     * returns to the post-logout URI with the session alive, so Log out
-     * followed by Log in signs the user straight back in with no prompt.
+     * Ends the IdP session, not just this application's.
+     *
+     * That is a property of the provider's invalidation flow, configured in
+     * homelab rather than here: it runs the user_logout stage and then honours
+     * post_logout_redirect_uri. Pointed at the *provider* invalidation flow
+     * instead, this would leave the session alive and Log out -> Log in would
+     * sign the user straight back in with no prompt — which is why there is one
+     * button here and not two.
      */
-    signOutEverywhere(): void;
+    logout(): Promise<void>;
     getAccessToken(): string | undefined;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
-
-const IDP_INVALIDATION_URL = 'https://auth.irha.cz/flows/-/default/invalidation/';
 
 /**
  * Marks that this tab has already asked the IdP whether a session exists.
@@ -127,11 +129,6 @@ export const AuthProvider = ({ client, children }: { client: AuthClient; childre
         await client.signoutRedirect();
     }, [client]);
 
-    const signOutEverywhere = useCallback(() => {
-        rememberSsoAttempt(true);
-        window.location.assign(IDP_INVALIDATION_URL);
-    }, []);
-
     const getAccessToken = useCallback(() => user?.access_token, [user]);
 
     const value = useMemo<AuthContextValue>(
@@ -141,10 +138,9 @@ export const AuthProvider = ({ client, children }: { client: AuthClient; childre
             roles: (user?.profile.roles as string[] | undefined) ?? [],
             login,
             logout,
-            signOutEverywhere,
             getAccessToken
         }),
-        [state, user, login, logout, signOutEverywhere, getAccessToken]
+        [state, user, login, logout, getAccessToken]
     );
 
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
