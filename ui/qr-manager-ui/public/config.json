@@ -5,7 +5,7 @@
         "issuer": "https://auth.irha.cz/application/o/qr-manager-server1-sandbox/",
         "clientId": "qr-manager-server1-sandbox",
         "scope": "openid profile email roles",
-        "redirectUri": "https://apps.sandbox.server1.homelab.irha.cz/qr-manager/callback",
-        "postLogoutRedirectUri": "https://apps.sandbox.server1.homelab.irha.cz/qr-manager/"
+        "redirectUri": "http://localhost:5173/callback",
+        "postLogoutRedirectUri": "http://localhost:5173/"
     }
 }
