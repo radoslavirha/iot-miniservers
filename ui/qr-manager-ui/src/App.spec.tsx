@@ -17,7 +17,6 @@ const authenticated = {
     roles: ['qr-manager.admin'],
     login: vi.fn(),
     logout: vi.fn(),
-    signOutEverywhere: vi.fn(),
     getAccessToken: () => 'token-abc'
 };
 
@@ -155,8 +154,9 @@ describe('the gate', () => {
 
         expect(await screen.findByRole('heading', { name: 'QR codes' })).toBeInTheDocument();
         expect(screen.getByText('radoslav')).toBeInTheDocument();
+        // One logout control, not two: it ends the SSO session outright.
         expect(screen.getByRole('button', { name: /log out/i })).toBeInTheDocument();
-        expect(screen.getByRole('button', { name: /sign out everywhere/i })).toBeInTheDocument();
+        expect(screen.queryByRole('button', { name: /everywhere/i })).not.toBeInTheDocument();
     });
 
     it('shows an anonymous visitor the sign-in page and NONE of the app', async () => {
