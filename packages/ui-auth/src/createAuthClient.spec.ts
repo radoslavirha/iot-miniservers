@@ -47,17 +47,16 @@ describe('createAuthClient', () => {
         expect(window.sessionStorage.length).toBe(0);
     });
 
-    it('renews silently against the registered redirect URI', () => {
+    it('never renews through an iframe — Authentik sets X-Frame-Options: DENY', () => {
+        // automaticSilentRenew is implemented with a hidden iframe, and every
+        // Authentik response refuses to be framed. Renewal is a top-level
+        // prompt=none redirect, driven by the provider.
+        // `silent_redirect_uri` is deliberately not asserted: oidc-client-ts
+        // defaults it to `redirect_uri`, so it is never undefined. It is simply
+        // unreachable while automaticSilentRenew is off, and that flag is the
+        // thing that actually decides whether an iframe is ever created.
         const { settings } = createAuthClient(config);
-        expect(settings.automaticSilentRenew).toBe(true);
-        // The IdP registers exactly one authorization redirect URI; a separate
-        // silent-redirect path would be refused with a Redirect URI Error.
-        expect(settings.silent_redirect_uri).toBe(config.redirectUri);
-    });
-
-    it('bounds every silent request, because a refused user gets an HTML page and never redirects', () => {
-        const { settings } = createAuthClient(config);
-        expect(settings.silentRequestTimeoutInSeconds).toBe(10);
+        expect(settings.automaticSilentRenew).toBe(false);
     });
 
     it('does not monitor the session — Authentik publishes no check_session_iframe we rely on', () => {

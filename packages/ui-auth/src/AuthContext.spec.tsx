@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { User } from 'oidc-client-ts';
@@ -13,7 +13,6 @@ const user = {
 const fakeClient = (overrides: Partial<Record<string, unknown>> = {}): AuthClient =>
     ({
         getUser: vi.fn().mockResolvedValue(null),
-        signinSilent: vi.fn().mockResolvedValue(null),
         signinRedirect: vi.fn().mockResolvedValue(undefined),
         signoutRedirect: vi.fn().mockResolvedValue(undefined),
         events: { addUserLoaded: vi.fn(), removeUserLoaded: vi.fn(), addUserUnloaded: vi.fn(), removeUserUnloaded: vi.fn() },
@@ -32,37 +31,64 @@ const Probe = () => {
     );
 };
 
+afterEach(() => window.sessionStorage.clear());
+
 describe('AuthProvider', () => {
-    it('recovers a session silently on mount', async () => {
-        const client = fakeClient({ signinSilent: vi.fn().mockResolvedValue(user) });
+    it('probes the IdP for an existing SSO session on mount, top-level and with prompt=none', async () => {
+        // This is the SSO case: signed in at another app, this redirect comes
+        // back with a code and no login form is ever shown. It must NOT be an
+        // iframe — Authentik sets X-Frame-Options: DENY.
+        const client = fakeClient();
+        render(<AuthProvider client={client}><Probe /></AuthProvider>);
+
+        await waitFor(() => expect(client.signinRedirect).toHaveBeenCalledOnce());
+        expect(client.signinRedirect).toHaveBeenCalledWith(
+            expect.objectContaining({ prompt: 'none' })
+        );
+        // The page is navigating away; it must not flash the anonymous shell.
+        expect(screen.getByTestId('state')).toHaveTextContent('loading');
+    });
+
+    it('probes only once per tab, so an anonymous visitor does not redirect-loop', async () => {
+        // Second mount: the IdP already answered login_required for this tab.
+        window.sessionStorage.setItem('auth.sso-attempted', '1');
+        const client = fakeClient();
+        render(<AuthProvider client={client}><Probe /></AuthProvider>);
+
+        await waitFor(() => expect(screen.getByTestId('state')).toHaveTextContent('anonymous'));
+        expect(client.signinRedirect).not.toHaveBeenCalled();
+        expect(screen.getByTestId('username')).toHaveTextContent('-');
+    });
+
+    it('adopts a live user from the store without contacting the IdP', async () => {
+        const client = fakeClient({ getUser: vi.fn().mockResolvedValue({ ...user, expired: false }) });
         render(<AuthProvider client={client}><Probe /></AuthProvider>);
 
         await waitFor(() => expect(screen.getByTestId('state')).toHaveTextContent('authenticated'));
         expect(screen.getByTestId('username')).toHaveTextContent('radoslav');
+        expect(client.signinRedirect).not.toHaveBeenCalled();
     });
 
-    it('lands on anonymous when the silent attempt fails', async () => {
-        // Covers all three prompt=none outcomes: login_required, a hard error,
-        // and the timeout that stands in for the Permission denied HTML page.
-        const client = fakeClient({ signinSilent: vi.fn().mockRejectedValue(new Error('login_required')) });
-        render(<AuthProvider client={client}><Probe /></AuthProvider>);
-
-        await waitFor(() => expect(screen.getByTestId('state')).toHaveTextContent('anonymous'));
-        expect(screen.getByTestId('username')).toHaveTextContent('-');
-    });
-
-    it('starts a redirect login on demand', async () => {
+    it('starts a redirect login on demand, WITHOUT prompt=none', async () => {
+        // The tab has already had its silent probe answered, so the provider
+        // settles on anonymous and shows the sign-in affordance.
+        window.sessionStorage.setItem('auth.sso-attempted', '1');
         const client = fakeClient();
         render(<AuthProvider client={client}><Probe /></AuthProvider>);
         await waitFor(() => expect(screen.getByTestId('state')).toHaveTextContent('anonymous'));
 
         await userEvent.click(screen.getByText('login'));
 
+        // An explicit click asks to be shown the login form if one is needed,
+        // so prompt=none would defeat the whole point.
         expect(client.signinRedirect).toHaveBeenCalledOnce();
+        expect(client.signinRedirect).not.toHaveBeenCalledWith(
+            expect.objectContaining({ prompt: 'none' })
+        );
     });
 
     it('logs out through the IdP end-session endpoint', async () => {
-        const client = fakeClient({ signinSilent: vi.fn().mockResolvedValue(user) });
+        const client = fakeClient({ getUser: vi.fn().mockResolvedValue({ ...user, expired: false }) });
         render(<AuthProvider client={client}><Probe /></AuthProvider>);
         await waitFor(() => expect(screen.getByTestId('state')).toHaveTextContent('authenticated'));
 
@@ -72,7 +98,7 @@ describe('AuthProvider', () => {
     });
 
     it('exposes the access token without ever storing it', async () => {
-        const client = fakeClient({ signinSilent: vi.fn().mockResolvedValue(user) });
+        const client = fakeClient({ getUser: vi.fn().mockResolvedValue({ ...user, expired: false }) });
         let token: string | undefined;
         const Reader = () => {
             token = useAuth().getAccessToken();
@@ -84,21 +110,6 @@ describe('AuthProvider', () => {
         expect(window.localStorage.getItem('token-abc')).toBeNull();
     });
 
-    it('reuses a live user without asking the IdP again', async () => {
-        // The other branch of the mount effect. Without it `getUser` is only
-        // ever exercised returning null, and the package misses its function
-        // coverage threshold at Task 4.
-        const signinSilent = vi.fn();
-        const client = fakeClient({
-            getUser: vi.fn().mockResolvedValue({ ...user, expired: false }),
-            signinSilent
-        });
-        render(<AuthProvider client={client}><Probe /></AuthProvider>);
-
-        await waitFor(() => expect(screen.getByTestId('state')).toHaveTextContent('authenticated'));
-        expect(signinSilent).not.toHaveBeenCalled();
-    });
-
     it('sends the browser to the IdP invalidation flow to sign out everywhere', async () => {
         // RP-initiated logout leaves the Authentik session alive (trap 4), so
         // this is the only action that actually ends it. It is a full-page
@@ -106,7 +117,7 @@ describe('AuthProvider', () => {
         const assign = vi.fn();
         vi.spyOn(window, 'location', 'get').mockReturnValue({ ...window.location, assign } as Location);
 
-        const client = fakeClient({ signinSilent: vi.fn().mockResolvedValue(user) });
+        const client = fakeClient({ getUser: vi.fn().mockResolvedValue({ ...user, expired: false }) });
         const Reader = () => {
             const { signOutEverywhere } = useAuth();
             return <button onClick={signOutEverywhere}>everywhere</button>;

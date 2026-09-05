@@ -1,4 +1,4 @@
-import { describe, expect, it, vi, afterEach } from 'vitest';
+import { describe, expect, it, vi, afterEach, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { App } from './App.js';
@@ -11,16 +11,19 @@ import type { RuntimeConfig } from './runtime/RuntimeConfig.js';
  * later. The identity control is what is under test here, so the hook is what
  * gets faked.
  */
-const { useAuth } = vi.hoisted(() => ({
-    useAuth: vi.fn(() => ({
-        state: 'anonymous',
-        roles: [],
-        login: vi.fn(),
-        logout: vi.fn(),
-        signOutEverywhere: vi.fn(),
-        getAccessToken: () => undefined
-    }))
-}));
+const authenticated = {
+    state: 'authenticated',
+    username: 'radoslav',
+    roles: ['qr-manager.admin'],
+    login: vi.fn(),
+    logout: vi.fn(),
+    signOutEverywhere: vi.fn(),
+    getAccessToken: () => 'token-abc'
+};
+
+// The app is gated, so every test that exercises a page needs a signed-in user.
+// The anonymous and loading cases get their own describe at the bottom.
+const { useAuth } = vi.hoisted(() => ({ useAuth: vi.fn() }));
 vi.mock('@radoslavirha/ui-auth', async importOriginal => ({
     ...(await importOriginal<typeof import('@radoslavirha/ui-auth')>()),
     useAuth,
@@ -52,6 +55,10 @@ const config = (overrides: Partial<RuntimeConfig> = {}): RuntimeConfig => ({
     basePath: '/',
     auth,
     ...overrides
+});
+
+beforeEach(() => {
+    useAuth.mockReturnValue(authenticated as unknown as ReturnType<typeof useAuth>);
 });
 
 afterEach(() => {
@@ -133,43 +140,47 @@ describe('<App />', () => {
     });
 });
 
-describe('identity in the header', () => {
-    it('offers a log-in button when nobody is signed in', async () => {
-        Object.assign(globalThis, {
-            fetch: vi.fn().mockResolvedValue(new Response(JSON.stringify({ items: [] }), {
-                status: 200,
-                headers: { 'Content-Type': 'application/json' }
-            }))
-        });
-
-        window.history.replaceState(null, '', '/admin');
-        render(<App config={config()} />);
-
-        expect(await screen.findByRole('button', { name: /log in/i })).toBeInTheDocument();
+describe('the gate', () => {
+    const okFetch = () => Object.assign(globalThis, {
+        fetch: vi.fn().mockResolvedValue(new Response(JSON.stringify({ items: [] }), {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' }
+        }))
     });
 
-    it('shows the username, log out and sign out everywhere once signed in', async () => {
-        useAuth.mockReturnValue({
-            state: 'authenticated',
-            username: 'radoslav',
-            roles: ['qr-manager.admin'],
-            login: vi.fn(),
-            logout: vi.fn(),
-            signOutEverywhere: vi.fn(),
-            getAccessToken: () => 'token-abc'
-        } as unknown as ReturnType<typeof useAuth>);
-        Object.assign(globalThis, {
-            fetch: vi.fn().mockResolvedValue(new Response(JSON.stringify({ items: [] }), {
-                status: 200,
-                headers: { 'Content-Type': 'application/json' }
-            }))
-        });
-
+    it('shows the app and the identity controls to a signed-in user', async () => {
+        okFetch();
         window.history.replaceState(null, '', '/admin');
         render(<App config={config()} />);
 
-        expect(await screen.findByText('radoslav')).toBeInTheDocument();
+        expect(await screen.findByRole('heading', { name: 'QR codes' })).toBeInTheDocument();
+        expect(screen.getByText('radoslav')).toBeInTheDocument();
         expect(screen.getByRole('button', { name: /log out/i })).toBeInTheDocument();
         expect(screen.getByRole('button', { name: /sign out everywhere/i })).toBeInTheDocument();
+    });
+
+    it('shows an anonymous visitor the sign-in page and NONE of the app', async () => {
+        useAuth.mockReturnValue({ ...authenticated, state: 'anonymous', username: undefined } as never);
+        okFetch();
+        window.history.replaceState(null, '', '/admin');
+        render(<App config={config()} />);
+
+        expect(await screen.findByRole('button', { name: /sign in/i })).toBeInTheDocument();
+        // The admin UI must not be reachable, and neither must its navigation.
+        expect(screen.queryByRole('heading', { name: 'QR codes' })).not.toBeInTheDocument();
+        expect(screen.queryByRole('link', { name: 'List' })).not.toBeInTheDocument();
+        expect(screen.queryByRole('link', { name: 'New' })).not.toBeInTheDocument();
+    });
+
+    it('renders neither the app nor the sign-in page while the answer is unknown', () => {
+        // `loading` may mean "about to navigate to the IdP for SSO". Showing the
+        // sign-in page here would flash it in front of a user who is signed in.
+        useAuth.mockReturnValue({ ...authenticated, state: 'loading', username: undefined } as never);
+        okFetch();
+        window.history.replaceState(null, '', '/admin');
+        render(<App config={config()} />);
+
+        expect(screen.queryByRole('button', { name: /sign in/i })).not.toBeInTheDocument();
+        expect(screen.queryByRole('heading', { name: 'QR codes' })).not.toBeInTheDocument();
     });
 });

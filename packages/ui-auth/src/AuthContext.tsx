@@ -3,6 +3,10 @@ import type { ReactNode } from 'react';
 import type { User } from 'oidc-client-ts';
 import type { AuthClient } from './createAuthClient.js';
 
+/**
+ * `loading` covers both "asking the IdP" and "about to navigate away", so the
+ * app never renders itself while the answer is unknown.
+ */
 export type AuthState = 'loading' | 'authenticated' | 'anonymous';
 
 export interface AuthContextValue {
@@ -24,6 +28,37 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 
 const IDP_INVALIDATION_URL = 'https://auth.irha.cz/flows/-/default/invalidation/';
 
+/**
+ * Marks that this tab has already asked the IdP whether a session exists.
+ *
+ * Without it the anonymous case is an infinite redirect: load, prompt=none,
+ * come back `login_required`, load, prompt=none... It holds no token and no
+ * secret, only the fact that the question has been asked once.
+ */
+const SSO_ATTEMPTED = 'auth.sso-attempted';
+
+const ssoAlreadyAttempted = (): boolean => {
+    try {
+        return window.sessionStorage.getItem(SSO_ATTEMPTED) === '1';
+    } catch {
+        // Private mode, or storage blocked. Better to skip the SSO probe than
+        // to risk the redirect loop it guards.
+        return true;
+    }
+};
+
+const rememberSsoAttempt = (value: boolean): void => {
+    try {
+        if (value) {
+            window.sessionStorage.setItem(SSO_ATTEMPTED, '1');
+        } else {
+            window.sessionStorage.removeItem(SSO_ATTEMPTED);
+        }
+    } catch {
+        // Nothing to do; the guard degrades to "do not probe".
+    }
+};
+
 export const AuthProvider = ({ client, children }: { client: AuthClient; children: ReactNode }) => {
     const [user, setUser] = useState<User | null>(null);
     const [state, setState] = useState<AuthState>('loading');
@@ -39,18 +74,36 @@ export const AuthProvider = ({ client, children }: { client: AuthClient; childre
             setState(next ? 'authenticated' : 'anonymous');
         };
 
-        // A reload empties the in-memory store, so the session is recovered
-        // rather than persisted: prompt=none against the IdP's own cookie.
-        // Every failure is the same answer — not signed in. That deliberately
-        // includes the timeout, which is what a "Permission denied" HTML page
-        // inside the renew iframe looks like from here.
-        void client
-            .getUser()
-            .then(existing => (existing && !existing.expired ? existing : client.signinSilent()))
-            .then(adopt)
-            .catch(() => adopt(null));
+        const recover = async () => {
+            const existing = await client.getUser();
+            if (existing && !existing.expired) {
+                rememberSsoAttempt(false);
+                adopt(existing);
+                return;
+            }
 
-        const onLoaded = (next: User) => adopt(next);
+            // Nothing in memory. Ask the IdP whether this browser already has a
+            // session — this is what makes SSO work: signed in at another app,
+            // the redirect returns a code and no login form is ever shown.
+            //
+            // It is a TOP-LEVEL navigation, not an iframe: Authentik sets
+            // X-Frame-Options: DENY. The page is leaving, so the state stays
+            // `loading` and the app never flashes its anonymous shell.
+            if (!ssoAlreadyAttempted()) {
+                rememberSsoAttempt(true);
+                await client.signinRedirect({ prompt: 'none', state: { returnTo: window.location.pathname } });
+                return;
+            }
+
+            adopt(null);
+        };
+
+        void recover().catch(() => adopt(null));
+
+        const onLoaded = (next: User) => {
+            rememberSsoAttempt(false);
+            adopt(next);
+        };
         const onUnloaded = () => adopt(null);
         client.events.addUserLoaded(onLoaded);
         client.events.addUserUnloaded(onUnloaded);
@@ -63,14 +116,19 @@ export const AuthProvider = ({ client, children }: { client: AuthClient; childre
     }, [client]);
 
     const login = useCallback(async () => {
-        await client.signinRedirect();
+        // An explicit click, so no prompt=none: the user is asking to be shown
+        // the login form if they need one.
+        rememberSsoAttempt(false);
+        await client.signinRedirect({ state: { returnTo: window.location.pathname } });
     }, [client]);
 
     const logout = useCallback(async () => {
+        rememberSsoAttempt(true);
         await client.signoutRedirect();
     }, [client]);
 
     const signOutEverywhere = useCallback(() => {
+        rememberSsoAttempt(true);
         window.location.assign(IDP_INVALIDATION_URL);
     }, []);
 

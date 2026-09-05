@@ -121,3 +121,23 @@
 .qr-image-downloads a:hover {
     color: var(--accent-hover);
 }
+
+/* Sign-in page — what an unauthenticated visitor gets instead of the app. */
+.signin {
+    max-width: 24rem;
+    margin: 4rem auto;
+    text-align: center;
+}
+
+.signin__button {
+    margin-top: 1rem;
+    padding: 0.6rem 1.4rem;
+    font: inherit;
+    cursor: pointer;
+}
+
+.app-loading {
+    margin: 4rem auto;
+    text-align: center;
+    opacity: 0.7;
+}
