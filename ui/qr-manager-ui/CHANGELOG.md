@@ -1,5 +1,29 @@
 # qr-manager-ui
 
+## 0.10.1
+
+### Patch Changes
+
+- [#97](https://github.com/radoslavirha/iot-miniservers/pull/97) [`5d566d6`](https://github.com/radoslavirha/iot-miniservers/commit/5d566d6934caa9670ae6d7b1c9b8d029e458dfdf) Thanks [@radoslavirha](https://github.com/radoslavirha)! - Fix an infinite redirect loop between the sign-in page and "Signing in…".
+  
+  Signing in cleared the per-tab marker that says "the IdP has already been asked whether a session
+  exists". So when Authentik redirected back with an authorization code, the provider mounted, saw no
+  user in memory and no marker, and immediately redirected to `authorize?prompt=none` — **before the
+  callback handler could exchange the code**. That bounced back to the callback, and round it went.
+  
+  The provider now recognises that a page load carrying `code` or `error` IS the return leg of a
+  redirect, and stays out of the way while the callback completes. It also honours its own cancellation
+  flag before navigating, so the discarded half of a StrictMode double-invoke cannot redirect the page
+  out from under the live one.
+
+- [#97](https://github.com/radoslavirha/iot-miniservers/pull/97) [`d467348`](https://github.com/radoslavirha/iot-miniservers/commit/d467348599aec6edcc63a8b79a21efb6d54d5438) Thanks [@radoslavirha](https://github.com/radoslavirha)! - Fix the app hanging on "Loading…" instead of showing the sign-in page.
+  
+  The provider skips its SSO probe while a callback is in flight and waits for the user-loaded event
+  instead. When the callback finds no session that event never arrives, so the provider never settled
+  and the app showed a permanent spinner where the sign-in page belongs. The callback now reports that
+  outcome, and local development points at `http://localhost:5173/callback`, which is registered on the
+  sandbox applications so `pnpm dev` can complete a real login.
+
 ## 0.10.0
 
 ### Minor Changes
