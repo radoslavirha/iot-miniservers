@@ -18,6 +18,7 @@
     "test:watch": "vitest"
   },
   "dependencies": {
+    "@radoslavirha/ui-auth": "workspace:*",
     "@radoslavirha/ui-kit": "workspace:*",
     "@radoslavirha/ui-runtime": "workspace:*",
     "react": "catalog:react",

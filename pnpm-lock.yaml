@@ -1684,6 +1684,9 @@ importers:
 
   ui/qr-manager-ui:
     dependencies:
+      '@radoslavirha/ui-auth':
+        specifier: workspace:*
+        version: link:../../packages/ui-auth
       '@radoslavirha/ui-kit':
         specifier: workspace:*
         version: link:../../packages/ui-kit
@@ -8925,10 +8928,10 @@ snapshots:
     dependencies:
       '@types/node': 26.2.0
 
-  '@typescript-eslint/eslint-plugin@8.67.0(@typescript-eslint/parser@8.67.0(eslint@10.9.0(supports-color@5.5.0))(supports-color@5.5.0)(typescript@6.0.3))(eslint@10.9.0(supports-color@5.5.0))(typescript@6.0.3)':
+  '@typescript-eslint/eslint-plugin@8.67.0(@typescript-eslint/parser@8.67.0(eslint@10.9.0(supports-color@5.5.0))(supports-color@7.2.0)(typescript@6.0.3))(eslint@10.9.0(supports-color@5.5.0))(typescript@6.0.3)':
     dependencies:
       '@eslint-community/regexpp': 4.12.2
-      '@typescript-eslint/parser': 8.67.0(eslint@10.9.0(supports-color@5.5.0))(supports-color@5.5.0)(typescript@6.0.3)
+      '@typescript-eslint/parser': 8.67.0(eslint@10.9.0(supports-color@5.5.0))(supports-color@7.2.0)(typescript@6.0.3)
       '@typescript-eslint/scope-manager': 8.67.0
       '@typescript-eslint/type-utils': 8.67.0(eslint@10.9.0(supports-color@5.5.0))(typescript@6.0.3)
       '@typescript-eslint/utils': 8.67.0(eslint@10.9.0(supports-color@5.5.0))(typescript@6.0.3)
@@ -8957,13 +8960,13 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@typescript-eslint/parser@8.67.0(eslint@10.9.0(supports-color@5.5.0))(supports-color@5.5.0)(typescript@6.0.3)':
+  '@typescript-eslint/parser@8.67.0(eslint@10.9.0(supports-color@5.5.0))(supports-color@7.2.0)(typescript@6.0.3)':
     dependencies:
       '@typescript-eslint/scope-manager': 8.67.0
       '@typescript-eslint/types': 8.67.0
       '@typescript-eslint/typescript-estree': 8.67.0(typescript@6.0.3)
       '@typescript-eslint/visitor-keys': 8.67.0
-      debug: 4.4.3(supports-color@5.5.0)
+      debug: 4.4.3(supports-color@7.2.0)
       eslint: 10.9.0(supports-color@5.5.0)
       typescript: 6.0.3
     transitivePeerDependencies:
@@ -11964,7 +11967,7 @@ snapshots:
 
   typescript-eslint@8.67.0(eslint@10.9.0(supports-color@5.5.0))(typescript@6.0.3):
     dependencies:
-      '@typescript-eslint/eslint-plugin': 8.67.0(@typescript-eslint/parser@8.67.0(eslint@10.9.0(supports-color@5.5.0))(supports-color@5.5.0)(typescript@6.0.3))(eslint@10.9.0(supports-color@5.5.0))(typescript@6.0.3)
+      '@typescript-eslint/eslint-plugin': 8.67.0(@typescript-eslint/parser@8.67.0(eslint@10.9.0(supports-color@5.5.0))(supports-color@7.2.0)(typescript@6.0.3))(eslint@10.9.0(supports-color@5.5.0))(typescript@6.0.3)
       '@typescript-eslint/parser': 8.67.0(eslint@10.9.0(supports-color@5.5.0))(typescript@6.0.3)
       '@typescript-eslint/typescript-estree': 8.67.0(typescript@6.0.3)
       '@typescript-eslint/utils': 8.67.0(eslint@10.9.0(supports-color@5.5.0))(typescript@6.0.3)
