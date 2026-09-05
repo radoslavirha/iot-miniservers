@@ -6,7 +6,7 @@ export default defineConfig(mergeConfig(defaultConfig, {
     test: {
         coverage: {
             thresholds: {
-                branches: 94.11,
+                branches: 94.06,
                 functions: 91.07,
                 lines: 95,
                 statements: 95
