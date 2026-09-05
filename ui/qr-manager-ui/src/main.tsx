@@ -1,7 +1,6 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { RuntimeConfigError } from '@radoslavirha/ui-runtime';
-import { createAuthClient, handleCallback } from '@radoslavirha/ui-auth';
 import { App } from './App.js';
 import { loadConfig } from './runtime/RuntimeConfig.js';
 import '@radoslavirha/ui-kit/styles.css';
@@ -35,30 +34,8 @@ const hintFor = (error: unknown): string => {
 
 const escape = (value: string): string => value.replace(/&/g, '&amp;').replace(/</g, '&lt;');
 
-/**
- * `silent_redirect_uri` is the app's own /callback path, because Authentik
- * registers exactly one authorization redirect URI per application and matches
- * it strictly. nginx serves index.html there, so the hidden renew iframe would
- * otherwise boot this entire SPA — AuthProvider included — and that provider
- * would start a renewal of its own, in a nested iframe, and so on until each
- * level times out. Once every four minutes, forever.
- *
- * In the iframe there is nothing to render and no router to mount: finish the
- * code exchange, let oidc-client-ts post the result up to the parent, stop.
- *
- * The cleaner shape is a static silent-renew.html registered as a second
- * redirect URI. It is deferred because that is a homelab chart change applying
- * to every application; see the plan's "The better fix, deferred".
- */
-const isFramed = window.self !== window.top;
-
 loadConfig()
-    .then(async config => {
-        if (isFramed && window.location.pathname.endsWith('/callback')) {
-            await handleCallback(createAuthClient(config.auth), { isFramed: true });
-            return;
-        }
-
+    .then(config => {
         createRoot(root).render(
             <StrictMode>
                 <App config={config} />
