@@ -64,7 +64,12 @@ RUN pnpm --filter=homelab-dashboard-ui run build
 
 FROM nginx:1.29-alpine AS homelab-dashboard-ui
 
-RUN apk add --no-cache jq=1.8.1-r0
+# Pinned per hadolint DL3018. Alpine keeps only the current revision of a
+# package, so this pin rots the moment upstream bumps it: 1.8.1-r0 vanished and
+# every image build failed with "unable to select packages". renovate.json sets
+# enabledManagers to npm + github-actions, so nothing updates this automatically
+# — bump it by hand when a build starts failing here.
+RUN apk add --no-cache jq=1.8.2-r0
 
 # dist/ carries no config.json: vite.config.ts sets build.copyPublicDir false so
 # the development config — placeholder API key included — never enters the image.
@@ -111,7 +116,12 @@ RUN pnpm --filter=qr-manager-ui run build
 
 FROM nginx:1.29-alpine AS qr-manager-ui
 
-RUN apk add --no-cache jq=1.8.1-r0
+# Pinned per hadolint DL3018. Alpine keeps only the current revision of a
+# package, so this pin rots the moment upstream bumps it: 1.8.1-r0 vanished and
+# every image build failed with "unable to select packages". renovate.json sets
+# enabledManagers to npm + github-actions, so nothing updates this automatically
+# — bump it by hand when a build starts failing here.
+RUN apk add --no-cache jq=1.8.2-r0
 
 # dist/ carries no config.json: vite.config.ts sets build.copyPublicDir false so
 # the development config never enters the image. A ConfigMap that fails to mount

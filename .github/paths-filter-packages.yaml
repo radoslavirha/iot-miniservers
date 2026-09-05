@@ -8,4 +8,6 @@ resilience: packages/resilience/**
 tsed-health: packages/tsed-health/**
 tsed-http-provider: packages/tsed-http-provider/**
 tsed-resilience: packages/tsed-resilience/**
+ui-auth: packages/ui-auth/**
 ui-kit: packages/ui-kit/**
+ui-runtime: packages/ui-runtime/**

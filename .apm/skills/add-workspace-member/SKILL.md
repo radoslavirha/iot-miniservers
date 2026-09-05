@@ -178,11 +178,28 @@ Use the `update-docs` skill — it generates the correct format automatically.
 | `vitest.config.ts` | Unit test config |
 | `src/index.ts` | Public exports |
 
-### Step 2 — Update `.github/paths-filter-apps.yaml`
+### Step 2 — Update `.github/paths-filter-packages.yaml`
+
+**Not** `paths-filter-apps.yaml` — that one is for deployable apps only (`apis/*`, `ui/*`), and its
+keys are full paths. Packages have their own filter file, keyed by the bare directory name:
 
 ```yaml
-packages/<name>: packages/<name>/**
+<name>: packages/<name>/**
 ```
+
+Miss this and CI goes **silently green**: `pull_request.yaml` builds `build-package-code` from a
+matrix over this file's changed keys, so a PR touching only the new package yields `packages: []`
+and no build job runs at all. Nothing fails — nothing is checked.
+
+Verify every package directory has an entry — review anything this prints:
+
+```bash
+diff <(ls packages/ | sort) <(grep -oE '^[a-z0-9-]+:' .github/paths-filter-packages.yaml | tr -d ':' | sort)
+```
+
+`nginx-runtime` is a known, deliberate omission: its `build`, `lint` and `test` scripts are all
+`true`, so a matrix entry would only add three no-op jobs. Its real check is `test:docker`, which
+CI does not run. Any *other* difference is a package that CI is not checking.
 
 ### Step 3 — Install & verify
 
@@ -203,7 +220,8 @@ pnpm test
 | Scaffold source files | ✓ | ✓ | ✓ |
 | Write `README.md` | ✓ | ✓ (via `update-docs`) | optional |
 | Add Dockerfile stages | ✓ | ✓ | — |
-| Add `.github/paths-filter-apps.yaml` entry | ✓ | ✓ | ✓ |
+| Add `.github/paths-filter-apps.yaml` entry (full path key) | ✓ | ✓ | — |
+| Add `.github/paths-filter-packages.yaml` entry (bare name key) | — | — | ✓ |
 | `pnpm install` from root | ✓ | ✓ | ✓ |
 | `pnpm lint && pnpm build && pnpm test` | ✓ | ✓ | ✓ |
 | Run `onboard-to-homelab` skill for k8s deploy | ✓ | ✓ | — |

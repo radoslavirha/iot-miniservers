@@ -30,3 +30,5 @@ ui/**/src/**/*.js
 .github/instructions
 .github/hooks
 .mcp.json
+
+docs/superpowers/plans

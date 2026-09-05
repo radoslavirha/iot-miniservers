@@ -211,6 +211,9 @@ catalogs:
     jsdom:
       specifier: ^30.0.1
       version: 30.0.1
+    oidc-client-ts:
+      specifier: ^3.5.0
+      version: 3.5.0
     react:
       specifier: ^19.2.8
       version: 19.2.8
@@ -332,7 +335,7 @@ importers:
         version: 1.1.4(tslib@2.8.1)(typescript@6.0.3)
       '@radoslavirha/otel':
         specifier: workspace:*
-        version: file:packages/otel(@opentelemetry/api@1.9.1)(supports-color@5.5.0)
+        version: link:../../packages/otel
       '@radoslavirha/tsed-common':
         specifier: 'catalog:'
         version: 0.5.8(@tsed/core@8.38.2)(@tsed/json-mapper@8.38.2(@tsed/core@8.38.2)(@tsed/schema@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/openspec@8.38.2)))(@tsed/schema@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/openspec@8.38.2))(zod@4.4.3)
@@ -344,16 +347,16 @@ importers:
         version: link:../../packages/tsed-health
       '@radoslavirha/tsed-http-provider':
         specifier: workspace:*
-        version: file:packages/tsed-http-provider(@radoslavirha/tsed-logger@0.6.4(@tsed/di@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/logger@8.0.5))(@tsed/platform-http@8.38.2(@tsed/engines@8.38.2)(@tsed/logger@8.0.5)(@tsed/openspec@8.38.2)(@types/multer@2.2.0)))(@tsed/di@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/logger@8.0.5))(@tsed/exceptions@8.38.2(@tsed/core@8.38.2))(axios@1.19.0(debug@4.4.3(supports-color@5.5.0))(supports-color@5.5.0))(debug@4.4.3(supports-color@5.5.0))(supports-color@5.5.0)(tslib@2.8.1)
+        version: file:packages/tsed-http-provider(@radoslavirha/tsed-logger@0.6.4(@tsed/di@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/logger@8.0.5))(@tsed/platform-http@8.38.2(@tsed/engines@8.38.2)(@tsed/logger@8.0.5)(@tsed/openspec@8.38.2)(@types/multer@2.2.0)))(@tsed/di@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/logger@8.0.5))(@tsed/exceptions@8.38.2(@tsed/core@8.38.2))(axios@1.19.0(supports-color@5.5.0))(tslib@2.8.1)
       '@radoslavirha/tsed-logger':
         specifier: 'catalog:'
         version: 0.6.4(@tsed/di@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/logger@8.0.5))(@tsed/platform-http@8.38.2(@tsed/engines@8.38.2)(@tsed/logger@8.0.5)(@tsed/openspec@8.38.2)(@types/multer@2.2.0))
       '@radoslavirha/tsed-platform':
         specifier: 'catalog:'
-        version: 5.0.1(2794667c9aee6c50c7bc1c561d26b060)
+        version: 5.0.1(7e3704c2a04bd34e146702ae6506ba15)
       '@radoslavirha/tsed-swagger':
         specifier: 'catalog:'
-        version: 9.1.5(01bbe3f22a087d89b9e6d6074b052101)
+        version: 9.1.5(aaf8c7f0c3f4be99a1ccc93aa86c454c)
       '@radoslavirha/utils':
         specifier: 'catalog:'
         version: 0.9.0
@@ -395,7 +398,7 @@ importers:
         version: 8.38.2(@tsed/core@8.38.2)(@tsed/di@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/logger@8.0.5))(@tsed/exceptions@8.38.2(@tsed/core@8.38.2))(@tsed/schema@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/openspec@8.38.2))
       '@tsed/platform-express':
         specifier: catalog:tsed
-        version: 8.38.2(@tsed/core@8.38.2)(@tsed/di@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/logger@8.0.5))(@tsed/json-mapper@8.38.2(@tsed/core@8.38.2)(@tsed/schema@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/openspec@8.38.2)))(@tsed/logger@8.0.5)(@tsed/openspec@8.38.2)(@tsed/platform-http@8.38.2(@tsed/engines@8.38.2)(@tsed/logger@8.0.5)(@tsed/openspec@8.38.2)(@types/multer@2.2.0))(@tsed/platform-views@8.38.2(@tsed/core@8.38.2)(@tsed/di@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/logger@8.0.5))(@tsed/engines@8.38.2)(@tsed/exceptions@8.38.2(@tsed/core@8.38.2))(@tsed/schema@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/openspec@8.38.2)))(@tsed/schema@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/openspec@8.38.2))(body-parser@2.3.0(supports-color@5.5.0))(express@5.2.1(supports-color@5.5.0))(multer@2.2.0)
+        version: 8.38.2(@tsed/core@8.38.2)(@tsed/di@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/logger@8.0.5))(@tsed/json-mapper@8.38.2(@tsed/core@8.38.2)(@tsed/schema@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/openspec@8.38.2)))(@tsed/logger@8.0.5)(@tsed/openspec@8.38.2)(@tsed/platform-http@8.38.2(@tsed/engines@8.38.2)(@tsed/logger@8.0.5)(@tsed/openspec@8.38.2)(@types/multer@2.2.0))(@tsed/platform-views@8.38.2(@tsed/core@8.38.2)(@tsed/di@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/logger@8.0.5))(@tsed/engines@8.38.2)(@tsed/exceptions@8.38.2(@tsed/core@8.38.2))(@tsed/schema@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/openspec@8.38.2)))(@tsed/schema@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/openspec@8.38.2))(body-parser@2.3.0)(express@5.2.1(supports-color@5.5.0))(multer@2.2.0)
       '@tsed/platform-http':
         specifier: catalog:tsed
         version: 8.38.2(@tsed/engines@8.38.2)(@tsed/logger@8.0.5)(@tsed/openspec@8.38.2)(@types/multer@2.2.0)
@@ -422,13 +425,13 @@ importers:
         version: 8.20.0
       axios:
         specifier: 'catalog:'
-        version: 1.19.0(debug@4.4.3(supports-color@5.5.0))(supports-color@5.5.0)
+        version: 1.19.0(supports-color@5.5.0)
       body-parser:
         specifier: catalog:express
-        version: 2.3.0(supports-color@5.5.0)
+        version: 2.3.0
       compression:
         specifier: catalog:express
-        version: 1.8.1(supports-color@5.5.0)
+        version: 1.8.1
       cookie-parser:
         specifier: catalog:express
         version: 1.4.7
@@ -446,7 +449,7 @@ importers:
         version: 5.2.1(supports-color@5.5.0)
       method-override:
         specifier: catalog:express
-        version: 3.0.0(supports-color@5.5.0)
+        version: 3.0.0
       sharp:
         specifier: ^0.35.3
         version: 0.35.3(@types/node@26.2.0)
@@ -459,7 +462,7 @@ importers:
     devDependencies:
       '@radoslavirha/config-eslint':
         specifier: 'catalog:'
-        version: 0.4.7(eslint@10.9.0(supports-color@5.5.0))(supports-color@5.5.0)(typescript@6.0.3)
+        version: 0.4.7(eslint@10.9.0(supports-color@5.5.0))(typescript@6.0.3)
       '@radoslavirha/config-vitest':
         specifier: 'catalog:'
         version: 0.4.5(@swc/core@1.16.1(@swc/helpers@0.5.23))(@vitest/coverage-v8@4.1.11)(esbuild@0.28.2)(rolldown@1.2.5)(vite@8.2.2(@types/node@26.2.0)(esbuild@0.28.2)(yaml@2.9.0))(vitest@4.1.11)
@@ -495,7 +498,7 @@ importers:
         version: 4.1.11(vitest@4.1.11)
       axios-mock-adapter:
         specifier: ^2.1.0
-        version: 2.1.0(axios@1.19.0(debug@4.4.3(supports-color@5.5.0))(supports-color@5.5.0))
+        version: 2.1.0(axios@1.19.0(supports-color@5.5.0))
       eslint:
         specifier: 'catalog:'
         version: 10.9.0(supports-color@5.5.0)
@@ -510,7 +513,7 @@ importers:
         version: 2.8.1
       typescript-eslint:
         specifier: 'catalog:'
-        version: 8.67.0(eslint@10.9.0(supports-color@5.5.0))(supports-color@5.5.0)(typescript@6.0.3)
+        version: 8.67.0(eslint@10.9.0(supports-color@5.5.0))(typescript@6.0.3)
       vitest:
         specifier: 'catalog:'
         version: 4.1.11(@opentelemetry/api@1.9.1)(@types/node@26.2.0)(@vitest/coverage-v8@4.1.11)(jsdom@30.0.1(@noble/hashes@1.8.0))(vite@8.2.2(@types/node@26.2.0)(esbuild@0.28.2)(yaml@2.9.0))
@@ -522,7 +525,7 @@ importers:
         version: 1.9.1
       '@opentelemetry/instrumentation-mongoose':
         specifier: catalog:otel
-        version: 0.67.0(@opentelemetry/api@1.9.1)(supports-color@7.2.0)
+        version: 0.67.0(@opentelemetry/api@1.9.1)
       '@opentelemetry/semantic-conventions':
         specifier: catalog:otel
         version: 1.43.0
@@ -558,19 +561,19 @@ importers:
         version: 5.0.8(4a700d482ecb3ddb3fe1b4a2f9586db6)
       '@radoslavirha/tsed-platform':
         specifier: 'catalog:'
-        version: 5.0.1(1da58fcad6d28e77fb43d739ea21bba0)
+        version: 5.0.1(4061f4931461b353eca905d1f2f80d6c)
       '@radoslavirha/tsed-swagger':
         specifier: 'catalog:'
-        version: 9.1.5(4f7225fc8e6539c631ccfc3a258805a2)
+        version: 9.1.5(8847d033c5bb1f54c814baea4e299e8a)
       '@radoslavirha/utils':
         specifier: 'catalog:'
         version: 0.9.0
       '@swc-node/register':
         specifier: catalog:swc
-        version: 1.12.1(@swc/core@1.16.1(@swc/helpers@0.5.23))(@swc/types@0.1.28)(supports-color@7.2.0)(typescript@6.0.3)
+        version: 1.12.1(@swc/core@1.16.1(@swc/helpers@0.5.23))(@swc/types@0.1.28)(typescript@6.0.3)
       '@swc/cli':
         specifier: catalog:swc
-        version: 0.8.1(@swc/core@1.16.1(@swc/helpers@0.5.23))(supports-color@7.2.0)
+        version: 0.8.1(@swc/core@1.16.1(@swc/helpers@0.5.23))
       '@swc/helpers':
         specifier: catalog:swc
         version: 0.5.23
@@ -606,7 +609,7 @@ importers:
         version: 8.38.2(@tsed/core@8.38.2)(@tsed/di@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/logger@8.0.5))(@tsed/exceptions@8.38.2(@tsed/core@8.38.2))(@tsed/schema@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/openspec@8.38.2))
       '@tsed/platform-express':
         specifier: catalog:tsed
-        version: 8.38.2(@tsed/core@8.38.2)(@tsed/di@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/logger@8.0.5))(@tsed/json-mapper@8.38.2(@tsed/core@8.38.2)(@tsed/schema@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/openspec@8.38.2)))(@tsed/logger@8.0.5)(@tsed/openspec@8.38.2)(@tsed/platform-http@8.38.2(@tsed/engines@8.38.2)(@tsed/logger@8.0.5)(@tsed/openspec@8.38.2)(@types/multer@2.2.0))(@tsed/platform-views@8.38.2(@tsed/core@8.38.2)(@tsed/di@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/logger@8.0.5))(@tsed/engines@8.38.2)(@tsed/exceptions@8.38.2(@tsed/core@8.38.2))(@tsed/schema@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/openspec@8.38.2)))(@tsed/schema@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/openspec@8.38.2))(body-parser@2.3.0(supports-color@7.2.0))(express@5.2.1(supports-color@7.2.0))(multer@2.2.0)
+        version: 8.38.2(@tsed/core@8.38.2)(@tsed/di@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/logger@8.0.5))(@tsed/json-mapper@8.38.2(@tsed/core@8.38.2)(@tsed/schema@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/openspec@8.38.2)))(@tsed/logger@8.0.5)(@tsed/openspec@8.38.2)(@tsed/platform-http@8.38.2(@tsed/engines@8.38.2)(@tsed/logger@8.0.5)(@tsed/openspec@8.38.2)(@types/multer@2.2.0))(@tsed/platform-views@8.38.2(@tsed/core@8.38.2)(@tsed/di@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/logger@8.0.5))(@tsed/engines@8.38.2)(@tsed/exceptions@8.38.2(@tsed/core@8.38.2))(@tsed/schema@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/openspec@8.38.2)))(@tsed/schema@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/openspec@8.38.2))(body-parser@2.3.0)(express@5.2.1)(multer@2.2.0)
       '@tsed/platform-http':
         specifier: catalog:tsed
         version: 8.38.2(@tsed/engines@8.38.2)(@tsed/logger@8.0.5)(@tsed/openspec@8.38.2)(@types/multer@2.2.0)
@@ -633,13 +636,13 @@ importers:
         version: 8.20.0
       axios:
         specifier: 'catalog:'
-        version: 1.19.0(debug@4.4.3(supports-color@7.2.0))(supports-color@7.2.0)
+        version: 1.19.0
       body-parser:
         specifier: catalog:express
-        version: 2.3.0(supports-color@7.2.0)
+        version: 2.3.0
       compression:
         specifier: catalog:express
-        version: 1.8.1(supports-color@7.2.0)
+        version: 1.8.1
       cookie-parser:
         specifier: catalog:express
         version: 1.4.7
@@ -654,10 +657,10 @@ importers:
         version: 17.4.2
       express:
         specifier: catalog:express
-        version: 5.2.1(supports-color@7.2.0)
+        version: 5.2.1
       method-override:
         specifier: catalog:express
-        version: 3.0.0(supports-color@7.2.0)
+        version: 3.0.0
       mongoose:
         specifier: 'catalog:'
         version: 9.9.3(socks@2.8.9)
@@ -679,7 +682,7 @@ importers:
         version: 2.10.0(@opentelemetry/api@1.9.1)
       '@radoslavirha/config-eslint':
         specifier: 'catalog:'
-        version: 0.4.7(eslint@10.9.0(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3)
+        version: 0.4.7(eslint@10.9.0)(typescript@6.0.3)
       '@radoslavirha/config-vitest':
         specifier: 'catalog:'
         version: 0.4.5(@swc/core@1.16.1(@swc/helpers@0.5.23))(@vitest/coverage-v8@4.1.11)(esbuild@0.28.2)(rolldown@1.2.5)(vite@8.2.2(@types/node@26.2.0)(esbuild@0.28.2)(yaml@2.9.0))(vitest@4.1.11)
@@ -715,22 +718,22 @@ importers:
         version: 4.1.11(vitest@4.1.11)
       axios-mock-adapter:
         specifier: ^2.1.0
-        version: 2.1.0(axios@1.19.0(debug@4.4.3(supports-color@7.2.0))(supports-color@7.2.0))
+        version: 2.1.0(axios@1.19.0)
       eslint:
         specifier: 'catalog:'
-        version: 10.9.0(supports-color@7.2.0)
+        version: 10.9.0
       nodemon:
         specifier: 'catalog:'
         version: 3.1.14
       supertest:
         specifier: 'catalog:'
-        version: 7.2.2(supports-color@7.2.0)
+        version: 7.2.2
       tslib:
         specifier: 'catalog:'
         version: 2.8.1
       typescript-eslint:
         specifier: 'catalog:'
-        version: 8.67.0(eslint@10.9.0(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3)
+        version: 8.67.0(eslint@10.9.0)(typescript@6.0.3)
       vitest:
         specifier: 'catalog:'
         version: 4.1.11(@opentelemetry/api@1.9.1)(@types/node@26.2.0)(@vitest/coverage-v8@4.1.11)(jsdom@30.0.1(@noble/hashes@1.8.0))(vite@8.2.2(@types/node@26.2.0)(esbuild@0.28.2)(yaml@2.9.0))
@@ -742,7 +745,7 @@ importers:
         version: 1.9.1
       '@opentelemetry/instrumentation-mongoose':
         specifier: catalog:otel
-        version: 0.67.0(@opentelemetry/api@1.9.1)(supports-color@7.2.0)
+        version: 0.67.0(@opentelemetry/api@1.9.1)
       '@opentelemetry/winston-transport':
         specifier: catalog:otel
         version: 0.31.0
@@ -772,22 +775,22 @@ importers:
         version: 5.0.8(4a700d482ecb3ddb3fe1b4a2f9586db6)
       '@radoslavirha/tsed-platform':
         specifier: 'catalog:'
-        version: 5.0.1(1da58fcad6d28e77fb43d739ea21bba0)
+        version: 5.0.1(4061f4931461b353eca905d1f2f80d6c)
       '@radoslavirha/tsed-resilience':
         specifier: workspace:*
         version: link:../../packages/tsed-resilience
       '@radoslavirha/tsed-swagger':
         specifier: 'catalog:'
-        version: 9.1.5(4f7225fc8e6539c631ccfc3a258805a2)
+        version: 9.1.5(8847d033c5bb1f54c814baea4e299e8a)
       '@radoslavirha/utils':
         specifier: 'catalog:'
         version: 0.9.0
       '@swc-node/register':
         specifier: catalog:swc
-        version: 1.12.1(@swc/core@1.16.1(@swc/helpers@0.5.23))(@swc/types@0.1.28)(supports-color@7.2.0)(typescript@6.0.3)
+        version: 1.12.1(@swc/core@1.16.1(@swc/helpers@0.5.23))(@swc/types@0.1.28)(typescript@6.0.3)
       '@swc/cli':
         specifier: catalog:swc
-        version: 0.8.1(@swc/core@1.16.1(@swc/helpers@0.5.23))(supports-color@7.2.0)
+        version: 0.8.1(@swc/core@1.16.1(@swc/helpers@0.5.23))
       '@swc/helpers':
         specifier: catalog:swc
         version: 0.5.23
@@ -823,7 +826,7 @@ importers:
         version: 8.38.2(@tsed/core@8.38.2)(@tsed/di@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/logger@8.0.5))(@tsed/exceptions@8.38.2(@tsed/core@8.38.2))(@tsed/schema@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/openspec@8.38.2))
       '@tsed/platform-express':
         specifier: catalog:tsed
-        version: 8.38.2(@tsed/core@8.38.2)(@tsed/di@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/logger@8.0.5))(@tsed/json-mapper@8.38.2(@tsed/core@8.38.2)(@tsed/schema@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/openspec@8.38.2)))(@tsed/logger@8.0.5)(@tsed/openspec@8.38.2)(@tsed/platform-http@8.38.2(@tsed/engines@8.38.2)(@tsed/logger@8.0.5)(@tsed/openspec@8.38.2)(@types/multer@2.2.0))(@tsed/platform-views@8.38.2(@tsed/core@8.38.2)(@tsed/di@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/logger@8.0.5))(@tsed/engines@8.38.2)(@tsed/exceptions@8.38.2(@tsed/core@8.38.2))(@tsed/schema@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/openspec@8.38.2)))(@tsed/schema@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/openspec@8.38.2))(body-parser@2.3.0(supports-color@7.2.0))(express@5.2.1(supports-color@7.2.0))(multer@2.2.0)
+        version: 8.38.2(@tsed/core@8.38.2)(@tsed/di@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/logger@8.0.5))(@tsed/json-mapper@8.38.2(@tsed/core@8.38.2)(@tsed/schema@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/openspec@8.38.2)))(@tsed/logger@8.0.5)(@tsed/openspec@8.38.2)(@tsed/platform-http@8.38.2(@tsed/engines@8.38.2)(@tsed/logger@8.0.5)(@tsed/openspec@8.38.2)(@types/multer@2.2.0))(@tsed/platform-views@8.38.2(@tsed/core@8.38.2)(@tsed/di@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/logger@8.0.5))(@tsed/engines@8.38.2)(@tsed/exceptions@8.38.2(@tsed/core@8.38.2))(@tsed/schema@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/openspec@8.38.2)))(@tsed/schema@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/openspec@8.38.2))(body-parser@2.3.0)(express@5.2.1)(multer@2.2.0)
       '@tsed/platform-http':
         specifier: catalog:tsed
         version: 8.38.2(@tsed/engines@8.38.2)(@tsed/logger@8.0.5)(@tsed/openspec@8.38.2)(@types/multer@2.2.0)
@@ -850,10 +853,10 @@ importers:
         version: 8.20.0
       body-parser:
         specifier: catalog:express
-        version: 2.3.0(supports-color@7.2.0)
+        version: 2.3.0
       compression:
         specifier: catalog:express
-        version: 1.8.1(supports-color@7.2.0)
+        version: 1.8.1
       cookie-parser:
         specifier: catalog:express
         version: 1.4.7
@@ -868,10 +871,10 @@ importers:
         version: 17.4.2
       express:
         specifier: catalog:express
-        version: 5.2.1(supports-color@7.2.0)
+        version: 5.2.1
       method-override:
         specifier: catalog:express
-        version: 3.0.0(supports-color@7.2.0)
+        version: 3.0.0
       mongoose:
         specifier: 'catalog:'
         version: 9.9.3(socks@2.8.9)
@@ -890,7 +893,7 @@ importers:
     devDependencies:
       '@radoslavirha/config-eslint':
         specifier: 'catalog:'
-        version: 0.4.7(eslint@10.9.0(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3)
+        version: 0.4.7(eslint@10.9.0)(typescript@6.0.3)
       '@radoslavirha/config-vitest':
         specifier: 'catalog:'
         version: 0.4.5(@swc/core@1.16.1(@swc/helpers@0.5.23))(@vitest/coverage-v8@4.1.11)(esbuild@0.28.2)(rolldown@1.2.5)(vite@8.2.2(@types/node@26.2.0)(esbuild@0.28.2)(yaml@2.9.0))(vitest@4.1.11)
@@ -899,7 +902,7 @@ importers:
         version: 1.16.1(@swc/helpers@0.5.23)
       '@tsed/testcontainers-mongo':
         specifier: catalog:tsed
-        version: 8.38.2(@testcontainers/mongodb@12.1.0(supports-color@7.2.0))(@tsed/core@8.38.2)(@tsed/di@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/logger@8.0.5))(@tsed/platform-http@8.38.2(@tsed/engines@8.38.2)(@tsed/logger@8.0.5)(@tsed/openspec@8.38.2)(@types/multer@2.2.0))(mongodb@7.5.0(socks@2.8.9))(testcontainers@12.1.0(supports-color@7.2.0))
+        version: 8.38.2(@testcontainers/mongodb@12.1.0)(@tsed/core@8.38.2)(@tsed/di@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/logger@8.0.5))(@tsed/platform-http@8.38.2(@tsed/engines@8.38.2)(@tsed/logger@8.0.5)(@tsed/openspec@8.38.2)(@types/multer@2.2.0))(mongodb@7.5.0(socks@2.8.9))(testcontainers@12.1.0)
       '@types/compression':
         specifier: catalog:express
         version: 1.8.1
@@ -929,19 +932,19 @@ importers:
         version: 4.1.11(vitest@4.1.11)
       eslint:
         specifier: 'catalog:'
-        version: 10.9.0(supports-color@7.2.0)
+        version: 10.9.0
       nodemon:
         specifier: 'catalog:'
         version: 3.1.14
       supertest:
         specifier: 'catalog:'
-        version: 7.2.2(supports-color@7.2.0)
+        version: 7.2.2
       tslib:
         specifier: 'catalog:'
         version: 2.8.1
       typescript-eslint:
         specifier: 'catalog:'
-        version: 8.67.0(eslint@10.9.0(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3)
+        version: 8.67.0(eslint@10.9.0)(typescript@6.0.3)
       vitest:
         specifier: 'catalog:'
         version: 4.1.11(@opentelemetry/api@1.9.1)(@types/node@26.2.0)(@vitest/coverage-v8@4.1.11)(jsdom@30.0.1(@noble/hashes@1.8.0))(vite@8.2.2(@types/node@26.2.0)(esbuild@0.28.2)(yaml@2.9.0))
@@ -963,7 +966,7 @@ importers:
     devDependencies:
       '@radoslavirha/config-eslint':
         specifier: 'catalog:'
-        version: 0.4.7(eslint@10.9.0(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3)
+        version: 0.4.7(eslint@10.9.0)(typescript@6.0.3)
       '@radoslavirha/config-tsdown':
         specifier: 'catalog:'
         version: 0.2.3(tsdown@0.22.14(oxc-resolver@11.24.2)(typescript@6.0.3))
@@ -978,13 +981,13 @@ importers:
         version: 4.1.11(vitest@4.1.11)
       eslint:
         specifier: 'catalog:'
-        version: 10.9.0(supports-color@7.2.0)
+        version: 10.9.0
       tsdown:
         specifier: 'catalog:'
         version: 0.22.14(oxc-resolver@11.24.2)(typescript@6.0.3)
       typescript-eslint:
         specifier: 'catalog:'
-        version: 8.67.0(eslint@10.9.0(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3)
+        version: 8.67.0(eslint@10.9.0)(typescript@6.0.3)
       vitest:
         specifier: 'catalog:'
         version: 4.1.11(@opentelemetry/api@1.9.1)(@types/node@26.2.0)(@vitest/coverage-v8@4.1.11)(jsdom@30.0.1(@noble/hashes@1.8.0))(vite@8.2.2(@types/node@26.2.0)(esbuild@0.28.2)(yaml@2.9.0))
@@ -1002,7 +1005,7 @@ importers:
         version: 0.9.0
       axios:
         specifier: 'catalog:'
-        version: 1.19.0(debug@4.4.3(supports-color@7.2.0))(supports-color@7.2.0)
+        version: 1.19.0
       jose:
         specifier: 'catalog:'
         version: 6.2.10
@@ -1015,7 +1018,7 @@ importers:
     devDependencies:
       '@radoslavirha/config-eslint':
         specifier: 'catalog:'
-        version: 0.4.7(eslint@10.9.0(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3)
+        version: 0.4.7(eslint@10.9.0)(typescript@6.0.3)
       '@radoslavirha/config-tsdown':
         specifier: 'catalog:'
         version: 0.2.3(tsdown@0.22.14(oxc-resolver@11.24.2)(typescript@6.0.3))
@@ -1030,16 +1033,16 @@ importers:
         version: 4.1.11(vitest@4.1.11)
       axios-mock-adapter:
         specifier: ^2.1.0
-        version: 2.1.0(axios@1.19.0(debug@4.4.3(supports-color@7.2.0))(supports-color@7.2.0))
+        version: 2.1.0(axios@1.19.0)
       eslint:
         specifier: 'catalog:'
-        version: 10.9.0(supports-color@7.2.0)
+        version: 10.9.0
       tsdown:
         specifier: 'catalog:'
         version: 0.22.14(oxc-resolver@11.24.2)(typescript@6.0.3)
       typescript-eslint:
         specifier: 'catalog:'
-        version: 8.67.0(eslint@10.9.0(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3)
+        version: 8.67.0(eslint@10.9.0)(typescript@6.0.3)
       vitest:
         specifier: 'catalog:'
         version: 4.1.11(@opentelemetry/api@1.9.1)(@types/node@26.2.0)(@vitest/coverage-v8@4.1.11)(jsdom@30.0.1(@noble/hashes@1.8.0))(vite@8.2.2(@types/node@26.2.0)(esbuild@0.28.2)(yaml@2.9.0))
@@ -1058,7 +1061,7 @@ importers:
     devDependencies:
       '@radoslavirha/config-eslint':
         specifier: 'catalog:'
-        version: 0.4.7(eslint@10.9.0(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3)
+        version: 0.4.7(eslint@10.9.0)(typescript@6.0.3)
       '@radoslavirha/config-tsdown':
         specifier: 'catalog:'
         version: 0.2.3(tsdown@0.22.14(oxc-resolver@11.24.2)(typescript@6.0.3))
@@ -1073,13 +1076,13 @@ importers:
         version: 4.1.11(vitest@4.1.11)
       eslint:
         specifier: 'catalog:'
-        version: 10.9.0(supports-color@7.2.0)
+        version: 10.9.0
       tsdown:
         specifier: 'catalog:'
         version: 0.22.14(oxc-resolver@11.24.2)(typescript@6.0.3)
       typescript-eslint:
         specifier: 'catalog:'
-        version: 8.67.0(eslint@10.9.0(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3)
+        version: 8.67.0(eslint@10.9.0)(typescript@6.0.3)
       vitest:
         specifier: 'catalog:'
         version: 4.1.11(@opentelemetry/api@1.9.1)(@types/node@26.2.0)(@vitest/coverage-v8@4.1.11)(jsdom@30.0.1(@noble/hashes@1.8.0))(vite@8.2.2(@types/node@26.2.0)(esbuild@0.28.2)(yaml@2.9.0))
@@ -1105,16 +1108,16 @@ importers:
         version: 0.221.0(@opentelemetry/api@1.9.1)
       '@opentelemetry/instrumentation':
         specifier: catalog:otel
-        version: 0.221.0(@opentelemetry/api@1.9.1)(supports-color@7.2.0)
+        version: 0.221.0(@opentelemetry/api@1.9.1)
       '@opentelemetry/instrumentation-express':
         specifier: catalog:otel
-        version: 0.69.0(@opentelemetry/api@1.9.1)(supports-color@7.2.0)
+        version: 0.69.0(@opentelemetry/api@1.9.1)
       '@opentelemetry/instrumentation-http':
         specifier: catalog:otel
-        version: 0.221.0(@opentelemetry/api@1.9.1)(supports-color@7.2.0)
+        version: 0.221.0(@opentelemetry/api@1.9.1)
       '@opentelemetry/instrumentation-winston':
         specifier: catalog:otel
-        version: 0.65.0(@opentelemetry/api@1.9.1)(supports-color@7.2.0)
+        version: 0.65.0(@opentelemetry/api@1.9.1)
       '@opentelemetry/resources':
         specifier: catalog:otel
         version: 2.10.0(@opentelemetry/api@1.9.1)
@@ -1126,7 +1129,7 @@ importers:
         version: 2.10.0(@opentelemetry/api@1.9.1)
       '@opentelemetry/sdk-node':
         specifier: catalog:otel
-        version: 0.221.0(@opentelemetry/api@1.9.1)(supports-color@7.2.0)
+        version: 0.221.0(@opentelemetry/api@1.9.1)
       '@opentelemetry/sdk-trace-node':
         specifier: catalog:otel
         version: 2.10.0(@opentelemetry/api@1.9.1)
@@ -1145,7 +1148,7 @@ importers:
     devDependencies:
       '@radoslavirha/config-eslint':
         specifier: 'catalog:'
-        version: 0.4.7(eslint@10.9.0(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3)
+        version: 0.4.7(eslint@10.9.0)(typescript@6.0.3)
       '@radoslavirha/config-tsdown':
         specifier: 'catalog:'
         version: 0.2.3(tsdown@0.22.14(oxc-resolver@11.24.2)(typescript@6.0.3))
@@ -1163,7 +1166,7 @@ importers:
         version: 4.1.11(vitest@4.1.11)
       eslint:
         specifier: 'catalog:'
-        version: 10.9.0(supports-color@7.2.0)
+        version: 10.9.0
       tsdown:
         specifier: 'catalog:'
         version: 0.22.14(oxc-resolver@11.24.2)(typescript@6.0.3)
@@ -1172,7 +1175,7 @@ importers:
         version: 6.0.3
       typescript-eslint:
         specifier: 'catalog:'
-        version: 8.67.0(eslint@10.9.0(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3)
+        version: 8.67.0(eslint@10.9.0)(typescript@6.0.3)
       vitest:
         specifier: 'catalog:'
         version: 4.1.11(@opentelemetry/api@1.9.1)(@types/node@26.2.0)(@vitest/coverage-v8@4.1.11)(jsdom@30.0.1(@noble/hashes@1.8.0))(vite@8.2.2(@types/node@26.2.0)(esbuild@0.28.2)(yaml@2.9.0))
@@ -1194,7 +1197,7 @@ importers:
     devDependencies:
       '@radoslavirha/config-eslint':
         specifier: 'catalog:'
-        version: 0.4.7(eslint@10.9.0(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3)
+        version: 0.4.7(eslint@10.9.0)(typescript@6.0.3)
       '@radoslavirha/config-tsdown':
         specifier: 'catalog:'
         version: 0.2.3(tsdown@0.22.14(oxc-resolver@11.24.2)(typescript@6.0.3))
@@ -1203,7 +1206,7 @@ importers:
         version: 0.4.5(@swc/core@1.16.1(@swc/helpers@0.5.23))(@vitest/coverage-v8@4.1.11)(esbuild@0.28.2)(rolldown@1.2.5)(vite@8.2.2(@types/node@26.2.0)(esbuild@0.28.2)(yaml@2.9.0))(vitest@4.1.11)
       '@tsed/testcontainers-mongo':
         specifier: catalog:tsed
-        version: 8.38.2(@testcontainers/mongodb@12.1.0(supports-color@7.2.0))(@tsed/core@8.38.2)(@tsed/di@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/logger@8.0.5))(@tsed/platform-http@8.38.2(@tsed/engines@8.38.2)(@tsed/logger@8.0.5)(@tsed/openspec@8.38.2)(@types/multer@2.2.0))(mongodb@7.5.0(socks@2.8.9))(testcontainers@12.1.0(supports-color@7.2.0))
+        version: 8.38.2(@testcontainers/mongodb@12.1.0)(@tsed/core@8.38.2)(@tsed/di@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/logger@8.0.5))(@tsed/platform-http@8.38.2(@tsed/engines@8.38.2)(@tsed/logger@8.0.5)(@tsed/openspec@8.38.2)(@types/multer@2.2.0))(mongodb@7.5.0(socks@2.8.9))(testcontainers@12.1.0)
       '@types/node':
         specifier: 'catalog:'
         version: 26.2.0
@@ -1212,7 +1215,7 @@ importers:
         version: 4.1.11(vitest@4.1.11)
       eslint:
         specifier: 'catalog:'
-        version: 10.9.0(supports-color@7.2.0)
+        version: 10.9.0
       mongoose:
         specifier: 'catalog:'
         version: 9.9.3(socks@2.8.9)
@@ -1221,7 +1224,7 @@ importers:
         version: 0.22.14(oxc-resolver@11.24.2)(typescript@6.0.3)
       typescript-eslint:
         specifier: 'catalog:'
-        version: 8.67.0(eslint@10.9.0(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3)
+        version: 8.67.0(eslint@10.9.0)(typescript@6.0.3)
       vitest:
         specifier: 'catalog:'
         version: 4.1.11(@opentelemetry/api@1.9.1)(@types/node@26.2.0)(@vitest/coverage-v8@4.1.11)(jsdom@30.0.1(@noble/hashes@1.8.0))(vite@8.2.2(@types/node@26.2.0)(esbuild@0.28.2)(yaml@2.9.0))
@@ -1240,7 +1243,7 @@ importers:
     devDependencies:
       '@radoslavirha/config-eslint':
         specifier: 'catalog:'
-        version: 0.4.7(eslint@10.9.0(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3)
+        version: 0.4.7(eslint@10.9.0)(typescript@6.0.3)
       '@radoslavirha/config-tsdown':
         specifier: 'catalog:'
         version: 0.2.3(tsdown@0.22.14(oxc-resolver@11.24.2)(typescript@6.0.3))
@@ -1261,7 +1264,7 @@ importers:
         version: 8.38.2(@tsed/ajv@8.38.2(@tsed/core@8.38.2)(@tsed/di@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/logger@8.0.5))(@tsed/exceptions@8.38.2(@tsed/core@8.38.2))(@tsed/schema@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/openspec@8.38.2))(ajv-errors@3.0.0(ajv@8.20.0))(ajv@8.20.0))(@tsed/core@8.38.2)(@tsed/di@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/logger@8.0.5))(@tsed/json-mapper@8.38.2(@tsed/core@8.38.2)(@tsed/schema@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/openspec@8.38.2)))(@tsed/logger@8.0.5)(@tsed/schema@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/openspec@8.38.2))(mongoose@9.9.3(socks@2.8.9))
       '@tsed/platform-express':
         specifier: catalog:tsed
-        version: 8.38.2(@tsed/core@8.38.2)(@tsed/di@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/logger@8.0.5))(@tsed/json-mapper@8.38.2(@tsed/core@8.38.2)(@tsed/schema@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/openspec@8.38.2)))(@tsed/logger@8.0.5)(@tsed/openspec@8.38.2)(@tsed/platform-http@8.38.2(@tsed/engines@8.38.2)(@tsed/logger@8.0.5)(@tsed/openspec@8.38.2)(@types/multer@2.2.0))(@tsed/platform-views@8.38.2(@tsed/core@8.38.2)(@tsed/di@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/logger@8.0.5))(@tsed/engines@8.38.2)(@tsed/exceptions@8.38.2(@tsed/core@8.38.2))(@tsed/schema@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/openspec@8.38.2)))(@tsed/schema@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/openspec@8.38.2))(body-parser@2.3.0(supports-color@7.2.0))(express@5.2.1(supports-color@7.2.0))(multer@2.2.0)
+        version: 8.38.2(@tsed/core@8.38.2)(@tsed/di@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/logger@8.0.5))(@tsed/json-mapper@8.38.2(@tsed/core@8.38.2)(@tsed/schema@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/openspec@8.38.2)))(@tsed/logger@8.0.5)(@tsed/openspec@8.38.2)(@tsed/platform-http@8.38.2(@tsed/engines@8.38.2)(@tsed/logger@8.0.5)(@tsed/openspec@8.38.2)(@types/multer@2.2.0))(@tsed/platform-views@8.38.2(@tsed/core@8.38.2)(@tsed/di@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/logger@8.0.5))(@tsed/engines@8.38.2)(@tsed/exceptions@8.38.2(@tsed/core@8.38.2))(@tsed/schema@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/openspec@8.38.2)))(@tsed/schema@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/openspec@8.38.2))(body-parser@2.3.0)(express@5.2.1)(multer@2.2.0)
       '@tsed/platform-http':
         specifier: catalog:tsed
         version: 8.38.2(@tsed/engines@8.38.2)(@tsed/logger@8.0.5)(@tsed/openspec@8.38.2)(@types/multer@2.2.0)
@@ -1273,7 +1276,7 @@ importers:
         version: 8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/openspec@8.38.2)
       '@tsed/testcontainers-mongo':
         specifier: catalog:tsed
-        version: 8.38.2(@testcontainers/mongodb@12.1.0(supports-color@7.2.0))(@tsed/core@8.38.2)(@tsed/di@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/logger@8.0.5))(@tsed/platform-http@8.38.2(@tsed/engines@8.38.2)(@tsed/logger@8.0.5)(@tsed/openspec@8.38.2)(@types/multer@2.2.0))(mongodb@7.5.0(socks@2.8.9))(testcontainers@12.1.0(supports-color@7.2.0))
+        version: 8.38.2(@testcontainers/mongodb@12.1.0)(@tsed/core@8.38.2)(@tsed/di@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/logger@8.0.5))(@tsed/platform-http@8.38.2(@tsed/engines@8.38.2)(@tsed/logger@8.0.5)(@tsed/openspec@8.38.2)(@types/multer@2.2.0))(mongodb@7.5.0(socks@2.8.9))(testcontainers@12.1.0)
       '@types/node':
         specifier: 'catalog:'
         version: 26.2.0
@@ -1285,13 +1288,13 @@ importers:
         version: 4.1.11(vitest@4.1.11)
       eslint:
         specifier: 'catalog:'
-        version: 10.9.0(supports-color@7.2.0)
+        version: 10.9.0
       mongoose:
         specifier: 'catalog:'
         version: 9.9.3(socks@2.8.9)
       supertest:
         specifier: 'catalog:'
-        version: 7.2.2(supports-color@7.2.0)
+        version: 7.2.2
       tsdown:
         specifier: 'catalog:'
         version: 0.22.14(oxc-resolver@11.24.2)(typescript@6.0.3)
@@ -1300,7 +1303,7 @@ importers:
         version: 2.8.1
       typescript-eslint:
         specifier: 'catalog:'
-        version: 8.67.0(eslint@10.9.0(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3)
+        version: 8.67.0(eslint@10.9.0)(typescript@6.0.3)
       vitest:
         specifier: 'catalog:'
         version: 4.1.11(@opentelemetry/api@1.9.1)(@types/node@26.2.0)(@vitest/coverage-v8@4.1.11)(jsdom@30.0.1(@noble/hashes@1.8.0))(vite@8.2.2(@types/node@26.2.0)(esbuild@0.28.2)(yaml@2.9.0))
@@ -1331,7 +1334,7 @@ importers:
     devDependencies:
       '@radoslavirha/config-eslint':
         specifier: 'catalog:'
-        version: 0.4.7(eslint@10.9.0(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3)
+        version: 0.4.7(eslint@10.9.0)(typescript@6.0.3)
       '@radoslavirha/config-tsdown':
         specifier: 'catalog:'
         version: 0.2.3(tsdown@0.22.14(oxc-resolver@11.24.2)(typescript@6.0.3))
@@ -1364,13 +1367,13 @@ importers:
         version: 4.1.11(vitest@4.1.11)
       axios:
         specifier: 'catalog:'
-        version: 1.19.0(debug@4.4.3(supports-color@7.2.0))(supports-color@7.2.0)
+        version: 1.19.0
       axios-mock-adapter:
         specifier: ^2.1.0
-        version: 2.1.0(axios@1.19.0(debug@4.4.3(supports-color@7.2.0))(supports-color@7.2.0))
+        version: 2.1.0(axios@1.19.0)
       eslint:
         specifier: 'catalog:'
-        version: 10.9.0(supports-color@7.2.0)
+        version: 10.9.0
       tsdown:
         specifier: 'catalog:'
         version: 0.22.14(oxc-resolver@11.24.2)(typescript@6.0.3)
@@ -1379,7 +1382,7 @@ importers:
         version: 2.8.1
       typescript-eslint:
         specifier: 'catalog:'
-        version: 8.67.0(eslint@10.9.0(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3)
+        version: 8.67.0(eslint@10.9.0)(typescript@6.0.3)
       vitest:
         specifier: 'catalog:'
         version: 4.1.11(@opentelemetry/api@1.9.1)(@types/node@26.2.0)(@vitest/coverage-v8@4.1.11)(jsdom@30.0.1(@noble/hashes@1.8.0))(vite@8.2.2(@types/node@26.2.0)(esbuild@0.28.2)(yaml@2.9.0))
@@ -1395,7 +1398,7 @@ importers:
     devDependencies:
       '@radoslavirha/config-eslint':
         specifier: 'catalog:'
-        version: 0.4.7(eslint@10.9.0(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3)
+        version: 0.4.7(eslint@10.9.0)(typescript@6.0.3)
       '@radoslavirha/config-tsdown':
         specifier: 'catalog:'
         version: 0.2.3(tsdown@0.22.14(oxc-resolver@11.24.2)(typescript@6.0.3))
@@ -1428,7 +1431,7 @@ importers:
         version: 4.1.11(vitest@4.1.11)
       eslint:
         specifier: 'catalog:'
-        version: 10.9.0(supports-color@7.2.0)
+        version: 10.9.0
       tsdown:
         specifier: 'catalog:'
         version: 0.22.14(oxc-resolver@11.24.2)(typescript@6.0.3)
@@ -1437,7 +1440,68 @@ importers:
         version: 2.8.1
       typescript-eslint:
         specifier: 'catalog:'
-        version: 8.67.0(eslint@10.9.0(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3)
+        version: 8.67.0(eslint@10.9.0)(typescript@6.0.3)
+      vitest:
+        specifier: 'catalog:'
+        version: 4.1.11(@opentelemetry/api@1.9.1)(@types/node@26.2.0)(@vitest/coverage-v8@4.1.11)(jsdom@30.0.1(@noble/hashes@1.8.0))(vite@8.2.2(@types/node@26.2.0)(esbuild@0.28.2)(yaml@2.9.0))
+
+  packages/ui-auth:
+    dependencies:
+      '@radoslavirha/ui-runtime':
+        specifier: workspace:*
+        version: link:../ui-runtime
+      oidc-client-ts:
+        specifier: catalog:react
+        version: 3.5.0
+      zod:
+        specifier: 'catalog:'
+        version: 4.4.3
+    devDependencies:
+      '@radoslavirha/config-eslint':
+        specifier: 'catalog:'
+        version: 0.4.7(eslint@10.9.0)(typescript@6.0.3)
+      '@radoslavirha/config-typescript':
+        specifier: 'catalog:'
+        version: 1.1.4(tslib@2.8.1)(typescript@6.0.3)
+      '@radoslavirha/config-vitest':
+        specifier: 'catalog:'
+        version: 0.4.5(@swc/core@1.16.1(@swc/helpers@0.5.23))(@vitest/coverage-v8@4.1.11)(esbuild@0.28.2)(rolldown@1.2.5)(vite@8.2.2(@types/node@26.2.0)(esbuild@0.28.2)(yaml@2.9.0))(vitest@4.1.11)
+      '@testing-library/jest-dom':
+        specifier: catalog:react
+        version: 7.0.1(@testing-library/dom@10.4.1)(vitest@4.1.11)
+      '@testing-library/react':
+        specifier: catalog:react
+        version: 16.3.2(@testing-library/dom@10.4.1)(@types/react-dom@19.2.4(@types/react@19.2.18))(@types/react@19.2.18)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+      '@testing-library/user-event':
+        specifier: catalog:react
+        version: 14.6.6(@testing-library/dom@10.4.1)
+      '@types/react':
+        specifier: catalog:react
+        version: 19.2.18
+      '@vitejs/plugin-react':
+        specifier: catalog:react
+        version: 6.1.0(vite@8.2.2(@types/node@26.2.0)(esbuild@0.28.2)(yaml@2.9.0))
+      '@vitest/coverage-v8':
+        specifier: 'catalog:'
+        version: 4.1.11(vitest@4.1.11)
+      eslint:
+        specifier: 'catalog:'
+        version: 10.9.0
+      jsdom:
+        specifier: catalog:react
+        version: 30.0.1(@noble/hashes@1.8.0)
+      react:
+        specifier: ^19.2.8
+        version: 19.2.8
+      react-dom:
+        specifier: ^19.2.8
+        version: 19.2.8(react@19.2.8)
+      typescript:
+        specifier: 'catalog:'
+        version: 6.0.3
+      typescript-eslint:
+        specifier: 'catalog:'
+        version: 8.67.0(eslint@10.9.0)(typescript@6.0.3)
       vitest:
         specifier: 'catalog:'
         version: 4.1.11(@opentelemetry/api@1.9.1)(@types/node@26.2.0)(@vitest/coverage-v8@4.1.11)(jsdom@30.0.1(@noble/hashes@1.8.0))(vite@8.2.2(@types/node@26.2.0)(esbuild@0.28.2)(yaml@2.9.0))
@@ -1446,7 +1510,7 @@ importers:
     devDependencies:
       '@radoslavirha/config-eslint':
         specifier: 'catalog:'
-        version: 0.4.7(eslint@10.9.0(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3)
+        version: 0.4.7(eslint@10.9.0)(typescript@6.0.3)
       '@radoslavirha/config-typescript':
         specifier: 'catalog:'
         version: 1.1.4(tslib@2.8.1)(typescript@6.0.3)
@@ -1476,7 +1540,7 @@ importers:
         version: 4.1.11(vitest@4.1.11)
       eslint:
         specifier: 'catalog:'
-        version: 10.9.0(supports-color@7.2.0)
+        version: 10.9.0
       jsdom:
         specifier: catalog:react
         version: 30.0.1(@noble/hashes@1.8.0)
@@ -1491,7 +1555,7 @@ importers:
         version: 6.0.3
       typescript-eslint:
         specifier: 'catalog:'
-        version: 8.67.0(eslint@10.9.0(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3)
+        version: 8.67.0(eslint@10.9.0)(typescript@6.0.3)
       vitest:
         specifier: 'catalog:'
         version: 4.1.11(@opentelemetry/api@1.9.1)(@types/node@26.2.0)(@vitest/coverage-v8@4.1.11)(jsdom@30.0.1(@noble/hashes@1.8.0))(vite@8.2.2(@types/node@26.2.0)(esbuild@0.28.2)(yaml@2.9.0))
@@ -1504,7 +1568,7 @@ importers:
     devDependencies:
       '@radoslavirha/config-eslint':
         specifier: 'catalog:'
-        version: 0.4.7(eslint@10.9.0(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3)
+        version: 0.4.7(eslint@10.9.0)(typescript@6.0.3)
       '@radoslavirha/config-typescript':
         specifier: 'catalog:'
         version: 1.1.4(tslib@2.8.1)(typescript@6.0.3)
@@ -1528,7 +1592,7 @@ importers:
         version: 4.1.11(vitest@4.1.11)
       eslint:
         specifier: 'catalog:'
-        version: 10.9.0(supports-color@7.2.0)
+        version: 10.9.0
       jsdom:
         specifier: catalog:react
         version: 30.0.1(@noble/hashes@1.8.0)
@@ -1543,7 +1607,7 @@ importers:
         version: 6.0.3
       typescript-eslint:
         specifier: 'catalog:'
-        version: 8.67.0(eslint@10.9.0(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3)
+        version: 8.67.0(eslint@10.9.0)(typescript@6.0.3)
       vitest:
         specifier: 'catalog:'
         version: 4.1.11(@opentelemetry/api@1.9.1)(@types/node@26.2.0)(@vitest/coverage-v8@4.1.11)(jsdom@30.0.1(@noble/hashes@1.8.0))(vite@8.2.2(@types/node@26.2.0)(esbuild@0.28.2)(yaml@2.9.0))
@@ -1568,7 +1632,7 @@ importers:
     devDependencies:
       '@radoslavirha/config-eslint':
         specifier: 'catalog:'
-        version: 0.4.7(eslint@10.9.0(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3)
+        version: 0.4.7(eslint@10.9.0)(typescript@6.0.3)
       '@radoslavirha/config-typescript':
         specifier: 'catalog:'
         version: 1.1.4(tslib@2.8.1)(typescript@6.0.3)
@@ -1601,7 +1665,7 @@ importers:
         version: 0.28.2
       eslint:
         specifier: 'catalog:'
-        version: 10.9.0(supports-color@7.2.0)
+        version: 10.9.0
       jsdom:
         specifier: catalog:react
         version: 30.0.1(@noble/hashes@1.8.0)
@@ -1610,7 +1674,7 @@ importers:
         version: 6.0.3
       typescript-eslint:
         specifier: 'catalog:'
-        version: 8.67.0(eslint@10.9.0(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3)
+        version: 8.67.0(eslint@10.9.0)(typescript@6.0.3)
       vite:
         specifier: catalog:react
         version: 8.2.2(@types/node@26.2.0)(esbuild@0.28.2)(yaml@2.9.0)
@@ -1620,6 +1684,9 @@ importers:
 
   ui/qr-manager-ui:
     dependencies:
+      '@radoslavirha/ui-auth':
+        specifier: workspace:*
+        version: link:../../packages/ui-auth
       '@radoslavirha/ui-kit':
         specifier: workspace:*
         version: link:../../packages/ui-kit
@@ -1641,7 +1708,7 @@ importers:
     devDependencies:
       '@radoslavirha/config-eslint':
         specifier: 'catalog:'
-        version: 0.4.7(eslint@10.9.0(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3)
+        version: 0.4.7(eslint@10.9.0)(typescript@6.0.3)
       '@radoslavirha/config-typescript':
         specifier: 'catalog:'
         version: 1.1.4(tslib@2.8.1)(typescript@6.0.3)
@@ -1674,7 +1741,7 @@ importers:
         version: 0.28.2
       eslint:
         specifier: 'catalog:'
-        version: 10.9.0(supports-color@7.2.0)
+        version: 10.9.0
       jsdom:
         specifier: catalog:react
         version: 30.0.1(@noble/hashes@1.8.0)
@@ -1683,7 +1750,7 @@ importers:
         version: 6.0.3
       typescript-eslint:
         specifier: 'catalog:'
-        version: 8.67.0(eslint@10.9.0(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3)
+        version: 8.67.0(eslint@10.9.0)(typescript@6.0.3)
       vite:
         specifier: catalog:react
         version: 8.2.2(@types/node@26.2.0)(esbuild@0.28.2)(yaml@2.9.0)
@@ -2976,12 +3043,6 @@ packages:
     resolution: {integrity: sha512-J9ZZpiIEMFbGM6O7GxBYaEXd1Ev5PuzYBWHdrhrxmH+KFw6A8qLExVAapqDMpymcn2L8G7oTyS28oCJZfaKPmw==, tarball: https://npm.pkg.github.com/download/@radoslavirha/logger/0.4.3/8acf26d9f4bac6b84cba91ab94c9ff880828ca80}
     engines: {node: '>= 24', pnpm: '>= 11.8'}
     os: [darwin, linux]
-
-  '@radoslavirha/otel@file:packages/otel':
-    resolution: {directory: packages/otel, type: directory}
-    engines: {node: '>= 24', pnpm: '>= 11.8'}
-    peerDependencies:
-      '@opentelemetry/api': catalog:otel
 
   '@radoslavirha/redaction@0.2.2':
     resolution: {integrity: sha512-ksD5RHGKiB+NHEg5PLeaWf/wlRXGorLdVgyKI30AgxsqrHkyTlSivyqy2mJgkOKg2fZZflLBR3Hv8KRdGA7Bsw==, tarball: https://npm.pkg.github.com/download/@radoslavirha/redaction/0.2.2/225524e973c5522e69f86c7aa2342b8c2b6ffa7d}
@@ -5234,6 +5295,10 @@ packages:
   jsonc-parser@3.3.1:
     resolution: {integrity: sha512-HUgH65KyejrUFPvHFPbqOY0rsFip3Bo5wb4ngvdi1EpCYWUQDC5V+Y7mZws+DLkr4M//zQJoanu1SP+87Dv1oQ==}
 
+  jwt-decode@4.0.0:
+    resolution: {integrity: sha512-+KJGIyHgkGuIq3IEBNftfhW/LfWhXUIY6OmyVWjliu5KH1y0fw7VQ8YndE2O4qZdMSd9SqbnC8GOcZEy0Om7sA==}
+    engines: {node: '>=18'}
+
   kareem@3.3.0:
     resolution: {integrity: sha512-kpSuLD3/7RenBnjnJdOHXCKC8dTd1JzeOiJhN0necWWci6cC+qX+VuwPnMVgb+a4+KNJSfgqahpnfWaeDXCimw==}
     engines: {node: '>=18.0.0'}
@@ -5624,6 +5689,10 @@ packages:
   obug@2.1.4:
     resolution: {integrity: sha512-4a+OsYv9UktOJKE+l1A4OufDgdRF9PifWj+tJnHURo/P+WOxpG4GzUFL9qCalmWauao6ogiG+QvnCovwPoyAWA==}
     engines: {node: '>=12.20.0'}
+
+  oidc-client-ts@3.5.0:
+    resolution: {integrity: sha512-l2q8l9CTCTOlbX+AnK4p3M+4CEpKpyQhle6blQkdFhm0IsBqsxm15bYaSa11G7pWdsYr6epdsRZxJpCyCRbT8A==}
+    engines: {node: '>=18'}
 
   on-finished@2.4.1:
     resolution: {integrity: sha512-oVlzkg3ENAhCk2zdv7IJwd/QUD4z2RxRwpkcGY8psCVcCYZNq4wYnVWALHM+brtuJjePWiYF/ClmuDr8Ch5+kg==}
@@ -7107,25 +7176,25 @@ snapshots:
       eslint: 10.9.0(supports-color@5.5.0)
       eslint-visitor-keys: 3.4.3
 
-  '@eslint-community/eslint-utils@4.10.1(eslint@10.9.0(supports-color@7.2.0))':
+  '@eslint-community/eslint-utils@4.10.1(eslint@10.9.0)':
     dependencies:
-      eslint: 10.9.0(supports-color@7.2.0)
+      eslint: 10.9.0
       eslint-visitor-keys: 3.4.3
 
   '@eslint-community/regexpp@4.12.2': {}
+
+  '@eslint/config-array@0.23.5':
+    dependencies:
+      '@eslint/object-schema': 3.0.5
+      debug: 4.4.3(supports-color@7.2.0)
+      minimatch: 10.2.6
+    transitivePeerDependencies:
+      - supports-color
 
   '@eslint/config-array@0.23.5(supports-color@5.5.0)':
     dependencies:
       '@eslint/object-schema': 3.0.5
       debug: 4.4.3(supports-color@5.5.0)
-      minimatch: 10.2.6
-    transitivePeerDependencies:
-      - supports-color
-
-  '@eslint/config-array@0.23.5(supports-color@7.2.0)':
-    dependencies:
-      '@eslint/object-schema': 3.0.5
-      debug: 4.4.3(supports-color@7.2.0)
       minimatch: 10.2.6
     transitivePeerDependencies:
       - supports-color
@@ -7322,7 +7391,7 @@ snapshots:
 
   '@keyv/serialize@1.1.1': {}
 
-  '@kwsites/file-exists@1.1.1(supports-color@7.2.0)':
+  '@kwsites/file-exists@1.1.1':
     dependencies:
       debug: 4.4.3(supports-color@7.2.0)
     transitivePeerDependencies:
@@ -7645,84 +7714,48 @@ snapshots:
       '@opentelemetry/sdk-trace': 2.10.0(@opentelemetry/api@1.9.1)
       '@opentelemetry/semantic-conventions': 1.43.0
 
-  '@opentelemetry/instrumentation-express@0.69.0(@opentelemetry/api@1.9.1)(supports-color@5.5.0)':
+  '@opentelemetry/instrumentation-express@0.69.0(@opentelemetry/api@1.9.1)':
     dependencies:
       '@opentelemetry/api': 1.9.1
       '@opentelemetry/core': 2.10.0(@opentelemetry/api@1.9.1)
-      '@opentelemetry/instrumentation': 0.221.0(@opentelemetry/api@1.9.1)(supports-color@5.5.0)
+      '@opentelemetry/instrumentation': 0.221.0(@opentelemetry/api@1.9.1)
       '@opentelemetry/semantic-conventions': 1.43.0
     transitivePeerDependencies:
       - supports-color
 
-  '@opentelemetry/instrumentation-express@0.69.0(@opentelemetry/api@1.9.1)(supports-color@7.2.0)':
+  '@opentelemetry/instrumentation-http@0.221.0(@opentelemetry/api@1.9.1)':
     dependencies:
       '@opentelemetry/api': 1.9.1
       '@opentelemetry/core': 2.10.0(@opentelemetry/api@1.9.1)
-      '@opentelemetry/instrumentation': 0.221.0(@opentelemetry/api@1.9.1)(supports-color@7.2.0)
-      '@opentelemetry/semantic-conventions': 1.43.0
-    transitivePeerDependencies:
-      - supports-color
-
-  '@opentelemetry/instrumentation-http@0.221.0(@opentelemetry/api@1.9.1)(supports-color@5.5.0)':
-    dependencies:
-      '@opentelemetry/api': 1.9.1
-      '@opentelemetry/core': 2.10.0(@opentelemetry/api@1.9.1)
-      '@opentelemetry/instrumentation': 0.221.0(@opentelemetry/api@1.9.1)(supports-color@5.5.0)
+      '@opentelemetry/instrumentation': 0.221.0(@opentelemetry/api@1.9.1)
       '@opentelemetry/semantic-conventions': 1.43.0
       forwarded-parse: 2.1.2
     transitivePeerDependencies:
       - supports-color
 
-  '@opentelemetry/instrumentation-http@0.221.0(@opentelemetry/api@1.9.1)(supports-color@7.2.0)':
+  '@opentelemetry/instrumentation-mongoose@0.67.0(@opentelemetry/api@1.9.1)':
     dependencies:
       '@opentelemetry/api': 1.9.1
       '@opentelemetry/core': 2.10.0(@opentelemetry/api@1.9.1)
-      '@opentelemetry/instrumentation': 0.221.0(@opentelemetry/api@1.9.1)(supports-color@7.2.0)
-      '@opentelemetry/semantic-conventions': 1.43.0
-      forwarded-parse: 2.1.2
-    transitivePeerDependencies:
-      - supports-color
-
-  '@opentelemetry/instrumentation-mongoose@0.67.0(@opentelemetry/api@1.9.1)(supports-color@7.2.0)':
-    dependencies:
-      '@opentelemetry/api': 1.9.1
-      '@opentelemetry/core': 2.10.0(@opentelemetry/api@1.9.1)
-      '@opentelemetry/instrumentation': 0.221.0(@opentelemetry/api@1.9.1)(supports-color@7.2.0)
+      '@opentelemetry/instrumentation': 0.221.0(@opentelemetry/api@1.9.1)
       '@opentelemetry/semantic-conventions': 1.43.0
     transitivePeerDependencies:
       - supports-color
 
-  '@opentelemetry/instrumentation-winston@0.65.0(@opentelemetry/api@1.9.1)(supports-color@5.5.0)':
+  '@opentelemetry/instrumentation-winston@0.65.0(@opentelemetry/api@1.9.1)':
     dependencies:
       '@opentelemetry/api': 1.9.1
       '@opentelemetry/api-logs': 0.221.0
-      '@opentelemetry/instrumentation': 0.221.0(@opentelemetry/api@1.9.1)(supports-color@5.5.0)
+      '@opentelemetry/instrumentation': 0.221.0(@opentelemetry/api@1.9.1)
     transitivePeerDependencies:
       - supports-color
 
-  '@opentelemetry/instrumentation-winston@0.65.0(@opentelemetry/api@1.9.1)(supports-color@7.2.0)':
-    dependencies:
-      '@opentelemetry/api': 1.9.1
-      '@opentelemetry/api-logs': 0.221.0
-      '@opentelemetry/instrumentation': 0.221.0(@opentelemetry/api@1.9.1)(supports-color@7.2.0)
-    transitivePeerDependencies:
-      - supports-color
-
-  '@opentelemetry/instrumentation@0.221.0(@opentelemetry/api@1.9.1)(supports-color@5.5.0)':
+  '@opentelemetry/instrumentation@0.221.0(@opentelemetry/api@1.9.1)':
     dependencies:
       '@opentelemetry/api': 1.9.1
       '@opentelemetry/api-logs': 0.221.0
       import-in-the-middle: 3.3.3
-      require-in-the-middle: 8.0.1(supports-color@5.5.0)
-    transitivePeerDependencies:
-      - supports-color
-
-  '@opentelemetry/instrumentation@0.221.0(@opentelemetry/api@1.9.1)(supports-color@7.2.0)':
-    dependencies:
-      '@opentelemetry/api': 1.9.1
-      '@opentelemetry/api-logs': 0.221.0
-      import-in-the-middle: 3.3.3
-      require-in-the-middle: 8.0.1(supports-color@7.2.0)
+      require-in-the-middle: 8.0.1
     transitivePeerDependencies:
       - supports-color
 
@@ -7780,7 +7813,7 @@ snapshots:
       '@opentelemetry/core': 2.10.0(@opentelemetry/api@1.9.1)
       '@opentelemetry/resources': 2.10.0(@opentelemetry/api@1.9.1)
 
-  '@opentelemetry/sdk-node@0.221.0(@opentelemetry/api@1.9.1)(supports-color@5.5.0)':
+  '@opentelemetry/sdk-node@0.221.0(@opentelemetry/api@1.9.1)':
     dependencies:
       '@opentelemetry/api': 1.9.1
       '@opentelemetry/api-logs': 0.221.0
@@ -7798,40 +7831,7 @@ snapshots:
       '@opentelemetry/exporter-trace-otlp-http': 0.221.0(@opentelemetry/api@1.9.1)
       '@opentelemetry/exporter-trace-otlp-proto': 0.221.0(@opentelemetry/api@1.9.1)
       '@opentelemetry/exporter-zipkin': 2.10.0(@opentelemetry/api@1.9.1)
-      '@opentelemetry/instrumentation': 0.221.0(@opentelemetry/api@1.9.1)(supports-color@5.5.0)
-      '@opentelemetry/otlp-exporter-base': 0.221.0(@opentelemetry/api@1.9.1)
-      '@opentelemetry/otlp-grpc-exporter-base': 0.221.0(@opentelemetry/api@1.9.1)
-      '@opentelemetry/propagator-b3': 2.10.0(@opentelemetry/api@1.9.1)
-      '@opentelemetry/propagator-jaeger': 2.10.0(@opentelemetry/api@1.9.1)
-      '@opentelemetry/resources': 2.10.0(@opentelemetry/api@1.9.1)
-      '@opentelemetry/sdk-logs': 0.221.0(@opentelemetry/api@1.9.1)
-      '@opentelemetry/sdk-metrics': 2.10.0(@opentelemetry/api@1.9.1)
-      '@opentelemetry/sdk-trace': 2.10.0(@opentelemetry/api@1.9.1)
-      '@opentelemetry/sdk-trace-base': 2.10.0(@opentelemetry/api@1.9.1)
-      '@opentelemetry/sdk-trace-node': 2.10.0(@opentelemetry/api@1.9.1)
-      '@opentelemetry/semantic-conventions': 1.43.0
-    transitivePeerDependencies:
-      - supports-color
-
-  '@opentelemetry/sdk-node@0.221.0(@opentelemetry/api@1.9.1)(supports-color@7.2.0)':
-    dependencies:
-      '@opentelemetry/api': 1.9.1
-      '@opentelemetry/api-logs': 0.221.0
-      '@opentelemetry/configuration': 0.221.0(@opentelemetry/api@1.9.1)
-      '@opentelemetry/context-async-hooks': 2.10.0(@opentelemetry/api@1.9.1)
-      '@opentelemetry/core': 2.10.0(@opentelemetry/api@1.9.1)
-      '@opentelemetry/exporter-logs-otlp-grpc': 0.221.0(@opentelemetry/api@1.9.1)
-      '@opentelemetry/exporter-logs-otlp-http': 0.221.0(@opentelemetry/api@1.9.1)
-      '@opentelemetry/exporter-logs-otlp-proto': 0.221.0(@opentelemetry/api@1.9.1)
-      '@opentelemetry/exporter-metrics-otlp-grpc': 0.221.0(@opentelemetry/api@1.9.1)
-      '@opentelemetry/exporter-metrics-otlp-http': 0.221.0(@opentelemetry/api@1.9.1)
-      '@opentelemetry/exporter-metrics-otlp-proto': 0.221.0(@opentelemetry/api@1.9.1)
-      '@opentelemetry/exporter-prometheus': 0.221.0(@opentelemetry/api@1.9.1)
-      '@opentelemetry/exporter-trace-otlp-grpc': 0.221.0(@opentelemetry/api@1.9.1)
-      '@opentelemetry/exporter-trace-otlp-http': 0.221.0(@opentelemetry/api@1.9.1)
-      '@opentelemetry/exporter-trace-otlp-proto': 0.221.0(@opentelemetry/api@1.9.1)
-      '@opentelemetry/exporter-zipkin': 2.10.0(@opentelemetry/api@1.9.1)
-      '@opentelemetry/instrumentation': 0.221.0(@opentelemetry/api@1.9.1)(supports-color@7.2.0)
+      '@opentelemetry/instrumentation': 0.221.0(@opentelemetry/api@1.9.1)
       '@opentelemetry/otlp-exporter-base': 0.221.0(@opentelemetry/api@1.9.1)
       '@opentelemetry/otlp-grpc-exporter-base': 0.221.0(@opentelemetry/api@1.9.1)
       '@opentelemetry/propagator-b3': 2.10.0(@opentelemetry/api@1.9.1)
@@ -7972,20 +7972,20 @@ snapshots:
     dependencies:
       quansync: 1.0.0
 
-  '@radoslavirha/config-eslint@0.4.7(eslint@10.9.0(supports-color@5.5.0))(supports-color@5.5.0)(typescript@6.0.3)':
+  '@radoslavirha/config-eslint@0.4.7(eslint@10.9.0(supports-color@5.5.0))(typescript@6.0.3)':
     dependencies:
       '@stylistic/eslint-plugin': 5.10.0(eslint@10.9.0(supports-color@5.5.0))
       eslint: 10.9.0(supports-color@5.5.0)
-      typescript-eslint: 8.67.0(eslint@10.9.0(supports-color@5.5.0))(supports-color@5.5.0)(typescript@6.0.3)
+      typescript-eslint: 8.67.0(eslint@10.9.0(supports-color@5.5.0))(typescript@6.0.3)
     transitivePeerDependencies:
       - supports-color
       - typescript
 
-  '@radoslavirha/config-eslint@0.4.7(eslint@10.9.0(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3)':
+  '@radoslavirha/config-eslint@0.4.7(eslint@10.9.0)(typescript@6.0.3)':
     dependencies:
-      '@stylistic/eslint-plugin': 5.10.0(eslint@10.9.0(supports-color@7.2.0))
-      eslint: 10.9.0(supports-color@7.2.0)
-      typescript-eslint: 8.67.0(eslint@10.9.0(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3)
+      '@stylistic/eslint-plugin': 5.10.0(eslint@10.9.0)
+      eslint: 10.9.0
+      typescript-eslint: 8.67.0(eslint@10.9.0)(typescript@6.0.3)
     transitivePeerDependencies:
       - supports-color
       - typescript
@@ -8016,12 +8016,12 @@ snapshots:
       - vite
       - webpack
 
-  '@radoslavirha/http-provider@file:packages/http-provider(debug@4.4.3(supports-color@5.5.0))(supports-color@5.5.0)(tslib@2.8.1)':
+  '@radoslavirha/http-provider@file:packages/http-provider(tslib@2.8.1)':
     dependencies:
       '@radoslavirha/config-typescript': 1.1.4(tslib@2.8.1)(typescript@6.0.3)
       '@radoslavirha/resilience': file:packages/resilience(tslib@2.8.1)
       '@radoslavirha/utils': 0.9.0
-      axios: 1.19.0(debug@4.4.3(supports-color@5.5.0))(supports-color@5.5.0)
+      axios: 1.19.0
       jose: 6.2.10
       typescript: 6.0.3
       zod: 4.4.3
@@ -8034,29 +8034,6 @@ snapshots:
     dependencies:
       '@radoslavirha/utils': 0.9.0
       winston: 3.19.0
-
-  '@radoslavirha/otel@file:packages/otel(@opentelemetry/api@1.9.1)(supports-color@5.5.0)':
-    dependencies:
-      '@opentelemetry/api': 1.9.1
-      '@opentelemetry/core': 2.10.0(@opentelemetry/api@1.9.1)
-      '@opentelemetry/exporter-logs-otlp-http': 0.221.0(@opentelemetry/api@1.9.1)
-      '@opentelemetry/exporter-metrics-otlp-http': 0.221.0(@opentelemetry/api@1.9.1)
-      '@opentelemetry/exporter-trace-otlp-http': 0.221.0(@opentelemetry/api@1.9.1)
-      '@opentelemetry/instrumentation': 0.221.0(@opentelemetry/api@1.9.1)(supports-color@5.5.0)
-      '@opentelemetry/instrumentation-express': 0.69.0(@opentelemetry/api@1.9.1)(supports-color@5.5.0)
-      '@opentelemetry/instrumentation-http': 0.221.0(@opentelemetry/api@1.9.1)(supports-color@5.5.0)
-      '@opentelemetry/instrumentation-winston': 0.65.0(@opentelemetry/api@1.9.1)(supports-color@5.5.0)
-      '@opentelemetry/resources': 2.10.0(@opentelemetry/api@1.9.1)
-      '@opentelemetry/sdk-logs': 0.221.0(@opentelemetry/api@1.9.1)
-      '@opentelemetry/sdk-metrics': 2.10.0(@opentelemetry/api@1.9.1)
-      '@opentelemetry/sdk-node': 0.221.0(@opentelemetry/api@1.9.1)(supports-color@5.5.0)
-      '@opentelemetry/sdk-trace-node': 2.10.0(@opentelemetry/api@1.9.1)
-      '@opentelemetry/semantic-conventions': 1.43.0
-      '@opentelemetry/winston-transport': 0.31.0
-      '@radoslavirha/utils': 0.9.0
-      zod: 4.4.3
-    transitivePeerDependencies:
-      - supports-color
 
   '@radoslavirha/redaction@0.2.2':
     dependencies:
@@ -8097,17 +8074,17 @@ snapshots:
       - '@tsed/core'
       - '@tsed/json-mapper'
 
-  '@radoslavirha/tsed-http-provider@file:packages/tsed-http-provider(@radoslavirha/tsed-logger@0.6.4(@tsed/di@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/logger@8.0.5))(@tsed/platform-http@8.38.2(@tsed/engines@8.38.2)(@tsed/logger@8.0.5)(@tsed/openspec@8.38.2)(@types/multer@2.2.0)))(@tsed/di@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/logger@8.0.5))(@tsed/exceptions@8.38.2(@tsed/core@8.38.2))(axios@1.19.0(debug@4.4.3(supports-color@5.5.0))(supports-color@5.5.0))(debug@4.4.3(supports-color@5.5.0))(supports-color@5.5.0)(tslib@2.8.1)':
+  '@radoslavirha/tsed-http-provider@file:packages/tsed-http-provider(@radoslavirha/tsed-logger@0.6.4(@tsed/di@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/logger@8.0.5))(@tsed/platform-http@8.38.2(@tsed/engines@8.38.2)(@tsed/logger@8.0.5)(@tsed/openspec@8.38.2)(@types/multer@2.2.0)))(@tsed/di@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/logger@8.0.5))(@tsed/exceptions@8.38.2(@tsed/core@8.38.2))(axios@1.19.0(supports-color@5.5.0))(tslib@2.8.1)':
     dependencies:
       '@radoslavirha/config-typescript': 1.1.4(tslib@2.8.1)(typescript@6.0.3)
-      '@radoslavirha/http-provider': file:packages/http-provider(debug@4.4.3(supports-color@5.5.0))(supports-color@5.5.0)(tslib@2.8.1)
+      '@radoslavirha/http-provider': file:packages/http-provider(tslib@2.8.1)
       '@radoslavirha/redaction': 0.2.2
       '@radoslavirha/resilience': file:packages/resilience(tslib@2.8.1)
       '@radoslavirha/tsed-logger': 0.6.4(@tsed/di@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/logger@8.0.5))(@tsed/platform-http@8.38.2(@tsed/engines@8.38.2)(@tsed/logger@8.0.5)(@tsed/openspec@8.38.2)(@types/multer@2.2.0))
       '@radoslavirha/utils': 0.9.0
       '@tsed/di': 8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/logger@8.0.5)
       '@tsed/exceptions': 8.38.2(@tsed/core@8.38.2)
-      axios: 1.19.0(debug@4.4.3(supports-color@5.5.0))(supports-color@5.5.0)
+      axios: 1.19.0(supports-color@5.5.0)
       typescript: 6.0.3
       zod: 4.4.3
     transitivePeerDependencies:
@@ -8134,7 +8111,7 @@ snapshots:
       '@tsed/schema': 8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/openspec@8.38.2)
       mongoose: 9.9.3(socks@2.8.9)
 
-  '@radoslavirha/tsed-platform@5.0.1(1da58fcad6d28e77fb43d739ea21bba0)':
+  '@radoslavirha/tsed-platform@5.0.1(4061f4931461b353eca905d1f2f80d6c)':
     dependencies:
       '@radoslavirha/tsed-configuration': 0.8.5(@tsed/core@8.38.2)(@tsed/di@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/logger@8.0.5))(@tsed/json-mapper@8.38.2(@tsed/core@8.38.2)(@tsed/schema@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/openspec@8.38.2)))(@tsed/schema@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/openspec@8.38.2))(zod@4.4.3)
       '@radoslavirha/tsed-logger': 0.6.4(@tsed/di@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/logger@8.0.5))(@tsed/platform-http@8.38.2(@tsed/engines@8.38.2)(@tsed/logger@8.0.5)(@tsed/openspec@8.38.2)(@types/multer@2.2.0))
@@ -8144,22 +8121,22 @@ snapshots:
       '@tsed/di': 8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/logger@8.0.5)
       '@tsed/logger': 8.0.5
       '@tsed/logger-connect': 8.0.5(@tsed/logger@8.0.5)
-      '@tsed/platform-express': 8.38.2(@tsed/core@8.38.2)(@tsed/di@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/logger@8.0.5))(@tsed/json-mapper@8.38.2(@tsed/core@8.38.2)(@tsed/schema@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/openspec@8.38.2)))(@tsed/logger@8.0.5)(@tsed/openspec@8.38.2)(@tsed/platform-http@8.38.2(@tsed/engines@8.38.2)(@tsed/logger@8.0.5)(@tsed/openspec@8.38.2)(@types/multer@2.2.0))(@tsed/platform-views@8.38.2(@tsed/core@8.38.2)(@tsed/di@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/logger@8.0.5))(@tsed/engines@8.38.2)(@tsed/exceptions@8.38.2(@tsed/core@8.38.2))(@tsed/schema@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/openspec@8.38.2)))(@tsed/schema@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/openspec@8.38.2))(body-parser@2.3.0(supports-color@7.2.0))(express@5.2.1(supports-color@7.2.0))(multer@2.2.0)
+      '@tsed/platform-express': 8.38.2(@tsed/core@8.38.2)(@tsed/di@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/logger@8.0.5))(@tsed/json-mapper@8.38.2(@tsed/core@8.38.2)(@tsed/schema@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/openspec@8.38.2)))(@tsed/logger@8.0.5)(@tsed/openspec@8.38.2)(@tsed/platform-http@8.38.2(@tsed/engines@8.38.2)(@tsed/logger@8.0.5)(@tsed/openspec@8.38.2)(@types/multer@2.2.0))(@tsed/platform-views@8.38.2(@tsed/core@8.38.2)(@tsed/di@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/logger@8.0.5))(@tsed/engines@8.38.2)(@tsed/exceptions@8.38.2(@tsed/core@8.38.2))(@tsed/schema@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/openspec@8.38.2)))(@tsed/schema@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/openspec@8.38.2))(body-parser@2.3.0)(express@5.2.1)(multer@2.2.0)
       '@tsed/platform-http': 8.38.2(@tsed/engines@8.38.2)(@tsed/logger@8.0.5)(@tsed/openspec@8.38.2)(@types/multer@2.2.0)
       '@tsed/platform-log-request': 8.38.2(@tsed/di@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/logger@8.0.5))(@tsed/platform-middlewares@8.38.2(@tsed/core@8.38.2)(@tsed/di@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/logger@8.0.5))(@tsed/schema@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/openspec@8.38.2)))(@tsed/platform-params@8.38.2(@tsed/core@8.38.2)(@tsed/di@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/logger@8.0.5))(@tsed/exceptions@8.38.2(@tsed/core@8.38.2))(@tsed/json-mapper@8.38.2(@tsed/core@8.38.2)(@tsed/schema@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/openspec@8.38.2)))(@tsed/schema@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/openspec@8.38.2)))
       ajv: 8.20.0
-      body-parser: 2.3.0(supports-color@7.2.0)
-      compression: 1.8.1(supports-color@7.2.0)
+      body-parser: 2.3.0
+      compression: 1.8.1
       cookie-parser: 1.4.7
       cors: 2.8.6
-      method-override: 3.0.0(supports-color@7.2.0)
+      method-override: 3.0.0
     transitivePeerDependencies:
       - '@tsed/json-mapper'
       - '@tsed/schema'
       - supports-color
       - zod
 
-  '@radoslavirha/tsed-platform@5.0.1(2794667c9aee6c50c7bc1c561d26b060)':
+  '@radoslavirha/tsed-platform@5.0.1(7e3704c2a04bd34e146702ae6506ba15)':
     dependencies:
       '@radoslavirha/tsed-configuration': 0.8.5(@tsed/core@8.38.2)(@tsed/di@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/logger@8.0.5))(@tsed/json-mapper@8.38.2(@tsed/core@8.38.2)(@tsed/schema@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/openspec@8.38.2)))(@tsed/schema@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/openspec@8.38.2))(zod@4.4.3)
       '@radoslavirha/tsed-logger': 0.6.4(@tsed/di@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/logger@8.0.5))(@tsed/platform-http@8.38.2(@tsed/engines@8.38.2)(@tsed/logger@8.0.5)(@tsed/openspec@8.38.2)(@types/multer@2.2.0))
@@ -8169,26 +8146,26 @@ snapshots:
       '@tsed/di': 8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/logger@8.0.5)
       '@tsed/logger': 8.0.5
       '@tsed/logger-connect': 8.0.5(@tsed/logger@8.0.5)
-      '@tsed/platform-express': 8.38.2(@tsed/core@8.38.2)(@tsed/di@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/logger@8.0.5))(@tsed/json-mapper@8.38.2(@tsed/core@8.38.2)(@tsed/schema@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/openspec@8.38.2)))(@tsed/logger@8.0.5)(@tsed/openspec@8.38.2)(@tsed/platform-http@8.38.2(@tsed/engines@8.38.2)(@tsed/logger@8.0.5)(@tsed/openspec@8.38.2)(@types/multer@2.2.0))(@tsed/platform-views@8.38.2(@tsed/core@8.38.2)(@tsed/di@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/logger@8.0.5))(@tsed/engines@8.38.2)(@tsed/exceptions@8.38.2(@tsed/core@8.38.2))(@tsed/schema@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/openspec@8.38.2)))(@tsed/schema@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/openspec@8.38.2))(body-parser@2.3.0(supports-color@5.5.0))(express@5.2.1(supports-color@5.5.0))(multer@2.2.0)
+      '@tsed/platform-express': 8.38.2(@tsed/core@8.38.2)(@tsed/di@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/logger@8.0.5))(@tsed/json-mapper@8.38.2(@tsed/core@8.38.2)(@tsed/schema@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/openspec@8.38.2)))(@tsed/logger@8.0.5)(@tsed/openspec@8.38.2)(@tsed/platform-http@8.38.2(@tsed/engines@8.38.2)(@tsed/logger@8.0.5)(@tsed/openspec@8.38.2)(@types/multer@2.2.0))(@tsed/platform-views@8.38.2(@tsed/core@8.38.2)(@tsed/di@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/logger@8.0.5))(@tsed/engines@8.38.2)(@tsed/exceptions@8.38.2(@tsed/core@8.38.2))(@tsed/schema@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/openspec@8.38.2)))(@tsed/schema@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/openspec@8.38.2))(body-parser@2.3.0)(express@5.2.1(supports-color@5.5.0))(multer@2.2.0)
       '@tsed/platform-http': 8.38.2(@tsed/engines@8.38.2)(@tsed/logger@8.0.5)(@tsed/openspec@8.38.2)(@types/multer@2.2.0)
       '@tsed/platform-log-request': 8.38.2(@tsed/di@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/logger@8.0.5))(@tsed/platform-middlewares@8.38.2(@tsed/core@8.38.2)(@tsed/di@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/logger@8.0.5))(@tsed/schema@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/openspec@8.38.2)))(@tsed/platform-params@8.38.2(@tsed/core@8.38.2)(@tsed/di@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/logger@8.0.5))(@tsed/exceptions@8.38.2(@tsed/core@8.38.2))(@tsed/json-mapper@8.38.2(@tsed/core@8.38.2)(@tsed/schema@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/openspec@8.38.2)))(@tsed/schema@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/openspec@8.38.2)))
       ajv: 8.20.0
-      body-parser: 2.3.0(supports-color@5.5.0)
-      compression: 1.8.1(supports-color@5.5.0)
+      body-parser: 2.3.0
+      compression: 1.8.1
       cookie-parser: 1.4.7
       cors: 2.8.6
-      method-override: 3.0.0(supports-color@5.5.0)
+      method-override: 3.0.0
     transitivePeerDependencies:
       - '@tsed/json-mapper'
       - '@tsed/schema'
       - supports-color
       - zod
 
-  '@radoslavirha/tsed-swagger@9.1.5(01bbe3f22a087d89b9e6d6074b052101)':
+  '@radoslavirha/tsed-swagger@9.1.5(8847d033c5bb1f54c814baea4e299e8a)':
     dependencies:
       '@radoslavirha/tsed-configuration': 0.8.5(@tsed/core@8.38.2)(@tsed/di@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/logger@8.0.5))(@tsed/json-mapper@8.38.2(@tsed/core@8.38.2)(@tsed/schema@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/openspec@8.38.2)))(@tsed/schema@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/openspec@8.38.2))(zod@4.4.3)
       '@radoslavirha/tsed-logger': 0.6.4(@tsed/di@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/logger@8.0.5))(@tsed/platform-http@8.38.2(@tsed/engines@8.38.2)(@tsed/logger@8.0.5)(@tsed/openspec@8.38.2)(@types/multer@2.2.0))
-      '@radoslavirha/tsed-platform': 5.0.1(2794667c9aee6c50c7bc1c561d26b060)
+      '@radoslavirha/tsed-platform': 5.0.1(4061f4931461b353eca905d1f2f80d6c)
       '@radoslavirha/types': 0.4.4
       '@radoslavirha/utils': 0.9.0
       '@swc/helpers': 0.5.23
@@ -8201,11 +8178,11 @@ snapshots:
       '@tsed/schema': 8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/openspec@8.38.2)
       '@tsed/swagger': 8.38.2(@tsed/platform-http@8.38.2(@tsed/engines@8.38.2)(@tsed/logger@8.0.5)(@tsed/openspec@8.38.2)(@types/multer@2.2.0))
 
-  '@radoslavirha/tsed-swagger@9.1.5(4f7225fc8e6539c631ccfc3a258805a2)':
+  '@radoslavirha/tsed-swagger@9.1.5(aaf8c7f0c3f4be99a1ccc93aa86c454c)':
     dependencies:
       '@radoslavirha/tsed-configuration': 0.8.5(@tsed/core@8.38.2)(@tsed/di@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/logger@8.0.5))(@tsed/json-mapper@8.38.2(@tsed/core@8.38.2)(@tsed/schema@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/openspec@8.38.2)))(@tsed/schema@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/openspec@8.38.2))(zod@4.4.3)
       '@radoslavirha/tsed-logger': 0.6.4(@tsed/di@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/logger@8.0.5))(@tsed/platform-http@8.38.2(@tsed/engines@8.38.2)(@tsed/logger@8.0.5)(@tsed/openspec@8.38.2)(@types/multer@2.2.0))
-      '@radoslavirha/tsed-platform': 5.0.1(1da58fcad6d28e77fb43d739ea21bba0)
+      '@radoslavirha/tsed-platform': 5.0.1(7e3704c2a04bd34e146702ae6506ba15)
       '@radoslavirha/types': 0.4.4
       '@radoslavirha/utils': 0.9.0
       '@swc/helpers': 0.5.23
@@ -8303,11 +8280,11 @@ snapshots:
       estraverse: 5.3.0
       picomatch: 4.0.5
 
-  '@stylistic/eslint-plugin@5.10.0(eslint@10.9.0(supports-color@7.2.0))':
+  '@stylistic/eslint-plugin@5.10.0(eslint@10.9.0)':
     dependencies:
-      '@eslint-community/eslint-utils': 4.10.1(eslint@10.9.0(supports-color@7.2.0))
+      '@eslint-community/eslint-utils': 4.10.1(eslint@10.9.0)
       '@typescript-eslint/types': 8.67.0
-      eslint: 10.9.0(supports-color@7.2.0)
+      eslint: 10.9.0
       eslint-visitor-keys: 4.2.1
       espree: 10.4.0
       estraverse: 5.3.0
@@ -8335,7 +8312,7 @@ snapshots:
       - '@swc/types'
       - supports-color
 
-  '@swc-node/register@1.12.1(@swc/core@1.16.1(@swc/helpers@0.5.23))(@swc/types@0.1.28)(supports-color@7.2.0)(typescript@6.0.3)':
+  '@swc-node/register@1.12.1(@swc/core@1.16.1(@swc/helpers@0.5.23))(@swc/types@0.1.28)(typescript@6.0.3)':
     dependencies:
       '@node-rs/xxhash': 1.7.7
       '@swc-node/core': 1.15.0(@swc/core@1.16.1(@swc/helpers@0.5.23))(@swc/types@0.1.28)
@@ -8357,11 +8334,11 @@ snapshots:
       source-map-support: 0.5.21
       tslib: 2.8.1
 
-  '@swc/cli@0.8.1(@swc/core@1.16.1(@swc/helpers@0.5.23))(supports-color@5.5.0)':
+  '@swc/cli@0.8.1(@swc/core@1.16.1(@swc/helpers@0.5.23))':
     dependencies:
       '@swc/core': 1.16.1(@swc/helpers@0.5.23)
       '@swc/counter': 0.1.3
-      '@xhmikosr/bin-wrapper': 14.5.1(supports-color@5.5.0)
+      '@xhmikosr/bin-wrapper': 14.5.1
       commander: 8.3.0
       minimatch: 9.0.9
       piscina: 4.9.3
@@ -8374,11 +8351,11 @@ snapshots:
       - react-native-b4a
       - supports-color
 
-  '@swc/cli@0.8.1(@swc/core@1.16.1(@swc/helpers@0.5.23))(supports-color@7.2.0)':
+  '@swc/cli@0.8.1(@swc/core@1.16.1(@swc/helpers@0.5.23))(supports-color@5.5.0)':
     dependencies:
       '@swc/core': 1.16.1(@swc/helpers@0.5.23)
       '@swc/counter': 0.1.3
-      '@xhmikosr/bin-wrapper': 14.5.1(supports-color@7.2.0)
+      '@xhmikosr/bin-wrapper': 14.5.1(supports-color@5.5.0)
       commander: 8.3.0
       minimatch: 9.0.9
       piscina: 4.9.3
@@ -8456,10 +8433,10 @@ snapshots:
     dependencies:
       '@swc/counter': 0.1.3
 
-  '@testcontainers/mongodb@12.1.0(supports-color@7.2.0)':
+  '@testcontainers/mongodb@12.1.0':
     dependencies:
       compare-versions: 6.1.1
-      testcontainers: 12.1.0(supports-color@7.2.0)
+      testcontainers: 12.1.0
     transitivePeerDependencies:
       - bare-abort-controller
       - bare-buffer
@@ -8503,16 +8480,16 @@ snapshots:
     dependencies:
       '@testing-library/dom': 10.4.1
 
-  '@tokenizer/inflate@0.4.1(supports-color@5.5.0)':
+  '@tokenizer/inflate@0.4.1':
     dependencies:
-      debug: 4.4.3(supports-color@5.5.0)
+      debug: 4.4.3(supports-color@7.2.0)
       token-types: 6.1.2
     transitivePeerDependencies:
       - supports-color
 
-  '@tokenizer/inflate@0.4.1(supports-color@7.2.0)':
+  '@tokenizer/inflate@0.4.1(supports-color@5.5.0)':
     dependencies:
-      debug: 4.4.3(supports-color@7.2.0)
+      debug: 4.4.3(supports-color@5.5.0)
       token-types: 6.1.2
     transitivePeerDependencies:
       - supports-color
@@ -8636,7 +8613,7 @@ snapshots:
       '@tsed/schema': 8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/openspec@8.38.2)
       tslib: 2.8.1
 
-  '@tsed/platform-express@8.38.2(@tsed/core@8.38.2)(@tsed/di@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/logger@8.0.5))(@tsed/json-mapper@8.38.2(@tsed/core@8.38.2)(@tsed/schema@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/openspec@8.38.2)))(@tsed/logger@8.0.5)(@tsed/openspec@8.38.2)(@tsed/platform-http@8.38.2(@tsed/engines@8.38.2)(@tsed/logger@8.0.5)(@tsed/openspec@8.38.2)(@types/multer@2.2.0))(@tsed/platform-views@8.38.2(@tsed/core@8.38.2)(@tsed/di@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/logger@8.0.5))(@tsed/engines@8.38.2)(@tsed/exceptions@8.38.2(@tsed/core@8.38.2))(@tsed/schema@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/openspec@8.38.2)))(@tsed/schema@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/openspec@8.38.2))(body-parser@2.3.0(supports-color@5.5.0))(express@5.2.1(supports-color@5.5.0))(multer@2.2.0)':
+  '@tsed/platform-express@8.38.2(@tsed/core@8.38.2)(@tsed/di@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/logger@8.0.5))(@tsed/json-mapper@8.38.2(@tsed/core@8.38.2)(@tsed/schema@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/openspec@8.38.2)))(@tsed/logger@8.0.5)(@tsed/openspec@8.38.2)(@tsed/platform-http@8.38.2(@tsed/engines@8.38.2)(@tsed/logger@8.0.5)(@tsed/openspec@8.38.2)(@types/multer@2.2.0))(@tsed/platform-views@8.38.2(@tsed/core@8.38.2)(@tsed/di@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/logger@8.0.5))(@tsed/engines@8.38.2)(@tsed/exceptions@8.38.2(@tsed/core@8.38.2))(@tsed/schema@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/openspec@8.38.2)))(@tsed/schema@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/openspec@8.38.2))(body-parser@2.3.0)(express@5.2.1(supports-color@5.5.0))(multer@2.2.0)':
     dependencies:
       '@tsed/core': 8.38.2
       '@tsed/di': 8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/logger@8.0.5)
@@ -8645,14 +8622,14 @@ snapshots:
       '@tsed/openspec': 8.38.2
       '@tsed/platform-http': 8.38.2(@tsed/engines@8.38.2)(@tsed/logger@8.0.5)(@tsed/openspec@8.38.2)(@types/multer@2.2.0)
       '@tsed/schema': 8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/openspec@8.38.2)
-      body-parser: 2.3.0(supports-color@5.5.0)
+      body-parser: 2.3.0
       express: 5.2.1(supports-color@5.5.0)
       multer: 2.2.0
       tslib: 2.8.1
     optionalDependencies:
       '@tsed/platform-views': 8.38.2(@tsed/core@8.38.2)(@tsed/di@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/logger@8.0.5))(@tsed/engines@8.38.2)(@tsed/exceptions@8.38.2(@tsed/core@8.38.2))(@tsed/schema@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/openspec@8.38.2))
 
-  '@tsed/platform-express@8.38.2(@tsed/core@8.38.2)(@tsed/di@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/logger@8.0.5))(@tsed/json-mapper@8.38.2(@tsed/core@8.38.2)(@tsed/schema@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/openspec@8.38.2)))(@tsed/logger@8.0.5)(@tsed/openspec@8.38.2)(@tsed/platform-http@8.38.2(@tsed/engines@8.38.2)(@tsed/logger@8.0.5)(@tsed/openspec@8.38.2)(@types/multer@2.2.0))(@tsed/platform-views@8.38.2(@tsed/core@8.38.2)(@tsed/di@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/logger@8.0.5))(@tsed/engines@8.38.2)(@tsed/exceptions@8.38.2(@tsed/core@8.38.2))(@tsed/schema@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/openspec@8.38.2)))(@tsed/schema@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/openspec@8.38.2))(body-parser@2.3.0(supports-color@7.2.0))(express@5.2.1(supports-color@7.2.0))(multer@2.2.0)':
+  '@tsed/platform-express@8.38.2(@tsed/core@8.38.2)(@tsed/di@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/logger@8.0.5))(@tsed/json-mapper@8.38.2(@tsed/core@8.38.2)(@tsed/schema@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/openspec@8.38.2)))(@tsed/logger@8.0.5)(@tsed/openspec@8.38.2)(@tsed/platform-http@8.38.2(@tsed/engines@8.38.2)(@tsed/logger@8.0.5)(@tsed/openspec@8.38.2)(@types/multer@2.2.0))(@tsed/platform-views@8.38.2(@tsed/core@8.38.2)(@tsed/di@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/logger@8.0.5))(@tsed/engines@8.38.2)(@tsed/exceptions@8.38.2(@tsed/core@8.38.2))(@tsed/schema@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/openspec@8.38.2)))(@tsed/schema@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/openspec@8.38.2))(body-parser@2.3.0)(express@5.2.1)(multer@2.2.0)':
     dependencies:
       '@tsed/core': 8.38.2
       '@tsed/di': 8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/logger@8.0.5)
@@ -8661,8 +8638,8 @@ snapshots:
       '@tsed/openspec': 8.38.2
       '@tsed/platform-http': 8.38.2(@tsed/engines@8.38.2)(@tsed/logger@8.0.5)(@tsed/openspec@8.38.2)(@types/multer@2.2.0)
       '@tsed/schema': 8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/openspec@8.38.2)
-      body-parser: 2.3.0(supports-color@7.2.0)
-      express: 5.2.1(supports-color@7.2.0)
+      body-parser: 2.3.0
+      express: 5.2.1
       multer: 2.2.0
       tslib: 2.8.1
     optionalDependencies:
@@ -8782,15 +8759,15 @@ snapshots:
       swagger-ui-dist: 5.32.14
       tslib: 2.8.1
 
-  '@tsed/testcontainers-mongo@8.38.2(@testcontainers/mongodb@12.1.0(supports-color@7.2.0))(@tsed/core@8.38.2)(@tsed/di@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/logger@8.0.5))(@tsed/platform-http@8.38.2(@tsed/engines@8.38.2)(@tsed/logger@8.0.5)(@tsed/openspec@8.38.2)(@types/multer@2.2.0))(mongodb@7.5.0(socks@2.8.9))(testcontainers@12.1.0(supports-color@7.2.0))':
+  '@tsed/testcontainers-mongo@8.38.2(@testcontainers/mongodb@12.1.0)(@tsed/core@8.38.2)(@tsed/di@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/logger@8.0.5))(@tsed/platform-http@8.38.2(@tsed/engines@8.38.2)(@tsed/logger@8.0.5)(@tsed/openspec@8.38.2)(@types/multer@2.2.0))(mongodb@7.5.0(socks@2.8.9))(testcontainers@12.1.0)':
     dependencies:
-      '@testcontainers/mongodb': 12.1.0(supports-color@7.2.0)
+      '@testcontainers/mongodb': 12.1.0
       '@tsed/core': 8.38.2
       '@tsed/di': 8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/logger@8.0.5)
       '@tsed/platform-http': 8.38.2(@tsed/engines@8.38.2)(@tsed/logger@8.0.5)(@tsed/openspec@8.38.2)(@types/multer@2.2.0)
       mongodb: 7.5.0(socks@2.8.9)
       semver: 7.8.5
-      testcontainers: 12.1.0(supports-color@7.2.0)
+      testcontainers: 12.1.0
       tslib: 2.8.1
 
   '@tybys/wasm-util@0.10.3':
@@ -8951,13 +8928,13 @@ snapshots:
     dependencies:
       '@types/node': 26.2.0
 
-  '@typescript-eslint/eslint-plugin@8.67.0(@typescript-eslint/parser@8.67.0(eslint@10.9.0(supports-color@5.5.0))(supports-color@5.5.0)(typescript@6.0.3))(eslint@10.9.0(supports-color@5.5.0))(supports-color@5.5.0)(typescript@6.0.3)':
+  '@typescript-eslint/eslint-plugin@8.67.0(@typescript-eslint/parser@8.67.0(eslint@10.9.0(supports-color@5.5.0))(supports-color@7.2.0)(typescript@6.0.3))(eslint@10.9.0(supports-color@5.5.0))(typescript@6.0.3)':
     dependencies:
       '@eslint-community/regexpp': 4.12.2
-      '@typescript-eslint/parser': 8.67.0(eslint@10.9.0(supports-color@5.5.0))(supports-color@5.5.0)(typescript@6.0.3)
+      '@typescript-eslint/parser': 8.67.0(eslint@10.9.0(supports-color@5.5.0))(supports-color@7.2.0)(typescript@6.0.3)
       '@typescript-eslint/scope-manager': 8.67.0
-      '@typescript-eslint/type-utils': 8.67.0(eslint@10.9.0(supports-color@5.5.0))(supports-color@5.5.0)(typescript@6.0.3)
-      '@typescript-eslint/utils': 8.67.0(eslint@10.9.0(supports-color@5.5.0))(supports-color@5.5.0)(typescript@6.0.3)
+      '@typescript-eslint/type-utils': 8.67.0(eslint@10.9.0(supports-color@5.5.0))(typescript@6.0.3)
+      '@typescript-eslint/utils': 8.67.0(eslint@10.9.0(supports-color@5.5.0))(typescript@6.0.3)
       '@typescript-eslint/visitor-keys': 8.67.0
       eslint: 10.9.0(supports-color@5.5.0)
       ignore: 7.0.6
@@ -8967,15 +8944,15 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@typescript-eslint/eslint-plugin@8.67.0(@typescript-eslint/parser@8.67.0(eslint@10.9.0(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3))(eslint@10.9.0(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3)':
+  '@typescript-eslint/eslint-plugin@8.67.0(@typescript-eslint/parser@8.67.0(eslint@10.9.0)(typescript@6.0.3))(eslint@10.9.0)(typescript@6.0.3)':
     dependencies:
       '@eslint-community/regexpp': 4.12.2
-      '@typescript-eslint/parser': 8.67.0(eslint@10.9.0(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3)
+      '@typescript-eslint/parser': 8.67.0(eslint@10.9.0)(typescript@6.0.3)
       '@typescript-eslint/scope-manager': 8.67.0
-      '@typescript-eslint/type-utils': 8.67.0(eslint@10.9.0(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3)
-      '@typescript-eslint/utils': 8.67.0(eslint@10.9.0(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3)
+      '@typescript-eslint/type-utils': 8.67.0(eslint@10.9.0)(typescript@6.0.3)
+      '@typescript-eslint/utils': 8.67.0(eslint@10.9.0)(typescript@6.0.3)
       '@typescript-eslint/visitor-keys': 8.67.0
-      eslint: 10.9.0(supports-color@7.2.0)
+      eslint: 10.9.0
       ignore: 7.0.6
       natural-compare: 1.4.0
       ts-api-utils: 2.5.0(typescript@6.0.3)
@@ -8983,40 +8960,43 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@typescript-eslint/parser@8.67.0(eslint@10.9.0(supports-color@5.5.0))(supports-color@5.5.0)(typescript@6.0.3)':
+  '@typescript-eslint/parser@8.67.0(eslint@10.9.0(supports-color@5.5.0))(supports-color@7.2.0)(typescript@6.0.3)':
     dependencies:
       '@typescript-eslint/scope-manager': 8.67.0
       '@typescript-eslint/types': 8.67.0
-      '@typescript-eslint/typescript-estree': 8.67.0(supports-color@5.5.0)(typescript@6.0.3)
-      '@typescript-eslint/visitor-keys': 8.67.0
-      debug: 4.4.3(supports-color@5.5.0)
-      eslint: 10.9.0(supports-color@5.5.0)
-      typescript: 6.0.3
-    transitivePeerDependencies:
-      - supports-color
-
-  '@typescript-eslint/parser@8.67.0(eslint@10.9.0(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3)':
-    dependencies:
-      '@typescript-eslint/scope-manager': 8.67.0
-      '@typescript-eslint/types': 8.67.0
-      '@typescript-eslint/typescript-estree': 8.67.0(supports-color@7.2.0)(typescript@6.0.3)
+      '@typescript-eslint/typescript-estree': 8.67.0(typescript@6.0.3)
       '@typescript-eslint/visitor-keys': 8.67.0
       debug: 4.4.3(supports-color@7.2.0)
-      eslint: 10.9.0(supports-color@7.2.0)
+      eslint: 10.9.0(supports-color@5.5.0)
       typescript: 6.0.3
     transitivePeerDependencies:
       - supports-color
 
-  '@typescript-eslint/project-service@8.67.0(supports-color@5.5.0)(typescript@6.0.3)':
+  '@typescript-eslint/parser@8.67.0(eslint@10.9.0(supports-color@5.5.0))(typescript@6.0.3)':
     dependencies:
-      '@typescript-eslint/tsconfig-utils': 8.67.0(typescript@6.0.3)
+      '@typescript-eslint/scope-manager': 8.67.0
       '@typescript-eslint/types': 8.67.0
-      debug: 4.4.3(supports-color@5.5.0)
+      '@typescript-eslint/typescript-estree': 8.67.0(typescript@6.0.3)
+      '@typescript-eslint/visitor-keys': 8.67.0
+      debug: 4.4.3(supports-color@7.2.0)
+      eslint: 10.9.0(supports-color@5.5.0)
       typescript: 6.0.3
     transitivePeerDependencies:
       - supports-color
 
-  '@typescript-eslint/project-service@8.67.0(supports-color@7.2.0)(typescript@6.0.3)':
+  '@typescript-eslint/parser@8.67.0(eslint@10.9.0)(typescript@6.0.3)':
+    dependencies:
+      '@typescript-eslint/scope-manager': 8.67.0
+      '@typescript-eslint/types': 8.67.0
+      '@typescript-eslint/typescript-estree': 8.67.0(typescript@6.0.3)
+      '@typescript-eslint/visitor-keys': 8.67.0
+      debug: 4.4.3(supports-color@7.2.0)
+      eslint: 10.9.0
+      typescript: 6.0.3
+    transitivePeerDependencies:
+      - supports-color
+
+  '@typescript-eslint/project-service@8.67.0(typescript@6.0.3)':
     dependencies:
       '@typescript-eslint/tsconfig-utils': 8.67.0(typescript@6.0.3)
       '@typescript-eslint/types': 8.67.0
@@ -9034,25 +9014,25 @@ snapshots:
     dependencies:
       typescript: 6.0.3
 
-  '@typescript-eslint/type-utils@8.67.0(eslint@10.9.0(supports-color@5.5.0))(supports-color@5.5.0)(typescript@6.0.3)':
+  '@typescript-eslint/type-utils@8.67.0(eslint@10.9.0(supports-color@5.5.0))(typescript@6.0.3)':
     dependencies:
       '@typescript-eslint/types': 8.67.0
-      '@typescript-eslint/typescript-estree': 8.67.0(supports-color@5.5.0)(typescript@6.0.3)
-      '@typescript-eslint/utils': 8.67.0(eslint@10.9.0(supports-color@5.5.0))(supports-color@5.5.0)(typescript@6.0.3)
-      debug: 4.4.3(supports-color@5.5.0)
+      '@typescript-eslint/typescript-estree': 8.67.0(typescript@6.0.3)
+      '@typescript-eslint/utils': 8.67.0(eslint@10.9.0(supports-color@5.5.0))(typescript@6.0.3)
+      debug: 4.4.3(supports-color@7.2.0)
       eslint: 10.9.0(supports-color@5.5.0)
       ts-api-utils: 2.5.0(typescript@6.0.3)
       typescript: 6.0.3
     transitivePeerDependencies:
       - supports-color
 
-  '@typescript-eslint/type-utils@8.67.0(eslint@10.9.0(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3)':
+  '@typescript-eslint/type-utils@8.67.0(eslint@10.9.0)(typescript@6.0.3)':
     dependencies:
       '@typescript-eslint/types': 8.67.0
-      '@typescript-eslint/typescript-estree': 8.67.0(supports-color@7.2.0)(typescript@6.0.3)
-      '@typescript-eslint/utils': 8.67.0(eslint@10.9.0(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3)
+      '@typescript-eslint/typescript-estree': 8.67.0(typescript@6.0.3)
+      '@typescript-eslint/utils': 8.67.0(eslint@10.9.0)(typescript@6.0.3)
       debug: 4.4.3(supports-color@7.2.0)
-      eslint: 10.9.0(supports-color@7.2.0)
+      eslint: 10.9.0
       ts-api-utils: 2.5.0(typescript@6.0.3)
       typescript: 6.0.3
     transitivePeerDependencies:
@@ -9060,24 +9040,9 @@ snapshots:
 
   '@typescript-eslint/types@8.67.0': {}
 
-  '@typescript-eslint/typescript-estree@8.67.0(supports-color@5.5.0)(typescript@6.0.3)':
+  '@typescript-eslint/typescript-estree@8.67.0(typescript@6.0.3)':
     dependencies:
-      '@typescript-eslint/project-service': 8.67.0(supports-color@5.5.0)(typescript@6.0.3)
-      '@typescript-eslint/tsconfig-utils': 8.67.0(typescript@6.0.3)
-      '@typescript-eslint/types': 8.67.0
-      '@typescript-eslint/visitor-keys': 8.67.0
-      debug: 4.4.3(supports-color@5.5.0)
-      minimatch: 10.2.6
-      semver: 7.8.5
-      tinyglobby: 0.2.17
-      ts-api-utils: 2.5.0(typescript@6.0.3)
-      typescript: 6.0.3
-    transitivePeerDependencies:
-      - supports-color
-
-  '@typescript-eslint/typescript-estree@8.67.0(supports-color@7.2.0)(typescript@6.0.3)':
-    dependencies:
-      '@typescript-eslint/project-service': 8.67.0(supports-color@7.2.0)(typescript@6.0.3)
+      '@typescript-eslint/project-service': 8.67.0(typescript@6.0.3)
       '@typescript-eslint/tsconfig-utils': 8.67.0(typescript@6.0.3)
       '@typescript-eslint/types': 8.67.0
       '@typescript-eslint/visitor-keys': 8.67.0
@@ -9090,24 +9055,24 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@typescript-eslint/utils@8.67.0(eslint@10.9.0(supports-color@5.5.0))(supports-color@5.5.0)(typescript@6.0.3)':
+  '@typescript-eslint/utils@8.67.0(eslint@10.9.0(supports-color@5.5.0))(typescript@6.0.3)':
     dependencies:
       '@eslint-community/eslint-utils': 4.10.1(eslint@10.9.0(supports-color@5.5.0))
       '@typescript-eslint/scope-manager': 8.67.0
       '@typescript-eslint/types': 8.67.0
-      '@typescript-eslint/typescript-estree': 8.67.0(supports-color@5.5.0)(typescript@6.0.3)
+      '@typescript-eslint/typescript-estree': 8.67.0(typescript@6.0.3)
       eslint: 10.9.0(supports-color@5.5.0)
       typescript: 6.0.3
     transitivePeerDependencies:
       - supports-color
 
-  '@typescript-eslint/utils@8.67.0(eslint@10.9.0(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3)':
+  '@typescript-eslint/utils@8.67.0(eslint@10.9.0)(typescript@6.0.3)':
     dependencies:
-      '@eslint-community/eslint-utils': 4.10.1(eslint@10.9.0(supports-color@7.2.0))
+      '@eslint-community/eslint-utils': 4.10.1(eslint@10.9.0)
       '@typescript-eslint/scope-manager': 8.67.0
       '@typescript-eslint/types': 8.67.0
-      '@typescript-eslint/typescript-estree': 8.67.0(supports-color@7.2.0)(typescript@6.0.3)
-      eslint: 10.9.0(supports-color@7.2.0)
+      '@typescript-eslint/typescript-estree': 8.67.0(typescript@6.0.3)
+      eslint: 10.9.0
       typescript: 6.0.3
     transitivePeerDependencies:
       - supports-color
@@ -9177,15 +9142,9 @@ snapshots:
       convert-source-map: 2.0.0
       tinyrainbow: 3.1.1
 
-  '@xhmikosr/archive-type@8.1.0(supports-color@5.5.0)':
+  '@xhmikosr/archive-type@8.1.0':
     dependencies:
-      file-type: 21.3.4(supports-color@5.5.0)
-    transitivePeerDependencies:
-      - supports-color
-
-  '@xhmikosr/archive-type@8.1.0(supports-color@7.2.0)':
-    dependencies:
-      file-type: 21.3.4(supports-color@7.2.0)
+      file-type: 21.3.4
     transitivePeerDependencies:
       - supports-color
 
@@ -9193,6 +9152,17 @@ snapshots:
     dependencies:
       execa: 9.6.1
       isexe: 4.0.0
+
+  '@xhmikosr/bin-wrapper@14.5.1':
+    dependencies:
+      '@xhmikosr/bin-check': 8.2.2
+      '@xhmikosr/downloader': 16.3.1
+      '@xhmikosr/os-filter-obj': 4.1.0
+      binary-version-check: 6.1.0
+    transitivePeerDependencies:
+      - bare-abort-controller
+      - react-native-b4a
+      - supports-color
 
   '@xhmikosr/bin-wrapper@14.5.1(supports-color@5.5.0)':
     dependencies:
@@ -9205,20 +9175,9 @@ snapshots:
       - react-native-b4a
       - supports-color
 
-  '@xhmikosr/bin-wrapper@14.5.1(supports-color@7.2.0)':
+  '@xhmikosr/decompress-tar@9.0.2':
     dependencies:
-      '@xhmikosr/bin-check': 8.2.2
-      '@xhmikosr/downloader': 16.3.1(supports-color@7.2.0)
-      '@xhmikosr/os-filter-obj': 4.1.0
-      binary-version-check: 6.1.0
-    transitivePeerDependencies:
-      - bare-abort-controller
-      - react-native-b4a
-      - supports-color
-
-  '@xhmikosr/decompress-tar@9.0.2(supports-color@5.5.0)':
-    dependencies:
-      file-type: 21.3.4(supports-color@5.5.0)
+      file-type: 21.3.4
       is-stream: 4.0.1
       tar-stream: 3.1.7
     transitivePeerDependencies:
@@ -9226,20 +9185,10 @@ snapshots:
       - react-native-b4a
       - supports-color
 
-  '@xhmikosr/decompress-tar@9.0.2(supports-color@7.2.0)':
+  '@xhmikosr/decompress-tarbz2@9.0.2':
     dependencies:
-      file-type: 21.3.4(supports-color@7.2.0)
-      is-stream: 4.0.1
-      tar-stream: 3.1.7
-    transitivePeerDependencies:
-      - bare-abort-controller
-      - react-native-b4a
-      - supports-color
-
-  '@xhmikosr/decompress-tarbz2@9.0.2(supports-color@5.5.0)':
-    dependencies:
-      '@xhmikosr/decompress-tar': 9.0.2(supports-color@5.5.0)
-      file-type: 21.3.4(supports-color@5.5.0)
+      '@xhmikosr/decompress-tar': 9.0.2
+      file-type: 21.3.4
       is-stream: 4.0.1
       seek-bzip: 2.0.0
       unbzip2-stream: 1.4.3
@@ -9248,60 +9197,30 @@ snapshots:
       - react-native-b4a
       - supports-color
 
-  '@xhmikosr/decompress-tarbz2@9.0.2(supports-color@7.2.0)':
+  '@xhmikosr/decompress-targz@9.0.1':
     dependencies:
-      '@xhmikosr/decompress-tar': 9.0.2(supports-color@7.2.0)
-      file-type: 21.3.4(supports-color@7.2.0)
-      is-stream: 4.0.1
-      seek-bzip: 2.0.0
-      unbzip2-stream: 1.4.3
-    transitivePeerDependencies:
-      - bare-abort-controller
-      - react-native-b4a
-      - supports-color
-
-  '@xhmikosr/decompress-targz@9.0.1(supports-color@5.5.0)':
-    dependencies:
-      '@xhmikosr/decompress-tar': 9.0.2(supports-color@5.5.0)
-      file-type: 21.3.4(supports-color@5.5.0)
+      '@xhmikosr/decompress-tar': 9.0.2
+      file-type: 21.3.4
       is-stream: 4.0.1
     transitivePeerDependencies:
       - bare-abort-controller
       - react-native-b4a
       - supports-color
 
-  '@xhmikosr/decompress-targz@9.0.1(supports-color@7.2.0)':
+  '@xhmikosr/decompress-unzip@8.2.1':
     dependencies:
-      '@xhmikosr/decompress-tar': 9.0.2(supports-color@7.2.0)
-      file-type: 21.3.4(supports-color@7.2.0)
-      is-stream: 4.0.1
-    transitivePeerDependencies:
-      - bare-abort-controller
-      - react-native-b4a
-      - supports-color
-
-  '@xhmikosr/decompress-unzip@8.2.1(supports-color@5.5.0)':
-    dependencies:
-      file-type: 21.3.4(supports-color@5.5.0)
+      file-type: 21.3.4
       get-stream: 9.0.1
       yauzl: 3.4.0
     transitivePeerDependencies:
       - supports-color
 
-  '@xhmikosr/decompress-unzip@8.2.1(supports-color@7.2.0)':
+  '@xhmikosr/decompress@11.1.4':
     dependencies:
-      file-type: 21.3.4(supports-color@7.2.0)
-      get-stream: 9.0.1
-      yauzl: 3.4.0
-    transitivePeerDependencies:
-      - supports-color
-
-  '@xhmikosr/decompress@11.1.4(supports-color@5.5.0)':
-    dependencies:
-      '@xhmikosr/decompress-tar': 9.0.2(supports-color@5.5.0)
-      '@xhmikosr/decompress-tarbz2': 9.0.2(supports-color@5.5.0)
-      '@xhmikosr/decompress-targz': 9.0.1(supports-color@5.5.0)
-      '@xhmikosr/decompress-unzip': 8.2.1(supports-color@5.5.0)
+      '@xhmikosr/decompress-tar': 9.0.2
+      '@xhmikosr/decompress-tarbz2': 9.0.2
+      '@xhmikosr/decompress-targz': 9.0.1
+      '@xhmikosr/decompress-unzip': 8.2.1
       graceful-fs: 4.2.11
       strip-dirs: 3.0.0
     transitivePeerDependencies:
@@ -9309,26 +9228,13 @@ snapshots:
       - react-native-b4a
       - supports-color
 
-  '@xhmikosr/decompress@11.1.4(supports-color@7.2.0)':
+  '@xhmikosr/downloader@16.3.1':
     dependencies:
-      '@xhmikosr/decompress-tar': 9.0.2(supports-color@7.2.0)
-      '@xhmikosr/decompress-tarbz2': 9.0.2(supports-color@7.2.0)
-      '@xhmikosr/decompress-targz': 9.0.1(supports-color@7.2.0)
-      '@xhmikosr/decompress-unzip': 8.2.1(supports-color@7.2.0)
-      graceful-fs: 4.2.11
-      strip-dirs: 3.0.0
-    transitivePeerDependencies:
-      - bare-abort-controller
-      - react-native-b4a
-      - supports-color
-
-  '@xhmikosr/downloader@16.3.1(supports-color@5.5.0)':
-    dependencies:
-      '@xhmikosr/archive-type': 8.1.0(supports-color@5.5.0)
-      '@xhmikosr/decompress': 11.1.4(supports-color@5.5.0)
+      '@xhmikosr/archive-type': 8.1.0
+      '@xhmikosr/decompress': 11.1.4
       content-disposition: 2.0.1
       ext-name: 5.0.0
-      file-type: 21.3.4(supports-color@5.5.0)
+      file-type: 21.3.4
       filenamify: 7.0.2
       got: 14.6.6
     transitivePeerDependencies:
@@ -9336,13 +9242,13 @@ snapshots:
       - react-native-b4a
       - supports-color
 
-  '@xhmikosr/downloader@16.3.1(supports-color@7.2.0)':
+  '@xhmikosr/downloader@16.3.1(supports-color@5.5.0)':
     dependencies:
-      '@xhmikosr/archive-type': 8.1.0(supports-color@7.2.0)
-      '@xhmikosr/decompress': 11.1.4(supports-color@7.2.0)
+      '@xhmikosr/archive-type': 8.1.0
+      '@xhmikosr/decompress': 11.1.4
       content-disposition: 2.0.1
       ext-name: 5.0.0
-      file-type: 21.3.4(supports-color@7.2.0)
+      file-type: 21.3.4(supports-color@5.5.0)
       filenamify: 7.0.2
       got: 14.6.6
     transitivePeerDependencies:
@@ -9448,15 +9354,15 @@ snapshots:
 
   acorn@8.18.0: {}
 
-  agent-base@6.0.2(supports-color@5.5.0):
+  agent-base@6.0.2:
     dependencies:
-      debug: 4.4.3(supports-color@5.5.0)
+      debug: 4.4.3(supports-color@7.2.0)
     transitivePeerDependencies:
       - supports-color
 
-  agent-base@6.0.2(supports-color@7.2.0):
+  agent-base@6.0.2(supports-color@5.5.0):
     dependencies:
-      debug: 4.4.3(supports-color@7.2.0)
+      debug: 4.4.3(supports-color@5.5.0)
     transitivePeerDependencies:
       - supports-color
 
@@ -9553,33 +9459,33 @@ snapshots:
 
   asynckit@0.4.0: {}
 
-  axios-mock-adapter@2.1.0(axios@1.19.0(debug@4.4.3(supports-color@5.5.0))(supports-color@5.5.0)):
+  axios-mock-adapter@2.1.0(axios@1.19.0(supports-color@5.5.0)):
     dependencies:
-      axios: 1.19.0(debug@4.4.3(supports-color@5.5.0))(supports-color@5.5.0)
+      axios: 1.19.0(supports-color@5.5.0)
       fast-deep-equal: 3.1.3
       is-buffer: 2.0.5
 
-  axios-mock-adapter@2.1.0(axios@1.19.0(debug@4.4.3(supports-color@7.2.0))(supports-color@7.2.0)):
+  axios-mock-adapter@2.1.0(axios@1.19.0):
     dependencies:
-      axios: 1.19.0(debug@4.4.3(supports-color@7.2.0))(supports-color@7.2.0)
+      axios: 1.19.0
       fast-deep-equal: 3.1.3
       is-buffer: 2.0.5
 
-  axios@1.19.0(debug@4.4.3(supports-color@5.5.0))(supports-color@5.5.0):
+  axios@1.19.0:
     dependencies:
-      follow-redirects: 1.16.0(debug@4.4.3(supports-color@5.5.0))
+      follow-redirects: 1.16.0
       form-data: 4.0.6
-      https-proxy-agent: 5.0.1(supports-color@5.5.0)
+      https-proxy-agent: 5.0.1
       proxy-from-env: 2.1.0
     transitivePeerDependencies:
       - debug
       - supports-color
 
-  axios@1.19.0(debug@4.4.3(supports-color@7.2.0))(supports-color@7.2.0):
+  axios@1.19.0(supports-color@5.5.0):
     dependencies:
-      follow-redirects: 1.16.0(debug@4.4.3(supports-color@7.2.0))
+      follow-redirects: 1.16.0
       form-data: 4.0.6
-      https-proxy-agent: 5.0.1(supports-color@7.2.0)
+      https-proxy-agent: 5.0.1(supports-color@5.5.0)
       proxy-from-env: 2.1.0
     transitivePeerDependencies:
       - debug
@@ -9658,21 +9564,7 @@ snapshots:
       inherits: 2.0.4
       readable-stream: 4.7.0
 
-  body-parser@2.3.0(supports-color@5.5.0):
-    dependencies:
-      bytes: 3.1.2
-      content-type: 2.1.0
-      debug: 4.4.3(supports-color@5.5.0)
-      http-errors: 2.0.1
-      iconv-lite: 0.7.3
-      on-finished: 2.4.1
-      qs: 6.15.3
-      raw-body: 3.0.2
-      type-is: 2.1.0
-    transitivePeerDependencies:
-      - supports-color
-
-  body-parser@2.3.0(supports-color@7.2.0):
+  body-parser@2.3.0:
     dependencies:
       bytes: 3.1.2
       content-type: 2.1.0
@@ -9852,23 +9744,11 @@ snapshots:
     dependencies:
       mime-db: 1.54.0
 
-  compression@1.8.1(supports-color@5.5.0):
+  compression@1.8.1:
     dependencies:
       bytes: 3.1.2
       compressible: 2.0.18
-      debug: 2.6.9(supports-color@5.5.0)
-      negotiator: 0.6.4
-      on-headers: 1.1.0
-      safe-buffer: 5.2.1
-      vary: 1.1.2
-    transitivePeerDependencies:
-      - supports-color
-
-  compression@1.8.1(supports-color@7.2.0):
-    dependencies:
-      bytes: 3.1.2
-      compressible: 2.0.18
-      debug: 2.6.9(supports-color@7.2.0)
+      debug: 2.6.9
       negotiator: 0.6.4
       on-headers: 1.1.0
       safe-buffer: 5.2.1
@@ -9967,29 +9847,13 @@ snapshots:
 
   date-format@4.0.14: {}
 
-  debug@2.6.9(supports-color@5.5.0):
+  debug@2.6.9:
     dependencies:
       ms: 2.0.0
-    optionalDependencies:
-      supports-color: 5.5.0
 
-  debug@2.6.9(supports-color@7.2.0):
+  debug@3.1.0:
     dependencies:
       ms: 2.0.0
-    optionalDependencies:
-      supports-color: 7.2.0
-
-  debug@3.1.0(supports-color@5.5.0):
-    dependencies:
-      ms: 2.0.0
-    optionalDependencies:
-      supports-color: 5.5.0
-
-  debug@3.1.0(supports-color@7.2.0):
-    dependencies:
-      ms: 2.0.0
-    optionalDependencies:
-      supports-color: 7.2.0
 
   debug@4.4.3(supports-color@5.5.0):
     dependencies:
@@ -10034,7 +9898,7 @@ snapshots:
     dependencies:
       yaml: 2.9.0
 
-  docker-modem@5.0.7(supports-color@7.2.0):
+  docker-modem@5.0.7:
     dependencies:
       debug: 4.4.3(supports-color@7.2.0)
       readable-stream: 3.6.2
@@ -10043,12 +9907,12 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  dockerode@5.0.1(supports-color@7.2.0):
+  dockerode@5.0.1:
     dependencies:
       '@balena/dockerignore': 1.0.2
       '@grpc/grpc-js': 1.14.4
       '@grpc/proto-loader': 0.7.15
-      docker-modem: 5.0.7(supports-color@7.2.0)
+      docker-modem: 5.0.7
       protobufjs: 7.6.5
       tar-fs: 2.1.5
     transitivePeerDependencies:
@@ -10159,11 +10023,11 @@ snapshots:
 
   eslint-visitor-keys@5.0.1: {}
 
-  eslint@10.9.0(supports-color@5.5.0):
+  eslint@10.9.0:
     dependencies:
-      '@eslint-community/eslint-utils': 4.10.1(eslint@10.9.0(supports-color@5.5.0))
+      '@eslint-community/eslint-utils': 4.10.1(eslint@10.9.0)
       '@eslint-community/regexpp': 4.12.2
-      '@eslint/config-array': 0.23.5(supports-color@5.5.0)
+      '@eslint/config-array': 0.23.5
       '@eslint/config-helpers': 0.7.0
       '@eslint/core': 1.2.1
       '@eslint/plugin-kit': 0.7.2
@@ -10173,7 +10037,7 @@ snapshots:
       '@types/estree': 1.0.9
       ajv: 6.15.0
       cross-spawn: 7.0.6
-      debug: 4.4.3(supports-color@5.5.0)
+      debug: 4.4.3(supports-color@7.2.0)
       escape-string-regexp: 4.0.0
       eslint-scope: 9.1.2
       eslint-visitor-keys: 5.0.1
@@ -10194,11 +10058,11 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  eslint@10.9.0(supports-color@7.2.0):
+  eslint@10.9.0(supports-color@5.5.0):
     dependencies:
-      '@eslint-community/eslint-utils': 4.10.1(eslint@10.9.0(supports-color@7.2.0))
+      '@eslint-community/eslint-utils': 4.10.1(eslint@10.9.0(supports-color@5.5.0))
       '@eslint-community/regexpp': 4.12.2
-      '@eslint/config-array': 0.23.5(supports-color@7.2.0)
+      '@eslint/config-array': 0.23.5(supports-color@5.5.0)
       '@eslint/config-helpers': 0.7.0
       '@eslint/core': 1.2.1
       '@eslint/plugin-kit': 0.7.2
@@ -10208,7 +10072,7 @@ snapshots:
       '@types/estree': 1.0.9
       ajv: 6.15.0
       cross-spawn: 7.0.6
-      debug: 4.4.3(supports-color@7.2.0)
+      debug: 4.4.3(supports-color@5.5.0)
       escape-string-regexp: 4.0.0
       eslint-scope: 9.1.2
       eslint-visitor-keys: 5.0.1
@@ -10302,10 +10166,43 @@ snapshots:
 
   expect-type@1.4.0: {}
 
+  express@5.2.1:
+    dependencies:
+      accepts: 2.0.0
+      body-parser: 2.3.0
+      content-disposition: 1.1.0
+      content-type: 1.0.5
+      cookie: 0.7.2
+      cookie-signature: 1.2.2
+      debug: 4.4.3(supports-color@7.2.0)
+      depd: 2.0.0
+      encodeurl: 2.0.0
+      escape-html: 1.0.3
+      etag: 1.8.1
+      finalhandler: 2.1.1
+      fresh: 2.0.0
+      http-errors: 2.0.1
+      merge-descriptors: 2.0.0
+      mime-types: 3.0.2
+      on-finished: 2.4.1
+      once: 1.4.0
+      parseurl: 1.3.3
+      proxy-addr: 2.0.7
+      qs: 6.15.3
+      range-parser: 1.3.0
+      router: 2.2.0
+      send: 1.2.1
+      serve-static: 2.2.1
+      statuses: 2.0.2
+      type-is: 2.1.0
+      vary: 1.1.2
+    transitivePeerDependencies:
+      - supports-color
+
   express@5.2.1(supports-color@5.5.0):
     dependencies:
       accepts: 2.0.0
-      body-parser: 2.3.0(supports-color@5.5.0)
+      body-parser: 2.3.0
       content-disposition: 1.1.0
       content-type: 1.0.5
       cookie: 0.7.2
@@ -10328,40 +10225,7 @@ snapshots:
       range-parser: 1.3.0
       router: 2.2.0(supports-color@5.5.0)
       send: 1.2.1(supports-color@5.5.0)
-      serve-static: 2.2.1(supports-color@5.5.0)
-      statuses: 2.0.2
-      type-is: 2.1.0
-      vary: 1.1.2
-    transitivePeerDependencies:
-      - supports-color
-
-  express@5.2.1(supports-color@7.2.0):
-    dependencies:
-      accepts: 2.0.0
-      body-parser: 2.3.0(supports-color@7.2.0)
-      content-disposition: 1.1.0
-      content-type: 1.0.5
-      cookie: 0.7.2
-      cookie-signature: 1.2.2
-      debug: 4.4.3(supports-color@7.2.0)
-      depd: 2.0.0
-      encodeurl: 2.0.0
-      escape-html: 1.0.3
-      etag: 1.8.1
-      finalhandler: 2.1.1(supports-color@7.2.0)
-      fresh: 2.0.0
-      http-errors: 2.0.1
-      merge-descriptors: 2.0.0
-      mime-types: 3.0.2
-      on-finished: 2.4.1
-      once: 1.4.0
-      parseurl: 1.3.3
-      proxy-addr: 2.0.7
-      qs: 6.15.3
-      range-parser: 1.3.0
-      router: 2.2.0(supports-color@7.2.0)
-      send: 1.2.1(supports-color@7.2.0)
-      serve-static: 2.2.1(supports-color@7.2.0)
+      serve-static: 2.2.1
       statuses: 2.0.2
       type-is: 2.1.0
       vary: 1.1.2
@@ -10420,18 +10284,18 @@ snapshots:
     dependencies:
       flat-cache: 4.0.1
 
-  file-type@21.3.4(supports-color@5.5.0):
+  file-type@21.3.4:
     dependencies:
-      '@tokenizer/inflate': 0.4.1(supports-color@5.5.0)
+      '@tokenizer/inflate': 0.4.1
       strtok3: 10.3.5
       token-types: 6.1.2
       uint8array-extras: 1.5.0
     transitivePeerDependencies:
       - supports-color
 
-  file-type@21.3.4(supports-color@7.2.0):
+  file-type@21.3.4(supports-color@5.5.0):
     dependencies:
-      '@tokenizer/inflate': 0.4.1(supports-color@7.2.0)
+      '@tokenizer/inflate': 0.4.1(supports-color@5.5.0)
       strtok3: 10.3.5
       token-types: 6.1.2
       uint8array-extras: 1.5.0
@@ -10452,9 +10316,9 @@ snapshots:
     dependencies:
       to-regex-range: 5.0.1
 
-  finalhandler@2.1.1(supports-color@5.5.0):
+  finalhandler@2.1.1:
     dependencies:
-      debug: 4.4.3(supports-color@5.5.0)
+      debug: 4.4.3(supports-color@7.2.0)
       encodeurl: 2.0.0
       escape-html: 1.0.3
       on-finished: 2.4.1
@@ -10463,9 +10327,9 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  finalhandler@2.1.1(supports-color@7.2.0):
+  finalhandler@2.1.1(supports-color@5.5.0):
     dependencies:
-      debug: 4.4.3(supports-color@7.2.0)
+      debug: 4.4.3(supports-color@5.5.0)
       encodeurl: 2.0.0
       escape-html: 1.0.3
       on-finished: 2.4.1
@@ -10498,13 +10362,7 @@ snapshots:
 
   fn.name@1.1.0: {}
 
-  follow-redirects@1.16.0(debug@4.4.3(supports-color@5.5.0)):
-    optionalDependencies:
-      debug: 4.4.3(supports-color@5.5.0)
-
-  follow-redirects@1.16.0(debug@4.4.3(supports-color@7.2.0)):
-    optionalDependencies:
-      debug: 4.4.3(supports-color@7.2.0)
+  follow-redirects@1.16.0: {}
 
   foreground-child@3.3.1:
     dependencies:
@@ -10665,17 +10523,17 @@ snapshots:
       quick-lru: 5.1.1
       resolve-alpn: 1.2.1
 
+  https-proxy-agent@5.0.1:
+    dependencies:
+      agent-base: 6.0.2
+      debug: 4.4.3(supports-color@7.2.0)
+    transitivePeerDependencies:
+      - supports-color
+
   https-proxy-agent@5.0.1(supports-color@5.5.0):
     dependencies:
       agent-base: 6.0.2(supports-color@5.5.0)
       debug: 4.4.3(supports-color@5.5.0)
-    transitivePeerDependencies:
-      - supports-color
-
-  https-proxy-agent@5.0.1(supports-color@7.2.0):
-    dependencies:
-      agent-base: 6.0.2(supports-color@7.2.0)
-      debug: 4.4.3(supports-color@7.2.0)
     transitivePeerDependencies:
       - supports-color
 
@@ -10840,6 +10698,8 @@ snapshots:
 
   jsonc-parser@3.3.1: {}
 
+  jwt-decode@4.0.0: {}
+
   kareem@3.3.0: {}
 
   keyv@4.5.4:
@@ -10986,18 +10846,9 @@ snapshots:
 
   merge-stream@2.0.0: {}
 
-  method-override@3.0.0(supports-color@5.5.0):
+  method-override@3.0.0:
     dependencies:
-      debug: 3.1.0(supports-color@5.5.0)
-      methods: 1.1.2
-      parseurl: 1.3.3
-      vary: 1.1.2
-    transitivePeerDependencies:
-      - supports-color
-
-  method-override@3.0.0(supports-color@7.2.0):
-    dependencies:
-      debug: 3.1.0(supports-color@7.2.0)
+      debug: 3.1.0
       methods: 1.1.2
       parseurl: 1.3.3
       vary: 1.1.2
@@ -11194,6 +11045,10 @@ snapshots:
 
   obug@2.1.4: {}
 
+  oidc-client-ts@3.5.0:
+    dependencies:
+      jwt-decode: 4.0.0
+
   on-finished@2.4.1:
     dependencies:
       ee-first: 1.1.1
@@ -11350,9 +11205,9 @@ snapshots:
       retry: 0.12.0
       signal-exit: 3.0.7
 
-  properties-reader@3.0.1(supports-color@7.2.0):
+  properties-reader@3.0.1:
     dependencies:
-      '@kwsites/file-exists': 1.1.1(supports-color@7.2.0)
+      '@kwsites/file-exists': 1.1.1
       mkdirp: 3.0.1
     transitivePeerDependencies:
       - supports-color
@@ -11485,14 +11340,7 @@ snapshots:
 
   require-from-string@2.0.2: {}
 
-  require-in-the-middle@8.0.1(supports-color@5.5.0):
-    dependencies:
-      debug: 4.4.3(supports-color@5.5.0)
-      module-details-from-path: 1.0.4
-    transitivePeerDependencies:
-      - supports-color
-
-  require-in-the-middle@8.0.1(supports-color@7.2.0):
+  require-in-the-middle@8.0.1:
     dependencies:
       debug: 4.4.3(supports-color@7.2.0)
       module-details-from-path: 1.0.4
@@ -11548,9 +11396,9 @@ snapshots:
       '@rolldown/binding-win32-arm64-msvc': 1.2.5
       '@rolldown/binding-win32-x64-msvc': 1.2.5
 
-  router@2.2.0(supports-color@5.5.0):
+  router@2.2.0:
     dependencies:
-      debug: 4.4.3(supports-color@5.5.0)
+      debug: 4.4.3(supports-color@7.2.0)
       depd: 2.0.0
       is-promise: 4.0.0
       parseurl: 1.3.3
@@ -11558,9 +11406,9 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  router@2.2.0(supports-color@7.2.0):
+  router@2.2.0(supports-color@5.5.0):
     dependencies:
-      debug: 4.4.3(supports-color@7.2.0)
+      debug: 4.4.3(supports-color@5.5.0)
       depd: 2.0.0
       is-promise: 4.0.0
       parseurl: 1.3.3
@@ -11594,6 +11442,22 @@ snapshots:
 
   semver@7.8.5: {}
 
+  send@1.2.1:
+    dependencies:
+      debug: 4.4.3(supports-color@7.2.0)
+      encodeurl: 2.0.0
+      escape-html: 1.0.3
+      etag: 1.8.1
+      fresh: 2.0.0
+      http-errors: 2.0.1
+      mime-types: 3.0.2
+      ms: 2.1.3
+      on-finished: 2.4.1
+      range-parser: 1.3.0
+      statuses: 2.0.2
+    transitivePeerDependencies:
+      - supports-color
+
   send@1.2.1(supports-color@5.5.0):
     dependencies:
       debug: 4.4.3(supports-color@5.5.0)
@@ -11610,37 +11474,12 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  send@1.2.1(supports-color@7.2.0):
-    dependencies:
-      debug: 4.4.3(supports-color@7.2.0)
-      encodeurl: 2.0.0
-      escape-html: 1.0.3
-      etag: 1.8.1
-      fresh: 2.0.0
-      http-errors: 2.0.1
-      mime-types: 3.0.2
-      ms: 2.1.3
-      on-finished: 2.4.1
-      range-parser: 1.3.0
-      statuses: 2.0.2
-    transitivePeerDependencies:
-      - supports-color
-
-  serve-static@2.2.1(supports-color@5.5.0):
+  serve-static@2.2.1:
     dependencies:
       encodeurl: 2.0.0
       escape-html: 1.0.3
       parseurl: 1.3.3
-      send: 1.2.1(supports-color@5.5.0)
-    transitivePeerDependencies:
-      - supports-color
-
-  serve-static@2.2.1(supports-color@7.2.0):
-    dependencies:
-      encodeurl: 2.0.0
-      escape-html: 1.0.3
-      parseurl: 1.3.3
-      send: 1.2.1(supports-color@7.2.0)
+      send: 1.2.1
     transitivePeerDependencies:
       - supports-color
 
@@ -11866,6 +11705,20 @@ snapshots:
       make-asynchronous: 1.1.0
       time-span: 5.1.0
 
+  superagent@10.3.0:
+    dependencies:
+      component-emitter: 1.3.1
+      cookiejar: 2.1.4
+      debug: 4.4.3(supports-color@7.2.0)
+      fast-safe-stringify: 2.1.1
+      form-data: 4.0.6
+      formidable: 3.5.4
+      methods: 1.1.2
+      mime: 2.6.0
+      qs: 6.15.3
+    transitivePeerDependencies:
+      - supports-color
+
   superagent@10.3.0(supports-color@5.5.0):
     dependencies:
       component-emitter: 1.3.1
@@ -11880,17 +11733,11 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  superagent@10.3.0(supports-color@7.2.0):
+  supertest@7.2.2:
     dependencies:
-      component-emitter: 1.3.1
-      cookiejar: 2.1.4
-      debug: 4.4.3(supports-color@7.2.0)
-      fast-safe-stringify: 2.1.1
-      form-data: 4.0.6
-      formidable: 3.5.4
+      cookie-signature: 1.2.2
       methods: 1.1.2
-      mime: 2.6.0
-      qs: 6.15.3
+      superagent: 10.3.0
     transitivePeerDependencies:
       - supports-color
 
@@ -11899,14 +11746,6 @@ snapshots:
       cookie-signature: 1.2.2
       methods: 1.1.2
       superagent: 10.3.0(supports-color@5.5.0)
-    transitivePeerDependencies:
-      - supports-color
-
-  supertest@7.2.2(supports-color@7.2.0):
-    dependencies:
-      cookie-signature: 1.2.2
-      methods: 1.1.2
-      superagent: 10.3.0(supports-color@7.2.0)
     transitivePeerDependencies:
       - supports-color
 
@@ -11982,7 +11821,7 @@ snapshots:
       - bare-abort-controller
       - react-native-b4a
 
-  testcontainers@12.1.0(supports-color@7.2.0):
+  testcontainers@12.1.0:
     dependencies:
       '@balena/dockerignore': 1.0.2
       '@types/dockerode': 4.0.1
@@ -11991,10 +11830,10 @@ snapshots:
       byline: 5.0.0
       debug: 4.4.3(supports-color@7.2.0)
       docker-compose: 1.4.2
-      dockerode: 5.0.1(supports-color@7.2.0)
+      dockerode: 5.0.1
       get-port: 5.1.1
       proper-lockfile: 4.1.2
-      properties-reader: 3.0.1(supports-color@7.2.0)
+      properties-reader: 3.0.1
       ssh-remote-port-forward: 1.0.4
       tar-fs: 3.1.3
       tmp: 0.2.7
@@ -12126,24 +11965,24 @@ snapshots:
 
   typedarray@0.0.6: {}
 
-  typescript-eslint@8.67.0(eslint@10.9.0(supports-color@5.5.0))(supports-color@5.5.0)(typescript@6.0.3):
+  typescript-eslint@8.67.0(eslint@10.9.0(supports-color@5.5.0))(typescript@6.0.3):
     dependencies:
-      '@typescript-eslint/eslint-plugin': 8.67.0(@typescript-eslint/parser@8.67.0(eslint@10.9.0(supports-color@5.5.0))(supports-color@5.5.0)(typescript@6.0.3))(eslint@10.9.0(supports-color@5.5.0))(supports-color@5.5.0)(typescript@6.0.3)
-      '@typescript-eslint/parser': 8.67.0(eslint@10.9.0(supports-color@5.5.0))(supports-color@5.5.0)(typescript@6.0.3)
-      '@typescript-eslint/typescript-estree': 8.67.0(supports-color@5.5.0)(typescript@6.0.3)
-      '@typescript-eslint/utils': 8.67.0(eslint@10.9.0(supports-color@5.5.0))(supports-color@5.5.0)(typescript@6.0.3)
+      '@typescript-eslint/eslint-plugin': 8.67.0(@typescript-eslint/parser@8.67.0(eslint@10.9.0(supports-color@5.5.0))(supports-color@7.2.0)(typescript@6.0.3))(eslint@10.9.0(supports-color@5.5.0))(typescript@6.0.3)
+      '@typescript-eslint/parser': 8.67.0(eslint@10.9.0(supports-color@5.5.0))(typescript@6.0.3)
+      '@typescript-eslint/typescript-estree': 8.67.0(typescript@6.0.3)
+      '@typescript-eslint/utils': 8.67.0(eslint@10.9.0(supports-color@5.5.0))(typescript@6.0.3)
       eslint: 10.9.0(supports-color@5.5.0)
       typescript: 6.0.3
     transitivePeerDependencies:
       - supports-color
 
-  typescript-eslint@8.67.0(eslint@10.9.0(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3):
+  typescript-eslint@8.67.0(eslint@10.9.0)(typescript@6.0.3):
     dependencies:
-      '@typescript-eslint/eslint-plugin': 8.67.0(@typescript-eslint/parser@8.67.0(eslint@10.9.0(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3))(eslint@10.9.0(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3)
-      '@typescript-eslint/parser': 8.67.0(eslint@10.9.0(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3)
-      '@typescript-eslint/typescript-estree': 8.67.0(supports-color@7.2.0)(typescript@6.0.3)
-      '@typescript-eslint/utils': 8.67.0(eslint@10.9.0(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3)
-      eslint: 10.9.0(supports-color@7.2.0)
+      '@typescript-eslint/eslint-plugin': 8.67.0(@typescript-eslint/parser@8.67.0(eslint@10.9.0)(typescript@6.0.3))(eslint@10.9.0)(typescript@6.0.3)
+      '@typescript-eslint/parser': 8.67.0(eslint@10.9.0)(typescript@6.0.3)
+      '@typescript-eslint/typescript-estree': 8.67.0(typescript@6.0.3)
+      '@typescript-eslint/utils': 8.67.0(eslint@10.9.0)(typescript@6.0.3)
+      eslint: 10.9.0
       typescript: 6.0.3
     transitivePeerDependencies:
       - supports-color

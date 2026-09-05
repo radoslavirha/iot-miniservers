@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { AuthConfigSchema } from '@radoslavirha/ui-auth';
 import { absolutePath, httpUrl, loadRuntimeConfig, stripTrailingSlash } from '@radoslavirha/ui-runtime';
 
 /**
@@ -28,7 +29,13 @@ export const RuntimeConfigSchema = z.object({
      * nginx reads NGINX_BASE_PATH, injects <base href>, AND serves static files
      * under the correct location — all without rebuilding the image.
      */
-    basePath: absolutePath().default('/')
+    basePath: absolutePath().default('/'),
+    /**
+     * IdP settings. REQUIRED — the validating initContainer rejects a config
+     * without it, so a UI can never quietly ship with login switched off.
+     * Nothing here is secret; a public client has no secret to hide.
+     */
+    auth: AuthConfigSchema
 });
 
 export type RuntimeConfig = z.infer<typeof RuntimeConfigSchema>;
