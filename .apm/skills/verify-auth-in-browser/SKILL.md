@@ -54,7 +54,15 @@ Authentik's flow UI is web components, so:
   nothing. Use `input[name="password"]:visible`.
 - **`innerText` on `body` returns "Powered by authentik"** — the form is in shadow DOM. Do not use
   page text to decide whether a stage rendered; query for the input.
-- Advance stages by clicking the `Log in` button, not by pressing Enter.
+- **`<ak-loading-overlay>` sits between stages and swallows pointer events**, so a click retries
+  until it times out. Wait for it to detach, then submit with `Enter` rather than clicking:
+
+  ```js
+  const settle = async () => {
+      await page.locator('ak-loading-overlay').waitFor({ state: 'detached', timeout: 20000 }).catch(() => {});
+      await page.waitForTimeout(500);
+  };
+  ```
 
 Count **main-frame navigations** — that is how a redirect loop shows up, and nothing else reveals it:
 
@@ -63,8 +71,10 @@ const nav = [];
 page.on('framenavigated', f => f === page.mainFrame() && nav.push(f.url()));
 ```
 
-A healthy sign-in is **one** navigation to the callback. Four means a loop that happened to
-terminate; the user sees it as "never ending".
+Count navigations **to the IdP**, not to the callback: `/callback` legitimately appears twice
+(document load, then the router's `replace`). One navigation to `auth.irha.cz` is healthy. Four
+callbacks with repeated IdP hops is a loop that happened to terminate — the user sees it as
+"never ending".
 
 ### 3. Against a deployed environment
 
@@ -89,6 +99,9 @@ you test the wrong build. Use local dev (1) instead. That is what the registered
 5. **Log out** — returns to the app AND ends the IdP session. Prove the second half:
    `prompt=none` afterwards must return `error=login_required`, not a code.
 6. **Console** — a clean run has no errors. `X-Frame-Options` and CORS failures appear only here.
+   A `400` on every login means the authorization code is being exchanged twice: codes are
+   single-use, and StrictMode double-invokes effects, so the callback needs a `useRef` guard. It is
+   invisible without a browser, because the first exchange succeeds and the user still lands signed in.
 
 ## Checking the IdP directly
 
