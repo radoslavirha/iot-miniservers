@@ -136,6 +136,23 @@ describe('AuthProvider', () => {
         expect(window.localStorage.getItem('token-abc')).toBeNull();
     });
 
+    it('settles as anonymous when the callback reports no session', async () => {
+        // Regression: the provider skips its probe on the callback and waits for
+        // userLoaded. On a no-session callback that event never comes, so without
+        // this the app sat on Loading… forever instead of showing the sign-in page.
+        window.sessionStorage.setItem('auth.sso-attempted', '1');
+        const client = fakeClient();
+        const Settler = () => {
+            const { state, resolveAnonymous } = useAuth();
+            return <><span data-testid="state">{state}</span><button onClick={resolveAnonymous}>settle</button></>;
+        };
+        render(<AuthProvider client={client}><Settler /></AuthProvider>);
+        await waitFor(() => expect(screen.getByTestId('state')).toHaveTextContent('anonymous'));
+
+        await userEvent.click(screen.getByText('settle'));
+        expect(screen.getByTestId('state')).toHaveTextContent('anonymous');
+    });
+
     it('throws when used outside the provider', () => {
         const Outside = () => {
             useAuth();

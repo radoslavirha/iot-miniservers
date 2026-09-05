@@ -25,6 +25,16 @@ export interface AuthContextValue {
      * button here and not two.
      */
     logout(): Promise<void>;
+    /**
+     * Settles the provider as signed-out.
+     *
+     * The callback route owns its page load, so the provider deliberately does
+     * not probe there and waits for the userLoaded event instead. When the
+     * outcome is "no session" there IS no such event, and without this the
+     * provider would wait forever — a permanent Loading… where the sign-in page
+     * belongs. The callback reports that outcome here.
+     */
+    resolveAnonymous(): void;
     getAccessToken(): string | undefined;
 }
 
@@ -154,6 +164,11 @@ export const AuthProvider = ({ client, children }: { client: AuthClient; childre
         await client.signoutRedirect();
     }, [client]);
 
+    const resolveAnonymous = useCallback(() => {
+        setUser(null);
+        setState(current => (current === 'authenticated' ? current : 'anonymous'));
+    }, []);
+
     const getAccessToken = useCallback(() => user?.access_token, [user]);
 
     const value = useMemo<AuthContextValue>(
@@ -163,9 +178,10 @@ export const AuthProvider = ({ client, children }: { client: AuthClient; childre
             roles: (user?.profile.roles as string[] | undefined) ?? [],
             login,
             logout,
+            resolveAnonymous,
             getAccessToken
         }),
-        [state, user, login, logout, getAccessToken]
+        [state, user, login, logout, resolveAnonymous, getAccessToken]
     );
 
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
