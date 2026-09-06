@@ -13,8 +13,8 @@
 | Doc | Repo | Relationship |
 | --- | --- | --- |
 | [`specs/2026-08-06-iot-app-health-checks-frontend.md`](./2026-08-06-iot-app-health-checks-frontend.md) | this repo | Built the config-validation machinery this changes the shape of |
-| [`specs/2026-08-08-nginx-ipv6-listener.md`](./2026-08-08-nginx-ipv6-listener.md) | this repo | Touches the same four nginx files. Independent, but land one before starting the other |
-| [`plans/2026-08-25-dashboard-credential-boundary-homelab.md`](../../../../homelab/docs/superpowers/plans/2026-08-25-dashboard-credential-boundary-homelab.md) | `homelab` | Values changes. Written 2026-08-25 after implementation; step 1 of its rollout gate is applied |
+| [`specs/2026-08-08-nginx-ipv6-listener.md`](../2026-08-08-nginx-ipv6-listener.md) | this repo | Touches the same four nginx files. Independent, but land one before starting the other |
+| `plans/2026-08-25-dashboard-credential-boundary-homelab.md` (deleted) | `homelab` | Values changes. Written 2026-08-25 after implementation; step 1 of its rollout gate was applied, and the plan was deleted once it shipped — that repo does not keep finished plans |
 
 ---
 

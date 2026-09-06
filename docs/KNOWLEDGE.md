@@ -26,7 +26,35 @@ pnpm monorepo of small independent Node.js APIs and UIs (Ts.ED, TypeScript ESM).
 | `@radoslavirha/tsed-health` | Ts.ED wiring for `health` — `/health/live`, `/health/ready`, `/health`, a `HEALTH_CHECKS` provider-type registry, and the SIGTERM drain sequence. Ships `MongoHealthCheck` on the `/mongoose` subpath (optional peers, so database-free apps never resolve mongoose) |
 | `@radoslavirha/tsed-http-provider` | Ts.ED wiring for `http-provider` — builds clients from `externalApis` config and adds redacted outbound request/response logging |
 | `@radoslavirha/tsed-resilience` | Ts.ED `@RequestSignal()` decorator — an `AbortSignal` tied to the HTTP request lifecycle |
+| `@radoslavirha/ui-auth` | OIDC authorization-code + PKCE login for the browser apps. Public client, **access token in memory only**, and **no iframe anywhere** — Authentik sets `X-Frame-Options: DENY`, so session recovery and renewal are top-level `prompt=none` redirects |
 | `@radoslavirha/ui-kit` | Shared design system and UI components for the UIs |
+
+## Frontend auth
+
+`qr-manager-ui` logs in through Authentik (`auth.irha.cz`) as a public client. The whole app is gated:
+an anonymous visitor gets a sign-in page and none of the routes. **That is UX, not security** — no API
+verifies a token yet, so an unauthenticated request still returns everything until Phase 1b.
+
+Four facts that are load-bearing and easy to get wrong:
+
+- **No iframe.** `X-Frame-Options: DENY` on every Authentik response. Recovery, renewal and SSO are all
+  top-level `prompt=none` redirects. A `302` passes through a frame unblocked, so an iframe approach
+  appears to work until Authentik renders an actual page — which is how it survived review once.
+- **SSO is global and so is logout.** One session covers all four `qr-manager` applications across both
+  clusters and both stages; logging out of any one signs out of all of them. There is no per-environment
+  logout.
+- **`roles` is identical in every environment** (`qr-manager.admin`, no cluster, no stage). Only `iss`
+  and `aud` separate a sandbox token from a production one, which is why `issuer_mode: per_provider`
+  matters and why a verifier must pin `iss` and check `aud` by membership.
+- **Config is templated per deployment.** The `homelab` values files are shared by both clusters, so
+  `clientId`, `issuer` and `redirectUri` render from `VAR_CLUSTER` / `NAMESPACE`. Literals there would
+  point server2 at server1's application.
+
+`http://localhost:5173/callback` is registered on **sandbox applications only**, so `pnpm dev` performs
+a real login against the real IdP. Use the **`verify-auth-in-browser`** skill before calling any auth
+change done: six bugs in this area passed a green test suite.
+
+Contract: [`superpowers/specs/2026-09-04-authentik-integration-contract.md`](./superpowers/specs/2026-09-04-authentik-integration-contract.md).
 
 ## Observability (OTel signal routing)
 
@@ -77,7 +105,7 @@ Three reusable instruments, repo-local namespace (OpenTelemetry has no conventio
 
 `/health*` and `/healthz` produce no spans (`HttpInstrumentation.ignoreIncomingRequestHook` in `@radoslavirha/otel`) and no request-log lines (`requests.ignorePaths` in `@radoslavirha/tsed-logger`, on by default). At ~0.3 req/s per pod forever, they would otherwise dominate both Tempo and Loki while carrying no information.
 
-The trace hook also suppresses `http.server.request.duration` for those paths — deliberate, since probe traffic is fast and constant-rate and would dilute every percentile of the real-traffic latency histogram. **Probe state is therefore a Kubernetes-layer fact only**, and must come from kube-state-metrics. `kube_pod_status_ready` is not currently collected on server3 — tracked in `homelab/docs/superpowers/plans/2026-08-07-probe-state-not-observable.md`. Until that lands, a readiness failure is invisible to monitoring.
+The trace hook also suppresses `http.server.request.duration` for those paths — deliberate, since probe traffic is fast and constant-rate and would dilute every percentile of the real-traffic latency histogram. **Probe state is therefore a Kubernetes-layer fact only**, and must come from kube-state-metrics. `kube_pod_status_ready` **is** collected — added to the kube-state-metrics allow-list in `homelab` → `gitops/helm-values/k8s-monitoring.yaml`, alongside kubelet's `prober_*` counters, which say *which* probe failed. Reference: `homelab` → `docs/observability.md`. No alert consumes either metric yet, so a readiness failure is visible but silent.
 
 ## Communication
 
