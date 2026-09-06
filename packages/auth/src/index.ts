@@ -78,5 +78,6 @@ export {
     UnknownStaticIssuerError
 } from './keys/StaticKeySource.js';
 export { RemoteJwksSource, SERVICE_ACCOUNT_TOKEN_PATH } from './keys/RemoteJwksSource.js';
+export { createKeySource } from './keys/createKeySource.js';
 
 export type { RemoteJwksSourceOptions } from './keys/RemoteJwksSource.js';
