@@ -49,6 +49,40 @@ public. `@Anonymous()` is then a visible, per-route opt-out sitting next to the 
 `permissive` with no credential, there genuinely is nobody — and a fabricated subject in an audit
 column is worse than an empty one, because later it cannot be told from a real one.
 
+## What lands in the OpenAPI document
+
+The decorators emit the documentation themselves, so there is nothing to keep in step by hand:
+
+```jsonc
+"/qr-codes": {
+    "get": {
+        "security": [{ "BEARER_JWT": [] }],
+        "responses": { "401": { … }, "503": { … } }
+    }
+},
+"/qr-codes/{slug}": {
+    "get": { "security": [] }        // @Anonymous()
+}
+```
+
+All of it is standard OpenAPI 3 — a `security` requirement, an empty one as the operation-level
+override, and ordinary response codes. **No vendor extensions**: a test asserts the generated document
+contains no `x-` key, so any generator or client can read it.
+
+`@Anonymous()` emits `security: []` rather than simply omitting the requirement, because omission
+inherits the document-level default. The empty array is OpenAPI's own way to say "this operation needs
+nothing", and it is what stops Swagger UI offering a padlock on a route that ignores it.
+
+**The scheme itself is declared once, by the app**, not here. Operations only reference it by name:
+
+```ts
+// apis/<api>/src/index.ts
+security: [SwaggerSecurityScheme.BEARER_JWT]   // replaces `security: []`
+```
+
+That puts `components.securitySchemes.BEARER_JWT` — `{ type: http, scheme: bearer, bearerFormat: JWT }`
+— into the document, and Swagger UI's **Authorize** button starts sending `Authorization: Bearer …`.
+
 ## Three things worth knowing
 
 **A refusal tells the caller nothing.** The verifier's `detail` — a JOSE error, the audience that did
