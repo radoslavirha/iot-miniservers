@@ -22,6 +22,27 @@ export type { Credential, ITokenVerifier } from './ITokenVerifier.js';
 export { UnresolvableKeyError } from './IKeySource.js';
 export type { IKeySource, KeyLookup, VerificationKey } from './IKeySource.js';
 
+// ─── Pipeline ─────────────────────────────────────────────────────────────────
+
+export { Authenticator, AuthConfigurationError, assertUsableConfig, statusForReason } from './Authenticator.js';
+export { describeAuthConfig } from './describeAuthConfig.js';
+
+export type { AuthDecision } from './Authenticator.js';
+export type { AuthConfigSummary, IssuerSummary } from './describeAuthConfig.js';
+
+// ─── Observability ────────────────────────────────────────────────────────────
+
+export {
+    ATTR_AUTH_ISSUER,
+    ATTR_AUTH_OUTCOME,
+    AUTH_METER_NAME,
+    AUTH_MODE_VALUE,
+    METRIC_AUTH_MODE,
+    METRIC_AUTH_VERIFICATIONS,
+    observeAuthMode,
+    recordVerification
+} from './authTelemetry.js';
+
 // ─── Configuration ────────────────────────────────────────────────────────────
 
 export {

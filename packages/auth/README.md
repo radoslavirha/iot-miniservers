@@ -25,6 +25,9 @@ Design and roadmap: [`docs/superpowers/specs/2026-09-05-auth-design.md`](../../d
 | `StaticKeySource` | Serves keys carried inline in the configuration — no network, no cache |
 | `RemoteJwksSource` | Serves keys from a remote JWKS: selected by `kid`, cached, bounded refresh, hard timeout |
 | `UnresolvableKeyError` | Marks a key failure as the *token's* fault, so it reports `invalid` rather than `indeterminate` |
+| `Authenticator` | Runs the configured mode over a credential and returns an allow/refuse decision |
+| `describeAuthConfig` | The boot-time summary: mode, every trusted issuer, and where its keys come from |
+| `recordVerification`, `observeAuthMode` | The outcome counter and the mode gauge |
 
 ## Three decisions worth knowing
 
@@ -59,6 +62,33 @@ denial of service against the IdP.
 **The ServiceAccount token is re-read on every fetch.** The kubelet rewrites the projected file at
 roughly 80% of its lifetime, so a token read once at construction works for about an hour and then
 fails in a way that looks like a permissions problem, long after the deploy that could be blamed.
+
+**`indeterminate` answers `503`, not `401`.** Every other reason is a statement about the credential;
+that one is a statement about us. A `401` when our own JWKS fetch timed out blames a token that was
+never the problem, and is not retriable — a client backing off correctly on a `503` would give up
+instead.
+
+**A mode that cannot work fails at boot.** `enforced` or `permissive` with no trusted issuers verifies
+nothing, so `Authenticator`'s constructor throws rather than letting the service come up healthy and
+refuse every request — which reads as a network fault and gets debugged for an hour.
+
+**Metric instruments are built per meter provider, never eagerly.** The metrics API has no proxy
+provider: an instrument created before the SDK starts is bound to the no-op provider forever, and
+every auth metric would silently vanish depending on import order. A test registers a provider *after*
+importing the module and asserts the counter still records.
+
+## Observability
+
+| | |
+| --- | --- |
+| `auth.mode` | Gauge, `0` disabled / `1` permissive / `2` enforced. Ordered so an alert is `auth_mode < 2` |
+| `auth.verifications` | Counter, labelled `auth.outcome` with `VerificationReason`'s strings verbatim |
+
+The issuer is attached as a label **only when one matched** — otherwise anyone could mint unbounded
+label values by sending tokens with made-up `iss` claims.
+
+This is what makes `permissive` more than a slogan: turn it on in production, watch for `missing` and
+`invalid`, find the caller nobody remembered, then flip to `enforced`.
 
 ## Local development is an issuer row, not a bypass
 

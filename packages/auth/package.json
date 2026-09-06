@@ -33,12 +33,14 @@
         "test:watch": "vitest"
     },
     "dependencies": {
+        "@opentelemetry/api": "catalog:otel",
         "@radoslavirha/config-typescript": "catalog:",
         "jose": "catalog:",
         "typescript": "catalog:",
         "zod": "catalog:"
     },
     "devDependencies": {
+        "@opentelemetry/sdk-metrics": "catalog:otel",
         "@radoslavirha/config-eslint": "catalog:",
         "@radoslavirha/config-tsdown": "catalog:",
         "@radoslavirha/config-vitest": "catalog:",
@@ -48,5 +50,8 @@
         "tsdown": "catalog:",
         "typescript-eslint": "catalog:",
         "vitest": "catalog:"
+    },
+    "peerDependencies": {
+        "@opentelemetry/api": "catalog:otel"
     }
 }
