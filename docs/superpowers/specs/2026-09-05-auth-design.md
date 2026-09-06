@@ -28,10 +28,8 @@ here should read as though anything earlier delivers security.
 | API pods reaching the IdP | Fixed — `homelab` `0b903db`, JWKS fetch verified from a pod in all four namespaces |
 | TLS on every exposed hop | Done 2026-09-03 |
 
-**Execution plans:**
-[`../plans/2026-09-05-p1f1-frontend-login.md`](../plans/2026-09-05-p1f1-frontend-login.md) then
-[`../plans/2026-09-05-p1f2-bearer-on-api-calls.md`](../plans/2026-09-05-p1f2-bearer-on-api-calls.md).
-Both written 2026-09-05, neither executed.
+**P1.F is finished.** Its two execution plans were written 2026-09-05, executed, and deleted. The next
+unit is **P1.0**.
 
 ---
 
@@ -236,11 +234,13 @@ keys, values and the reason `redirectUri` is spelled out rather than derived: th
 
 Three Authentik behaviours shape the implementation, all verified, all in the contract:
 
-- **No refresh token is issued.** Renewal is `prompt=none` against the IdP session cookie, on a timer
-  under the 300-second access-token lifetime. There is no fallback.
+- **No refresh token is issued.** Recovery is a top-level `prompt=none` redirect against the IdP session
+  cookie. There is no fallback, and as of P1.F2 there is no renewal at all — see P1.F2's finding 1.
+  The access token lives **30 minutes**, not 300 seconds; that changed when renewal became a navigation.
 - **`prompt=none` has three outcomes**, not two. A valid session whose user is not in the group returns
   a `200` HTML page and never redirects — time it out, and treat the timeout as *not authorized*.
-- **Logout does not end the IdP session.** Offer a second *Sign out everywhere* action.
+- **Logout ends the IdP session**, because the provider binds `default-invalidation-flow`. That is a
+  `homelab` decision, not a frontend one. There is one *Log out* button and no *Sign out everywhere*.
 
 ### ~~P1.F1 — login~~ — DONE, shipped as `qr-manager-ui@0.10.1`, 2026-09-05
 
@@ -269,19 +269,32 @@ logout became a **single button that ends the IdP session** by binding `default-
 complete a real login. That it was not is why all four mistakes reached a deployed environment first.
 Anything touching auth from here uses the **`verify-auth-in-browser`** skill.
 
-### P1.F2 — token on our calls
+### ~~P1.F2 — token on our calls~~ — DONE 2026-09-06, not released
 
-`qr-manager-ui`'s calls to `qr-manager-api` carry `Authorization: Bearer`; the UniFi call from
-`homelab-dashboard-ui` carries nothing. Verified in devtools.
+All six calls in `src/api/qrCodes.ts` route through one `request()` seam that attaches the token from an
+injected getter. Verified in Chromium against the live IdP, on `pnpm dev` against a local
+`qr-manager-api`: `GET`, `POST`, `PUT`×3 and `DELETE` all carry the header, no other request carries one,
+and signed out the app issues no API call at all.
 
-**The seam is not `json()`.** The six calls in `src/api/qrCodes.ts` share `url()`, `json()` and
-`observe()`, but headers only pass through `json()`, and `list()` and `remove()` do not call it —
-adding the header there authenticates four of six and leaves `GET /qr-codes` and `DELETE
-/qr-codes/:id` bare. Put the token on a wrapper every call goes through, or give the client a single
-`request()` seam.
+**This delivers no security, and the docs must not read as though it does.** An unauthenticated `curl`
+still returns everything. What it delivers is a verified end-to-end human token.
 
-**This delivers no security, and the docs must not read as though it does.** After P1.F2 an
-unauthenticated `curl` still returns everything. What it delivers is a verified end-to-end human token.
+**Three things it left for Phase 1b, all found by reading the shipped code:**
+
+1. **Nothing renews the token.** `automaticSilentRenew` is off — correctly, it uses an iframe — but
+   nothing replaced it. `AuthContext` subscribes only to `addUserLoaded`/`addUserUnloaded`, `recover()`
+   runs once on mount, and there is no timer in the package. A tab open past the 30-minute lifetime
+   holds a dead token.
+2. **`getAccessToken()` does not check `user.expired`**, so the seam attaches that dead token. Harmless
+   while the API ignores it.
+3. **A 401 will report the backend as healthy.** `classifyResponse` maps every 4xx to `client-error`,
+   which `statusForOutcome` maps to `ok`. Right for a validation error, wrong for an expired session:
+   the user gets a green banner and a raw `Request failed with 401` string, and nothing prompts a
+   re-login. 401/403 are the only 4xx that mean "your session, not your input".
+
+**Not every call can carry a header.** `GET /qr-codes/:id/image` is loaded by `<img src>` and offered as
+`<a download>` links, which cannot send one. Phase 1b must rank that route explicitly — leave it public,
+mint a signed URL, or fetch it to a blob.
 
 ## P1.0 — contracts and test kit (gate)
 
@@ -341,7 +354,10 @@ real 401/403 tests are a different kind of work from package construction.
 
 - Extend each app's `ConfigSchema` with the auth block.
 - `localhost.json`: the dev issuer row above, `mode: enforced`, plus the matching `externalApis` entry.
-- Anonymous allowlist per route: `GET /r/:slug` and `/health*` stay open, explicitly.
+- Anonymous allowlist per route: `GET /r/:slug` and `/health*` stay open, explicitly. `GET
+  /qr-codes/:id/image` needs a decision too — the UI loads it with `<img src>` and cannot send a header.
+- Frontend follow-up, all three from P1.F2: add renewal, make `getAccessToken()` expiry-aware, and give
+  401/403 their own outcome so an expired session stops reporting as healthy.
 - Swap `security: []` for the real scheme in each app's `index.ts`.
 - 401/403 integration tests, and `config/test.json` coverage of the failure paths.
 - **Which app goes first is undecided.** `miot-bridge-api`'s `/command` actuates physical devices and is
