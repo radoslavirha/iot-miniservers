@@ -16,7 +16,7 @@ runs:
     - name: Set up pnpm v11
       uses: pnpm/action-setup@v6
       with:
-        version: 11
+        version: 12
     - name: Set up Node.js v24
       uses: actions/setup-node@v7
       with:
