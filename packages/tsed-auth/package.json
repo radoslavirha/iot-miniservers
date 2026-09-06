@@ -1,0 +1,72 @@
+{
+    "name": "@radoslavirha/tsed-auth",
+    "version": "0.1.0",
+    "description": "Ts.ED wiring for @radoslavirha/auth: the request guard, the endpoint decorators and the injectable Principal",
+    "private": true,
+    "type": "module",
+    "exports": {
+        "import": {
+            "types": "./dist/esm/index.d.mts",
+            "import": "./dist/esm/index.mjs"
+        },
+        "require": {
+            "types": "./dist/cjs/index.d.cts",
+            "require": "./dist/cjs/index.cjs"
+        }
+    },
+    "main": "./dist/cjs/index.cjs",
+    "module": "./dist/esm/index.mjs",
+    "types": "./dist/esm/index.d.mts",
+    "files": [
+        "dist",
+        "package.json",
+        "README.md"
+    ],
+    "scripts": {
+        "build": "tsc --noEmit && tsdown",
+        "cleanup:all": "pnpm run cleanup:artifacts && pnpm run cleanup:modules",
+        "cleanup:artifacts": "rm -rf coverage dist",
+        "cleanup:modules": "rm -rf node_modules",
+        "lint": "eslint .",
+        "lint:fix": "eslint --fix .",
+        "test": "vitest run",
+        "test:watch": "vitest"
+    },
+    "dependencies": {
+        "@radoslavirha/auth": "workspace:*",
+        "@radoslavirha/config-typescript": "catalog:",
+        "@swc/helpers": "catalog:swc",
+        "typescript": "catalog:"
+    },
+    "peerDependencies": {
+        "@tsed/core": "catalog:tsed",
+        "@tsed/di": "catalog:tsed",
+        "@tsed/exceptions": "catalog:tsed",
+        "@tsed/platform-http": "catalog:tsed",
+        "@tsed/platform-middlewares": "catalog:tsed",
+        "@tsed/platform-params": "catalog:tsed",
+        "@tsed/schema": "catalog:tsed"
+    },
+    "devDependencies": {
+        "@radoslavirha/config-eslint": "catalog:",
+        "@radoslavirha/config-tsdown": "catalog:",
+        "@radoslavirha/config-vitest": "catalog:",
+        "@tsed/core": "catalog:tsed",
+        "@tsed/di": "catalog:tsed",
+        "@tsed/exceptions": "catalog:tsed",
+        "@tsed/platform-http": "catalog:tsed",
+        "@tsed/platform-middlewares": "catalog:tsed",
+        "@tsed/platform-params": "catalog:tsed",
+        "@tsed/schema": "catalog:tsed",
+        "@types/node": "catalog:",
+        "@vitest/coverage-v8": "catalog:",
+        "eslint": "catalog:",
+        "tsdown": "catalog:",
+        "typescript-eslint": "catalog:",
+        "vitest": "catalog:"
+    },
+    "engines": {
+        "node": ">= 24",
+        "pnpm": ">= 11.8"
+    }
+}
