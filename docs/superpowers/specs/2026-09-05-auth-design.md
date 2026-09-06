@@ -1,7 +1,8 @@
 # Auth design and work packages
 
-**Status: nothing is built.** The IdP exists and is verified; no code in this repo authenticates
-anything yet.
+**Status: P1.0–P1.6 are built; nothing enforces yet.** `packages/auth` and `packages/tsed-auth` exist,
+are tested, and can verify a token and guard a route. No API has been onboarded, so every HTTP API in
+this repo still answers an unauthenticated request in full. That closes in Phase 1b.
 
 **Read [`2026-09-04-authentik-integration-contract.md`](./2026-09-04-authentik-integration-contract.md)
 first.** It is the authority for every concrete IdP fact — endpoints, `client_id`s, claims, traps.
@@ -93,7 +94,8 @@ and deliberately unbuilt: there is no user-initiated cross-service call yet.
   multi-issuer JWKS verification over `jose.createRemoteJWKSet`, audience validation, subject →
   `Principal` mapping, Zod schemas in the style of `packages/http-provider/src/schemas/auth.schema.ts`.
   **Zero Kubernetes imports.** Also the mode pipeline below, static-key issuer rows, the boot-time
-  issuer log, the mode gauge and outcome counter, and a dev-only token-minting script.
+  issuer log, and the mode gauge and outcome counter. (The token-minting script that was listed here
+  is dropped — see P1.4.)
   Graduation checklist: [`2026-08-11-health-packages-graduation.md`](./2026-08-11-health-packages-graduation.md).
 - **`packages/tsed-auth`** — `@Authenticated()` / `@Scopes()`, injectable `Principal`, redaction
   integration so tokens never reach a log, OTel attributes, and wiring of the already-present-but-unused
@@ -335,7 +337,7 @@ Dependencies declared upfront: `jose`, `zod`, `@opentelemetry/api`. `jose` is al
 | **P1.1** jwt core + static keys | `src/verifiers/JwtVerifier.ts`, `src/keys/StaticKeySource.ts` | Needs no infrastructure — HS256 with an inline key makes a full signed round trip locally |
 | **P1.2** remote JWKS | `src/keys/RemoteJwksSource.ts` | The IdP's JWKS is anonymously readable, so build the plain case first and the ServiceAccount-authenticated fetch second. Cache by `kid`, bounded refresh, **explicit timeout** — a blocked JWKS fetch is a hang, not a refusal |
 | **P1.3** mode pipeline + observability | mode gate, boot log, gauge, outcome counter | Uses P1.0's outcome strings verbatim |
-| **P1.4** dev-token minting CLI | dev-only script | Small. Feeds Swagger's Authorize button and Postman |
+| ~~**P1.4** dev-token minting CLI~~ | — | **Dropped 2026-09-06.** Its purpose was Swagger's Authorize button; that workflow is not wanted, and `pnpm dev` already completes a real login against the live IdP from the registered `localhost:5173` redirect URI — a real RS256 token beats a minted HS256 one. Integration tests mint in-process with P1.0's `mintTestToken`, which needs no CLI |
 | **P1.5** `packages/tsed-auth` guard | guard, decorators, injectable `Principal` | Substance. Tests against `FakeTokenVerifier` |
 | **P1.6** OpenAPI security metadata | swaps `security: []` for the real scheme | Small |
 | **P1.7** authorization plumbing | `@Scopes()`, roles on `Principal` | **Parked** — a leaf that blocks nothing. Recommendation: plumbing only |
