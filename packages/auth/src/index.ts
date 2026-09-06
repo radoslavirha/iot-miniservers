@@ -25,16 +25,18 @@ export type { IKeySource, KeyLookup, VerificationKey } from './IKeySource.js';
 
 export {
     AuthConfigSchema,
-    JwksKeySourceSchema,
-    KeySourceSchema,
+    JwksKeySchema,
+    KeySchema,
+    StaticKeySchema,
     TrustedIssuerSchema
 } from './schemas/auth.schema.js';
 
 export type {
     AuthConfig,
     AuthConfigInput,
-    JwksKeySource,
-    KeySourceConfig,
+    JwksKey,
+    KeyConfig,
+    StaticKey,
     TrustedIssuer
 } from './schemas/auth.schema.js';
 
@@ -45,11 +47,16 @@ export { FakeTokenVerifier, failureOutcome, successOutcome } from './test/FakeTo
 
 export type { MintTestTokenOptions } from './test/mintTestToken.js';
 
-// ─── Planned — uncomment as each unit lands ──────────────────────────────────
+// ─── Verification ─────────────────────────────────────────────────────────────
 
-// P1.1 — JWT verification and inline static keys
-// export { JwtVerifier } from './verifiers/JwtVerifier.js';
-// export { StaticKeySource } from './keys/StaticKeySource.js';
+export { JwtVerifier } from './verifiers/JwtVerifier.js';
+export {
+    StaticAlgorithmMismatchError,
+    StaticKeySource,
+    UnknownStaticIssuerError
+} from './keys/StaticKeySource.js';
+
+// ─── Planned — uncomment as each unit lands ──────────────────────────────────
 
 // P1.2 — remote JWKS, cached by kid, with a bounded fetch
 // export { RemoteJwksSource } from './keys/RemoteJwksSource.js';

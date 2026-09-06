@@ -2,53 +2,83 @@ import { z } from 'zod';
 import { AuthMode } from '../AuthMode.js';
 
 /**
- * How a trust source's verification keys are obtained.
+ * An inline key, carried in the configuration itself.
  *
- * A discriminated union with one member today — `jwks`, a remote JWKS endpoint.
- * It is a union rather than a bare object because P1.1 adds inline static keys
- * and later work may add introspection, and a union member is additive where a
- * widened object is a breaking edit to every row already written.
+ * This is what makes `config/localhost.json` an *issuer row* rather than a
+ * bypass flag: local development runs `mode: enforced` against an HS256 secret,
+ * so the code exercised locally is the code that runs in production and the 401
+ * and 403 paths stop being the only ones never covered. The outbound half
+ * already exists — `JwtSelfSignedStrategy` in `http-provider` signs with the
+ * same `{ source: 'value' }` shape — so the two halves meet in a real signed
+ * round trip on a laptop.
+ *
+ * It fails closed in a way `enabled: false` does not: a leftover dev issuer row
+ * is exploitable only by someone who also holds the dev secret, where a
+ * leftover disable flag *is* the whole vulnerability.
  */
-export const JwksKeySourceSchema = z.object({
-    kind: z.literal('jwks'),
-    /** Absolute URL of the JWKS document. */
-    url: z.url(),
+export const StaticKeySchema = z.object({
+    source: z.literal('value'),
     /**
-     * How long a fetched key set is reused. A JWKS fetch per request would put
-     * the IdP on the critical path of every call.
-     */
-    cacheTtlSeconds: z.number().int().positive().default(300),
-    /**
-     * Hard ceiling on the fetch.
+     * Algorithm this key is for, and the only one accepted from this issuer.
      *
-     * Required, not optional, and the reason is the failure mode: an
-     * unreachable JWKS endpoint that never answers turns every request into a
-     * hang rather than a refusal. A hang is worse than a `503` — it exhausts
-     * the connection pool and takes down routes that need no authentication at
-     * all.
+     * Singular and required, because it is also the allowlist. Trusting the
+     * algorithm named in the JWS header is the classic JWT failure — `alg:
+     * none`, or an RSA public key accepted as an HMAC secret.
      */
-    timeoutMs: z.number().int().positive().default(3000),
-    /**
-     * Send the pod's ServiceAccount token with the JWKS fetch.
-     *
-     * This is the whole of the Kubernetes special case: the apiserver's JWKS is
-     * not anonymously readable, the IdP's is. Configuration, not a code branch —
-     * which is what keeps this package runnable outside a cluster.
-     */
-    serviceAccountToken: z.boolean().default(false)
+    algorithm: z.string().min(1).default('HS256'),
+    /** `HS*`: the shared secret. Otherwise: a PEM-encoded public key. */
+    value: z.string().min(1)
 });
 
-export const KeySourceSchema = z.discriminatedUnion('kind', [JwksKeySourceSchema]);
+/**
+ * Keys fetched from a remote JWKS endpoint. Consumed by P1.2; the shape is
+ * fixed here so a config file written today does not have to change.
+ */
+export const JwksKeySchema = z.object({
+    source: z.literal('jwks'),
+    uri: z.url(),
+    /**
+     * Whether the JWKS fetch itself needs a credential.
+     *
+     * This single field is the whole of the Kubernetes special case: the
+     * apiserver's JWKS is not anonymously readable, the IdP's is. Configuration,
+     * not a branch in the verifier — which is what lets the same binary run
+     * outside a cluster.
+     */
+    auth: z.enum(['none', 'serviceAccountToken']).default('none'),
+    /** Signature algorithms accepted from this issuer. An allowlist, always. */
+    algorithms: z.array(z.string().min(1)).default(['RS256']),
+    /** How long a fetched key set is reused, so the IdP is not on every request's path. */
+    cacheTtlSeconds: z.number().int().positive().default(300),
+    /**
+     * Hard ceiling on the fetch. Required, because the failure mode is the
+     * point: a JWKS endpoint that never answers turns every request into a hang
+     * rather than a refusal, exhausting the connection pool and taking down
+     * routes that need no authentication at all.
+     */
+    timeoutMs: z.number().int().positive().default(3000)
+});
+
+export const KeySchema = z.discriminatedUnion('source', [StaticKeySchema, JwksKeySchema]);
 
 /**
  * One trust source: an issuer we are willing to believe, and the terms.
+ *
+ * Kubernetes is a row here, not a code path. Add a cluster, swap IdPs, or run
+ * with no Kubernetes at all — each is a configuration change.
  */
 export const TrustedIssuerSchema = z.object({
     /**
+     * Operator-facing label. Not matched against anything — it exists so the
+     * boot-time log can name each trusted issuer, which is the answer to "why
+     * is my token rejected" nine times in ten.
+     */
+    name: z.string().min(1),
+    /**
      * Exact `iss` value to match, compared as a string.
      *
-     * Not normalised, and in particular the trailing slash is never stripped:
-     * Authentik's per-provider issuers carry one, and `iss` comparison is exact.
+     * Never normalised, and in particular the trailing slash is never stripped:
+     * Authentik's per-provider issuers carry one and `iss` comparison is exact.
      * A helpful normalisation here would silently accept a token from a
      * different issuer.
      */
@@ -59,26 +89,18 @@ export const TrustedIssuerSchema = z.object({
      * the only thing standing between "a token" and "a token for us".
      */
     audience: z.string().min(1),
-    keySource: KeySourceSchema,
+    key: KeySchema,
     /**
      * Which caller class tokens from this issuer represent. Stamped onto the
-     * `Principal`; it is a property of the trust source, not of the token.
+     * `Principal`; a property of the trust source, not of the token.
      */
-    principalKind: z.enum(['human', 'service', 'device']).default('human'),
+    subjectKind: z.enum(['human', 'service', 'device']).default('human'),
     /**
      * Claim to read roles from. Authentik puts them in `roles`; the Kubernetes
-     * apiserver has no equivalent, so a source with no roles claim yields an
+     * apiserver has no equivalent, so a source with no such claim yields an
      * empty list rather than an error.
      */
-    rolesClaim: z.string().default('roles'),
-    /**
-     * Signature algorithms accepted from this issuer.
-     *
-     * An allowlist, always. Trusting whatever the JWS header names is the
-     * classic JWT failure — `alg: none`, or an RSA public key accepted as an
-     * HMAC secret.
-     */
-    algorithms: z.array(z.string().min(1)).default(['RS256'])
+    rolesClaim: z.string().default('roles')
 });
 
 /**
@@ -94,12 +116,12 @@ export const AuthConfigSchema = z.object({
      * Trust sources, in no particular order — a token is matched to one by its
      * `iss`, never by position.
      *
-     * Defaults to empty, which is coherent only in `disabled`. `enforced` with
-     * no issuers can verify nothing and must fail at boot rather than refuse
+     * Defaults to empty, which is only coherent in `disabled`. `enforced` with
+     * no issuers can verify nothing and should fail at boot rather than refuse
      * every request at runtime; that check is P1.3's, because it is a startup
      * concern rather than a shape concern.
      */
-    issuers: z.array(TrustedIssuerSchema).default([]),
+    trustedIssuers: z.array(TrustedIssuerSchema).default([]),
     /**
      * Routes that stay open, as an explicit allowlist.
      *
@@ -115,6 +137,7 @@ export type AuthConfigInput = z.input<typeof AuthConfigSchema>;
 /** Config as **parsed** — every default resolved. What the runtime works with. */
 export type AuthConfig = z.output<typeof AuthConfigSchema>;
 
-export type JwksKeySource = z.output<typeof JwksKeySourceSchema>;
-export type KeySourceConfig = z.output<typeof KeySourceSchema>;
+export type StaticKey = z.output<typeof StaticKeySchema>;
+export type JwksKey = z.output<typeof JwksKeySchema>;
+export type KeyConfig = z.output<typeof KeySchema>;
 export type TrustedIssuer = z.output<typeof TrustedIssuerSchema>;

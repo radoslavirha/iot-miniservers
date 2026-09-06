@@ -1,12 +1,11 @@
 # @radoslavirha/auth
 
-Framework-agnostic authentication **contracts**: the `Principal` every mechanism resolves to, the
-vocabulary for why a credential was accepted or refused, the two seams implementations plug into, the
-configuration schema, and the shared test kit.
+Framework-agnostic authentication: the `Principal` every mechanism resolves to, the vocabulary for why
+a credential was accepted or refused, the seams implementations plug into, the configuration schema,
+the shared test kit — and the JWT verifier itself.
 
-**This package contains no implementation.** It is the gate the rest of the auth work compiles
-against — verifiers, key sources, the mode pipeline and the Ts.ED guard all arrive later and all
-depend on the names fixed here. Nothing in it verifies anything.
+**It verifies nothing on its own.** Wiring it into a service, the mode pipeline and the Ts.ED guard all
+arrive later and depend on the names fixed here.
 
 Design and roadmap: [`docs/superpowers/specs/2026-09-05-auth-design.md`](../../docs/superpowers/specs/2026-09-05-auth-design.md).
 
@@ -22,6 +21,8 @@ Design and roadmap: [`docs/superpowers/specs/2026-09-05-auth-design.md`](../../d
 | `IKeySource` | The seam between inline static keys and a remote JWKS |
 | `AuthConfigSchema` | Zod. Every field defaulted, so a service that says nothing gets `disabled` |
 | `mintTestToken`, `FakeTokenVerifier` | Shared test kit, so later units do not each invent one |
+| `JwtVerifier` | Verifies a JWT against the configured trust sources and yields a `Principal` |
+| `StaticKeySource` | Serves keys carried inline in the configuration — no network, no cache |
 
 ## Three decisions worth knowing
 
@@ -34,8 +35,32 @@ good and we simply cannot say. Collapsing the two would report an outage as a wa
 make `enforced` indistinguishable from a broken IdP.
 
 **Kubernetes is not a special case.** A ServiceAccount token is "an issuer whose JWKS fetch happens to
-need a bearer token" — a `serviceAccountToken: true` row in configuration, not a branch in the
-verifier. Delete the row and the same binary runs on a VM.
+need a bearer token" — `key.auth: serviceAccountToken` in configuration, not a branch in the verifier.
+Delete the row and the same binary runs on a VM.
+
+**The algorithm allowlist comes from configuration, never from the token.** Trusting the JWS header's
+own `alg` is the classic JWT failure — `alg: none`, or an RSA public key accepted as an HMAC secret.
+Both are covered by tests.
+
+## Local development is an issuer row, not a bypass
+
+```jsonc
+"auth": {
+    "mode": "enforced",
+    "trustedIssuers": [{
+        "name": "dev-local",
+        "issuer": "dev",
+        "audience": "qr-manager-api",
+        "subjectKind": "service",
+        "key": { "source": "value", "algorithm": "HS256", "value": "local-dev-secret" }
+    }]
+}
+```
+
+`mode: enforced` locally, against an inline HS256 secret. The code exercised on a laptop is the code
+that runs in production, and 401/403 stop being the only paths never covered. It also fails closed: a
+leftover dev issuer row needs the dev secret to exploit, where a leftover `enabled: false` *is* the
+vulnerability.
 
 ## The barrel is owned by this package
 

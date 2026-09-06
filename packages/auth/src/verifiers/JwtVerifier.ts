@@ -1,0 +1,133 @@
+import { decodeJwt, decodeProtectedHeader, errors, jwtVerify } from 'jose';
+import type { JWTPayload } from 'jose';
+import type { IKeySource } from '../IKeySource.js';
+import type { Credential, ITokenVerifier } from '../ITokenVerifier.js';
+import type { Principal } from '../Principal.js';
+import type { TrustedIssuer } from '../schemas/auth.schema.js';
+import { VerificationReason, type VerificationOutcome } from '../VerificationOutcome.js';
+
+/**
+ * Verifies a JWT against the configured trust sources.
+ *
+ * The only verifier this repo needs today, and the one every caller class flows
+ * through: a human's IdP token and a Kubernetes ServiceAccount token are the
+ * same RS256 JWT verified by the same code, differing only in which issuer row
+ * matched.
+ *
+ * It owns no keys. Where a key comes from — inline config or a remote JWKS — is
+ * the `IKeySource`'s problem, which is what lets this class be written and
+ * tested with no infrastructure and have JWKS swapped in behind it later.
+ */
+export class JwtVerifier implements ITokenVerifier {
+    readonly #byIssuer: ReadonlyMap<string, TrustedIssuer>;
+    readonly #keys: IKeySource;
+
+    constructor(issuers: readonly TrustedIssuer[], keys: IKeySource) {
+        this.#byIssuer = new Map(issuers.map(row => [row.issuer, row]));
+        this.#keys = keys;
+    }
+
+    async verify(credential: Credential): Promise<VerificationOutcome> {
+        // An absent or blank credential is `missing`, not `invalid`. P1.3 counts
+        // these separately, and the difference is what tells "a caller nobody
+        // remembered" apart from "a caller sending rubbish".
+        if (credential.trim() === '') {
+            return { reason: VerificationReason.Missing };
+        }
+
+        // Read `iss` before verifying anything, purely to select a trust source.
+        // Nothing read here is trusted — the signature check below is what makes
+        // any of it meaningful.
+        let issuer: string | undefined;
+        let algorithm: string | undefined;
+        let kid: string | undefined;
+        try {
+            issuer = decodeJwt(credential).iss;
+            ({ alg: algorithm, kid } = decodeProtectedHeader(credential));
+        } catch (error) {
+            return invalid(error);
+        }
+
+        if (issuer === undefined) {
+            return { reason: VerificationReason.Invalid, detail: 'token carries no iss claim' };
+        }
+
+        const row = this.#byIssuer.get(issuer);
+        if (!row) {
+            return { reason: VerificationReason.UnknownIssuer, detail: `no trusted issuer matches ${issuer}` };
+        }
+
+        // A key-source failure is NOT a verification failure. An unreachable
+        // JWKS says nothing about the token, so it must not be counted as a bad
+        // one — otherwise an IdP outage reads as an attack, and `enforced` mode
+        // becomes indistinguishable from a broken dependency.
+        let key;
+        try {
+            key = await this.#keys.getKey({ issuer, kid, algorithm });
+        } catch (error) {
+            return { reason: VerificationReason.Indeterminate, detail: messageOf(error) };
+        }
+
+        try {
+            const { payload } = await jwtVerify(credential, key, {
+                issuer: row.issuer,
+                audience: row.audience,
+                // The allowlist, never the header's own claim about itself.
+                algorithms: algorithmsFor(row)
+            });
+            // No `sub`, no principal. Falling back to a placeholder would put a
+            // fabricated subject in an audit column, which is worse than an
+            // empty one because it is indistinguishable from a real subject
+            // later.
+            if (typeof payload.sub !== 'string' || payload.sub === '') {
+                return { reason: VerificationReason.Invalid, detail: 'token carries no sub claim' };
+            }
+            return { reason: VerificationReason.Ok, principal: toPrincipal(payload, payload.sub, row) };
+        } catch (error) {
+            // `aud` gets its own reason because it is the one failure that means
+            // "a real token, minted for somebody else" — a misrouted caller or a
+            // confused-deputy attempt, not a forged credential.
+            if (error instanceof errors.JWTClaimValidationFailed && error.claim === 'aud') {
+                return { reason: VerificationReason.WrongAudience, detail: messageOf(error) };
+            }
+            return invalid(error);
+        }
+    }
+}
+
+/**
+ * Which algorithms this issuer's tokens may be signed with.
+ *
+ * A static row carries exactly one; a JWKS row carries a list. Either way it
+ * comes from configuration and never from the token.
+ */
+const algorithmsFor = (row: TrustedIssuer): string[] =>
+    row.key.source === 'value' ? [row.key.algorithm] : [...row.key.algorithms];
+
+const toPrincipal = (payload: JWTPayload, subject: string, row: TrustedIssuer): Principal => ({
+    subject,
+    kind: row.subjectKind,
+    displayName: typeof payload['preferred_username'] === 'string' ? payload['preferred_username'] : undefined,
+    roles: rolesFrom(payload, row.rolesClaim),
+    issuer: row.issuer
+});
+
+/**
+ * Roles as the issuer stated them.
+ *
+ * A missing claim is an empty list, not an error: the Kubernetes apiserver has
+ * no roles claim at all, and a service token is none the less valid for it.
+ * Non-string entries are dropped rather than coerced — `roles: [1, 2]` is a
+ * misconfiguration, and `['1', '2']` would hide it.
+ */
+const rolesFrom = (payload: JWTPayload, claim: string): string[] => {
+    const raw = payload[claim];
+    return Array.isArray(raw) ? raw.filter((entry): entry is string => typeof entry === 'string') : [];
+};
+
+const invalid = (error: unknown): VerificationOutcome => ({
+    reason: VerificationReason.Invalid,
+    detail: messageOf(error)
+});
+
+const messageOf = (error: unknown): string => (error instanceof Error ? error.message : String(error));
