@@ -23,12 +23,34 @@ export interface IKeySource {
      * than one key and given no `kid` should reject rather than guess.
      *
      * **Rejects rather than returning undefined when the key cannot be
-     * resolved.** The caller has to tell "no such key" (the credential is
-     * invalid) apart from "could not reach the key source" (indeterminate), and
-     * a thrown transport error carries that distinction where a bare `undefined`
-     * would erase it.
+     * resolved**, and the *type* of the rejection carries the distinction the
+     * caller needs: `UnresolvableKeyError` means the credential asked for a key
+     * this source will never have, and anything else means the source could not
+     * be consulted. A bare `undefined` would erase that difference.
      */
     getKey(params: KeyLookup): Promise<VerificationKey>;
+}
+
+/**
+ * The credential named a key this source cannot supply — an unknown `kid`, an
+ * algorithm the configured key is not for, an issuer with no key at all.
+ *
+ * **This is the token's fault, and verification should report `invalid`.**
+ * Every other rejection from `getKey` is the source's fault — a timeout, a
+ * refused connection, a malformed JWKS document — and must report
+ * `indeterminate` instead.
+ *
+ * The split lives here, as a type, rather than in the verifier inspecting
+ * error messages: the verifier must not learn which key sources exist, or
+ * adding one would mean editing it. Getting this backwards files an attack
+ * under "the IdP might be down", and files an outage under "someone is
+ * forging tokens".
+ */
+export class UnresolvableKeyError extends Error {
+    constructor(message: string) {
+        super(message);
+        this.name = 'UnresolvableKeyError';
+    }
 }
 
 export interface KeyLookup {

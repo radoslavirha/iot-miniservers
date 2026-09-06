@@ -23,6 +23,8 @@ Design and roadmap: [`docs/superpowers/specs/2026-09-05-auth-design.md`](../../d
 | `mintTestToken`, `FakeTokenVerifier` | Shared test kit, so later units do not each invent one |
 | `JwtVerifier` | Verifies a JWT against the configured trust sources and yields a `Principal` |
 | `StaticKeySource` | Serves keys carried inline in the configuration — no network, no cache |
+| `RemoteJwksSource` | Serves keys from a remote JWKS: selected by `kid`, cached, bounded refresh, hard timeout |
+| `UnresolvableKeyError` | Marks a key failure as the *token's* fault, so it reports `invalid` rather than `indeterminate` |
 
 ## Three decisions worth knowing
 
@@ -41,6 +43,22 @@ Delete the row and the same binary runs on a VM.
 **The algorithm allowlist comes from configuration, never from the token.** Trusting the JWS header's
 own `alg` is the classic JWT failure — `alg: none`, or an RSA public key accepted as an HMAC secret.
 Both are covered by tests.
+
+**A key failure has two meanings and they must not collapse.** An unknown `kid` or a mismatched
+algorithm is the credential's fault and reports `invalid`; a timeout or refused connection is the key
+source's fault and reports `indeterminate`. Key sources signal the first by throwing
+`UnresolvableKeyError`, so the verifier never has to know which sources exist. Getting this backwards
+files an attack under "the IdP might be down".
+
+**A JWKS fetch is bounded three ways.** `timeoutMs` aborts a hanging endpoint — a hang is worse than a
+refusal, because it exhausts the connection pool and takes down routes that need no authentication at
+all. `cacheTtlSeconds` keeps the IdP off the per-request path. `refreshCooldownMs` stops a stream of
+tokens carrying unknown `kid`s from becoming a fetch per request, which would turn a bad token into a
+denial of service against the IdP.
+
+**The ServiceAccount token is re-read on every fetch.** The kubelet rewrites the projected file at
+roughly 80% of its lifetime, so a token read once at construction works for about an hour and then
+fails in a way that looks like a permissions problem, long after the deploy that could be blamed.
 
 ## Local development is an issuer row, not a bypass
 

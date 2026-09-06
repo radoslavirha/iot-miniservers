@@ -51,6 +51,16 @@ export const JwksKeySchema = z.object({
     /** How long a fetched key set is reused, so the IdP is not on every request's path. */
     cacheTtlSeconds: z.number().int().positive().default(300),
     /**
+     * Floor on how often a key set may be refetched, independent of the cache
+     * age above.
+     *
+     * The cache says when a key set is stale; this says how fast a *miss* may
+     * force a refetch. Without it, a stream of tokens carrying an unknown `kid`
+     * becomes a fetch per request — a bad token turned into a denial of service
+     * against the IdP.
+     */
+    refreshCooldownMs: z.number().int().positive().default(30_000),
+    /**
      * Hard ceiling on the fetch. Required, because the failure mode is the
      * point: a JWKS endpoint that never answers turns every request into a hang
      * rather than a refusal, exhausting the connection pool and taking down

@@ -149,7 +149,10 @@ describe('JwtVerifier — algorithm confusion', () => {
 
         const outcome = await verifierFor(row).verify(forged);
 
-        expect(outcome.reason).not.toBe('ok');
+        // `invalid`, specifically — a forged token is the credential's fault.
+        // Reporting it as `indeterminate` would file an attack under "the IdP
+        // might be down".
+        expect(outcome.reason).toBe('invalid');
     });
 
     it('verifies a genuine RS256 token against a PEM public key', async () => {

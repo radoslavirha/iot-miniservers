@@ -103,6 +103,7 @@ describe('KeySchema', () => {
             auth: 'none',
             algorithms: ['RS256'],
             cacheTtlSeconds: 300,
+            refreshCooldownMs: 30_000,
             timeoutMs: 3000
         });
     });
@@ -117,6 +118,11 @@ describe('KeySchema', () => {
         expect(KeySchema.parse(jwksKey)).toHaveProperty('timeoutMs', 3000);
         expect(() => KeySchema.parse({ ...jwksKey, timeoutMs: 0 })).toThrow();
         expect(() => KeySchema.parse({ ...jwksKey, timeoutMs: -1 })).toThrow();
+    });
+
+    it('bounds how fast a miss may refetch, so unknown kids cannot hammer the IdP', () => {
+        expect(KeySchema.parse(jwksKey)).toHaveProperty('refreshCooldownMs', 30_000);
+        expect(() => KeySchema.parse({ ...jwksKey, refreshCooldownMs: 0 })).toThrow();
     });
 
     it('requires a real URL for a JWKS key', () => {

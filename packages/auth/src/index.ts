@@ -19,6 +19,7 @@ export { VerificationReason } from './VerificationOutcome.js';
 export type { Principal, PrincipalKind } from './Principal.js';
 export type { VerificationOutcome } from './VerificationOutcome.js';
 export type { Credential, ITokenVerifier } from './ITokenVerifier.js';
+export { UnresolvableKeyError } from './IKeySource.js';
 export type { IKeySource, KeyLookup, VerificationKey } from './IKeySource.js';
 
 // ─── Configuration ────────────────────────────────────────────────────────────
@@ -55,8 +56,6 @@ export {
     StaticKeySource,
     UnknownStaticIssuerError
 } from './keys/StaticKeySource.js';
+export { RemoteJwksSource, SERVICE_ACCOUNT_TOKEN_PATH } from './keys/RemoteJwksSource.js';
 
-// ─── Planned — uncomment as each unit lands ──────────────────────────────────
-
-// P1.2 — remote JWKS, cached by kid, with a bounded fetch
-// export { RemoteJwksSource } from './keys/RemoteJwksSource.js';
+export type { RemoteJwksSourceOptions } from './keys/RemoteJwksSource.js';

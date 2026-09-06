@@ -1,4 +1,5 @@
 import { importSPKI } from 'jose';
+import { UnresolvableKeyError } from '../IKeySource.js';
 import type { IKeySource, KeyLookup, VerificationKey } from '../IKeySource.js';
 import type { StaticKey, TrustedIssuer } from '../schemas/auth.schema.js';
 
@@ -77,19 +78,25 @@ export class StaticKeySource implements IKeySource {
 /**
  * No inline key is configured for this issuer.
  *
- * A distinct error type rather than a returned `undefined`, because the caller
- * has to tell "no such key" — the credential is invalid — apart from "could not
- * reach the key source", which is indeterminate.
+ * `UnresolvableKeyError`, because this source is local: there is no fetch to
+ * fail, so a miss can only ever mean the credential asked for something that
+ * does not exist.
  */
-export class UnknownStaticIssuerError extends Error {
+export class UnknownStaticIssuerError extends UnresolvableKeyError {
     constructor(readonly issuer: string) {
         super(`No static key configured for issuer ${issuer}.`);
         this.name = 'UnknownStaticIssuerError';
     }
 }
 
-/** The token asked for an algorithm this issuer's key is not for. */
-export class StaticAlgorithmMismatchError extends Error {
+/**
+ * The token asked for an algorithm this issuer's key is not for.
+ *
+ * This is the algorithm-confusion attack arriving — a token signed HS256 with
+ * an RSA public key as the secret, against a row configured for RS256. It is
+ * emphatically the credential's fault, so it must surface as `invalid`.
+ */
+export class StaticAlgorithmMismatchError extends UnresolvableKeyError {
     constructor(
         readonly issuer: string,
         readonly expected: string,

@@ -1,5 +1,6 @@
 import { decodeJwt, decodeProtectedHeader, errors, jwtVerify } from 'jose';
 import type { JWTPayload } from 'jose';
+import { UnresolvableKeyError } from '../IKeySource.js';
 import type { IKeySource } from '../IKeySource.js';
 import type { Credential, ITokenVerifier } from '../ITokenVerifier.js';
 import type { Principal } from '../Principal.js';
@@ -57,15 +58,25 @@ export class JwtVerifier implements ITokenVerifier {
             return { reason: VerificationReason.UnknownIssuer, detail: `no trusted issuer matches ${issuer}` };
         }
 
-        // A key-source failure is NOT a verification failure. An unreachable
-        // JWKS says nothing about the token, so it must not be counted as a bad
-        // one — otherwise an IdP outage reads as an attack, and `enforced` mode
-        // becomes indistinguishable from a broken dependency.
+        // Two very different failures hide behind one `await`.
+        //
+        // `UnresolvableKeyError` means the token asked for a key that will never
+        // exist — an unknown `kid`, or an algorithm the configured key is not
+        // for. That is the credential's fault and must read as `invalid`;
+        // reporting it as `indeterminate` files an algorithm-confusion attack
+        // under "the IdP might be down".
+        //
+        // Anything else means the source could not be consulted at all. An
+        // unreachable JWKS says nothing about the token, so counting it as a bad
+        // one would make an outage look like an attack and `enforced` mode
+        // indistinguishable from a broken dependency.
         let key;
         try {
             key = await this.#keys.getKey({ issuer, kid, algorithm });
         } catch (error) {
-            return { reason: VerificationReason.Indeterminate, detail: messageOf(error) };
+            return error instanceof UnresolvableKeyError
+                ? invalid(error)
+                : { reason: VerificationReason.Indeterminate, detail: messageOf(error) };
         }
 
         try {
