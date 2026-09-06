@@ -47,24 +47,45 @@ export interface QrCodesClientOptions {
      * client works identically without it.
      */
     readonly onOutcome?: (outcome: RequestOutcome) => void;
+    /**
+     * Supplies the current access token, or undefined when there is none.
+     *
+     * Injected per client rather than installed globally on `fetch`: this token
+     * is minted for qr-manager-api and must never be attached to a third-party
+     * call. A client built without this getter sends no credential at all.
+     */
+    readonly getAccessToken?: () => string | undefined;
 }
 
 export const createQrCodesClient = (apiBaseURL: string, options: QrCodesClientOptions = {}): QrCodesClient => {
     const url = (path: string) => `${apiBaseURL}${path}`;
-    const json = (init: RequestInit, body?: unknown): RequestInit => ({
-        ...init,
-        headers: { 'Content-Type': 'application/json', ...(init.headers ?? {}) },
-        body: body === undefined ? undefined : JSON.stringify(body)
-    });
 
     /**
-     * Reports the outcome, then hands the response back untouched. Errors keep
-     * propagating exactly as before — the status model is additive, so per-page
-     * error rendering is unchanged.
+     * The single seam every call passes through — named `send` so the six client
+     * methods can keep their `request` parameter name. It exists because headers
+     * used to flow only through the JSON helper, which `list` and `remove` never
+     * called — so a header added there would have covered four of six calls and
+     * left the list and delete endpoints anonymous.
      */
-    const observe = async (request: Promise<Response>): Promise<Response> => {
+    const send = async (path: string, init: RequestInit = {}, body?: unknown): Promise<Response> => {
+        const headers = new Headers(init.headers);
+        if (body !== undefined) {
+            headers.set('Content-Type', 'application/json');
+        }
+        // Read through on every call rather than capturing at construction: the
+        // token is replaced when the session is recovered, and a captured value
+        // would go stale without anything rebuilding the client.
+        const token = options.getAccessToken?.();
+        if (token) {
+            headers.set('Authorization', `Bearer ${token}`);
+        }
+
         try {
-            const response = await request;
+            const response = await fetch(url(path), {
+                ...init,
+                headers,
+                body: body === undefined ? undefined : JSON.stringify(body)
+            });
             options.onOutcome?.(classifyResponse(response));
             return response;
         } catch (error) {
@@ -74,12 +95,12 @@ export const createQrCodesClient = (apiBaseURL: string, options: QrCodesClientOp
     };
 
     return {
-        list: async (filter) => parse<QrCodeListResponse>(await observe(fetch(url(buildListPath(filter))))).then(r => r.items),
-        create: async (request) => parse<QrCode>(await observe(fetch(url('/qr-codes'), json({ method: 'POST' }, request)))),
-        update: async (id, request) => parse<QrCode>(await observe(fetch(url(`/qr-codes/${id}`), json({ method: 'PUT' }, request)))),
-        deactivate: async (id) => parse<QrCode>(await observe(fetch(url(`/qr-codes/${id}`), json({ method: 'PUT' }, { active: false })))),
-        activate: async (id) => parse<QrCode>(await observe(fetch(url(`/qr-codes/${id}`), json({ method: 'PUT' }, { active: true })))),
-        remove: async (id) => parse<void>(await observe(fetch(url(`/qr-codes/${id}`), { method: 'DELETE' })))
+        list: async (filter) => parse<QrCodeListResponse>(await send(buildListPath(filter))).then(r => r.items),
+        create: async (request) => parse<QrCode>(await send('/qr-codes', { method: 'POST' }, request)),
+        update: async (id, request) => parse<QrCode>(await send(`/qr-codes/${id}`, { method: 'PUT' }, request)),
+        deactivate: async (id) => parse<QrCode>(await send(`/qr-codes/${id}`, { method: 'PUT' }, { active: false })),
+        activate: async (id) => parse<QrCode>(await send(`/qr-codes/${id}`, { method: 'PUT' }, { active: true })),
+        remove: async (id) => parse<void>(await send(`/qr-codes/${id}`, { method: 'DELETE' }))
     };
 };
 

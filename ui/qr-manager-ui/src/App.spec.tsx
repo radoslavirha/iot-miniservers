@@ -77,7 +77,8 @@ describe('<App />', () => {
         render(<App config={config()} />);
 
         await waitFor(() => expect(screen.getByText('Shelf 1')).toBeInTheDocument());
-        expect(fetchMock).toHaveBeenCalledWith('https://api.server.home/qr/qr-codes');
+        const [url] = fetchMock.mock.calls[0] as [string, RequestInit];
+        expect(url).toBe('https://api.server.home/qr/qr-codes');
         expect(screen.getByRole('link', { name: 'List' })).toBeInTheDocument();
         expect(screen.getByRole('link', { name: 'New' })).toBeInTheDocument();
     });
