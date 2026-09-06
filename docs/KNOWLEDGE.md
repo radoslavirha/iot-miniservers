@@ -77,7 +77,7 @@ Three reusable instruments, repo-local namespace (OpenTelemetry has no conventio
 
 `/health*` and `/healthz` produce no spans (`HttpInstrumentation.ignoreIncomingRequestHook` in `@radoslavirha/otel`) and no request-log lines (`requests.ignorePaths` in `@radoslavirha/tsed-logger`, on by default). At ~0.3 req/s per pod forever, they would otherwise dominate both Tempo and Loki while carrying no information.
 
-The trace hook also suppresses `http.server.request.duration` for those paths — deliberate, since probe traffic is fast and constant-rate and would dilute every percentile of the real-traffic latency histogram. **Probe state is therefore a Kubernetes-layer fact only**, and must come from kube-state-metrics. `kube_pod_status_ready` is not currently collected on server3 — tracked in `homelab/docs/superpowers/plans/2026-08-07-probe-state-not-observable.md`. Until that lands, a readiness failure is invisible to monitoring.
+The trace hook also suppresses `http.server.request.duration` for those paths — deliberate, since probe traffic is fast and constant-rate and would dilute every percentile of the real-traffic latency histogram. **Probe state is therefore a Kubernetes-layer fact only**, and must come from kube-state-metrics. `kube_pod_status_ready` **is** collected — added to the kube-state-metrics allow-list in `homelab` → `gitops/helm-values/k8s-monitoring.yaml`, alongside kubelet's `prober_*` counters, which say *which* probe failed. Reference: `homelab` → `docs/observability.md`. No alert consumes either metric yet, so a readiness failure is visible but silent.
 
 ## Communication
 
