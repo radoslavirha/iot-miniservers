@@ -6,6 +6,7 @@ import type { Credential, ITokenVerifier } from '../ITokenVerifier.js';
 import type { Principal } from '../Principal.js';
 import type { TrustedIssuer } from '../schemas/auth.schema.js';
 import { VerificationReason, type VerificationOutcome } from '../VerificationOutcome.js';
+import { ArrayUtils, CommonUtils, StringUtils } from '@radoslavirha/utils';
 
 /**
  * Verifies a JWT against the configured trust sources.
@@ -49,7 +50,7 @@ export class JwtVerifier implements ITokenVerifier {
             return invalid(error);
         }
 
-        if (issuer === undefined) {
+        if (CommonUtils.isUndefined(issuer)) {
             return { reason: VerificationReason.Invalid, detail: 'token carries no iss claim' };
         }
 
@@ -90,7 +91,7 @@ export class JwtVerifier implements ITokenVerifier {
             // fabricated subject in an audit column, which is worse than an
             // empty one because it is indistinguishable from a real subject
             // later.
-            if (typeof payload.sub !== 'string' || payload.sub === '') {
+            if (!StringUtils.isNotEmpty(payload.sub)) {
                 return { reason: VerificationReason.Invalid, detail: 'token carries no sub claim' };
             }
             return { reason: VerificationReason.Ok, principal: toPrincipal(payload, payload.sub, row) };
@@ -118,7 +119,7 @@ const algorithmsFor = (row: TrustedIssuer): string[] =>
 const toPrincipal = (payload: JWTPayload, subject: string, row: TrustedIssuer): Principal => ({
     subject,
     kind: row.subjectKind,
-    displayName: typeof payload['preferred_username'] === 'string' ? payload['preferred_username'] : undefined,
+    displayName: StringUtils.isString(payload['preferred_username']) ? payload['preferred_username'] : undefined,
     roles: rolesFrom(payload, row.rolesClaim),
     issuer: row.issuer
 });
@@ -133,7 +134,7 @@ const toPrincipal = (payload: JWTPayload, subject: string, row: TrustedIssuer): 
  */
 const rolesFrom = (payload: JWTPayload, claim: string): string[] => {
     const raw = payload[claim];
-    return Array.isArray(raw) ? raw.filter((entry): entry is string => typeof entry === 'string') : [];
+    return ArrayUtils.isArray(raw) ? raw.filter((entry): entry is string => StringUtils.isString(entry)) : [];
 };
 
 const invalid = (error: unknown): VerificationOutcome => ({

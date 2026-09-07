@@ -2,6 +2,7 @@ import { importSPKI } from 'jose';
 import { UnresolvableKeyError } from '../IKeySource.js';
 import type { IKeySource, KeyLookup, VerificationKey } from '../IKeySource.js';
 import type { StaticKey, TrustedIssuer } from '../schemas/auth.schema.js';
+import { CommonUtils } from '@radoslavirha/utils';
 
 /**
  * Serves keys carried inline in the configuration.
@@ -50,7 +51,7 @@ export class StaticKeySource implements IKeySource {
         // in the verifier is deliberate: a key source that hands back an HMAC
         // secret for an `RS256` header has already lost, whatever the caller
         // does next.
-        if (algorithm !== undefined && algorithm !== key.algorithm) {
+        if (CommonUtils.notUndefined(algorithm) && algorithm !== key.algorithm) {
             throw new StaticAlgorithmMismatchError(issuer, key.algorithm, algorithm);
         }
 

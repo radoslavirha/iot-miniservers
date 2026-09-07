@@ -57,10 +57,10 @@ This is also what keeps the design Kubernetes-agnostic. A ServiceAccount token i
 in the code; it is "an issuer whose JWKS fetch happens to need a bearer token", which is transport
 configuration. Delete that config row and the same binary runs on a VM.
 
-**One consequence for the application API.** In `disabled`, and in `permissive` with no token, there
-is no `Principal`. The injected value is therefore `Principal | undefined`, and **no synthetic
-"local-dev" principal is fabricated** — a fake subject in an audit column is worse than an empty one,
-because it is indistinguishable from a real subject later.
+**One consequence for the application API.** On an `@Anonymous()` route there is no `Principal`. The
+injected value is therefore `Principal | undefined`, and **no synthetic "local-dev" principal is
+fabricated** — a fake subject in an audit column is worse than an empty one, because it is
+indistinguishable from a real subject later.
 
 ## Caller classes
 
@@ -93,8 +93,8 @@ and deliberately unbuilt: there is no user-initiated cross-service call yet.
 - **`packages/auth`** — framework-free, `private: true`, exportable from day one. `ITokenVerifier`,
   multi-issuer JWKS verification over `jose.createRemoteJWKSet`, audience validation, subject →
   `Principal` mapping, Zod schemas in the style of `packages/http-provider/src/schemas/auth.schema.ts`.
-  **Zero Kubernetes imports.** Also the mode pipeline below, static-key issuer rows, the boot-time
-  issuer log, and the mode gauge and outcome counter. (The token-minting script that was listed here
+  **Zero Kubernetes imports.** Also static-key issuer rows, the boot-time issuer log, and the outcome
+  counter. (The token-minting script that was listed here
   is dropped — see P1.4.)
   Graduation checklist: [`2026-08-11-health-packages-graduation.md`](./2026-08-11-health-packages-graduation.md).
 - **`packages/tsed-auth`** — `@Authenticated()` / `@Scopes()`, injectable `Principal`, redaction
@@ -131,50 +131,73 @@ trustedIssuers:
 Same `jose.jwtVerify` call, same `Principal` out. Add a cluster, swap IdPs, or run with no Kubernetes
 at all — each is a config change.
 
-## Three modes, not an on/off switch
+## ~~Three modes, not an on/off switch~~ — no modes at all
 
-```
-auth.mode: disabled | permissive | enforced
-```
+**Superseded 2026-09-07. `AuthMode` is deleted; there is no `disabled`, no `permissive`, no
+`enforced`.** The section is kept because the reasoning against `enabled: false` still stands — it
+turned out to apply to the modes themselves.
 
-| Mode | Guard behaviour | Where it is for |
-| --- | --- | --- |
-| `disabled` | resolves immediately, no `Principal` | app not yet onboarded |
-| `permissive` | verifies, records the outcome, **does not reject** | production rollout; local dev with real tokens |
-| `enforced` | verifies, rejects | production, once permissive has been quiet |
+The case for three modes was that `permissive` answers "how many callers would this break" from real
+traffic, removing the big-bang cutover. That is worth a great deal where the callers are unknown. Here
+there are two UIs and one operator, every API is onboarded in a single release, and the deployment
+target tolerates downtime — so the observation window buys nothing that reading the config does not.
 
-A plain `enabled: false` was rejected for two reasons. It **fails open** — a missing ConfigMap key or a
-values file that forgot the block produces a running, healthy, unauthenticated API with no signal
-anywhere — and it is **indistinguishable from not-yet-onboarded**.
+`disabled` was justified by local development, and P1.F2 disproved it: `pnpm dev` completes a real
+login against the live IdP from the registered `localhost:5173` redirect URI, and the local API
+verifies those tokens against the live JWKS. There is nothing to disable. Where an IdP genuinely is
+not reachable, an inline HS256 issuer row verifies for real — which is what `config/test.json` does.
 
-`permissive` removes the big-bang cutover: turn it on in production, watch the outcome metric for
-`missing` and `invalid`, find the caller nobody remembered, then flip to `enforced`.
+**Deleting the mode is strictly safer, which is the part worth noticing.** The argument against
+`enabled: false` was that it fails open: a values file that forgets the block leaves a service up,
+healthy and unauthenticated. `mode` had exactly that hazard — `disabled` was the *default*, so a
+forgotten block failed open in precisely the way the three modes were introduced to prevent. With no
+mode there is no fail-open state left to reach.
 
-**Make the default state observable** — two lines of work that convert a fail-open default into a
-monitored one:
+What replaces it is a schema that cannot express "not really on":
 
-- a boot-time `WARN` naming the mode and every trusted issuer with its key source (also the answer to
-  "why is my token rejected" nine times in ten);
-- an OTel gauge — `auth.mode` as 0/1/2 per app — plus a counter on verification outcome
-  (`ok` / `missing` / `invalid` / `wrong-audience`). Alertable: *any production app not in `enforced`
-  after date X*.
+- the `auth` block **is** a map of named entries, not an array and not a wrapper around one, and a
+  service declares the names its routes use — `createAuthConfigSchema(Object.values(AuthMethod))`. A
+  config missing one fails to parse at boot naming `auth.IDP`. The array form could only count
+  elements after the fact. That schema is strict, so a `IPD` typo is rejected rather than stripped.
+- a name is **not** a mechanism. `AuthMethod.Idp` says which callers a route admits; the entry's
+  `type` (`VerifierType.BearerJwt`) says how they are checked. Naming entries after their mechanism
+  capped the design at one entry per mechanism, so a cluster's ServiceAccount token would have been
+  accepted on every route a person's token was — see the caller-classes table above.
+- **the names belong to the service.** `AuthMethod` is declared per API, beside `ExternalApi`, and
+  `packages/auth` takes plain strings. Which callers a deployment admits is not something a package
+  that may be published can name.
+- there is no `dummy` or `allow-all` verifier type, for the same reason there is no mode.
+- nothing else lives at that level. An `anonymousRoutes` list was tried and deleted — nothing enforced
+  it, so it was a second copy of what `@Anonymous()` already says, free to drift from it.
+- a `jwt` verifier must carry at least one trusted issuer, so "configured but verifies nothing" is
+  rejected by Zod rather than by a hand-written assertion.
+- `@Authenticate(AuthMethod.Idp)` takes the method as a **required** argument, so what a route asks
+  for and what the config must supply are the same enum.
+
+What survives from the observability half: the boot log naming every trusted issuer with its key
+source (the answer to "why is my token rejected" nine times in ten), and the `auth.verifications`
+counter labelled by outcome. The `auth.mode` gauge is deleted with the modes.
 
 ### Local development is an issuer row, never a bypass
 
-`config/localhost.json` carries `mode: enforced` — enforced *locally* — plus a static-key issuer row:
+`config/localhost.json` verifies for real. As shipped it points at the sandbox IdP's JWKS; where no
+IdP is reachable, a static-key row does the same job with no network — which is what
+`config/test.json` uses:
 
 ```jsonc
 "auth": {
-    "mode": "enforced",
-    "trustedIssuers": [
-        {
-            "name": "dev-local",
-            "issuer": "dev",
-            "key": { "source": "value", "algorithm": "HS256", "value": "local-dev-secret" },
-            "audience": "qr-manager-api",
-            "subjectKind": "service"
-        }
-    ]
+    "IDP": {
+        "type": "bearer-jwt",
+        "trustedIssuers": [
+            {
+                "name": "dev-local",
+                "issuer": "dev",
+                "key": { "source": "value", "algorithm": "HS256", "value": "local-dev-secret" },
+                "audience": "qr-manager-api",
+                "subjectKind": "service"
+            }
+        ]
+    }
 }
 ```
 
@@ -307,7 +330,7 @@ Package scaffolding for `packages/auth` — `package.json` (`private: true`), `t
 the graduation checklist. Then types and schemas, no logic:
 
 - `src/Principal.ts` — the shape above.
-- `src/AuthMode.ts` — `disabled | permissive | enforced`.
+- ~~`src/AuthMode.ts`~~ — **deleted 2026-09-07**, see the superseded modes section above.
 - `src/ITokenVerifier.ts` — credential material in, outcome out. **No JWT in the signature**, **async**,
   and the outcome type has room for "could not determine" — a JWKS fetch is I/O that can fail, and a
   transport failure is not a verification failure. This is what keeps `ApiKeyVerifier` and introspection
@@ -336,7 +359,7 @@ Dependencies declared upfront: `jose`, `zod`, `@opentelemetry/api`. `jose` is al
 | --- | --- | --- |
 | **P1.1** jwt core + static keys | `src/verifiers/JwtVerifier.ts`, `src/keys/StaticKeySource.ts` | Needs no infrastructure — HS256 with an inline key makes a full signed round trip locally |
 | **P1.2** remote JWKS | `src/keys/RemoteJwksSource.ts` | The IdP's JWKS is anonymously readable, so build the plain case first and the ServiceAccount-authenticated fetch second. Cache by `kid`, bounded refresh, **explicit timeout** — a blocked JWKS fetch is a hang, not a refusal |
-| **P1.3** mode pipeline + observability | mode gate, boot log, gauge, outcome counter | Uses P1.0's outcome strings verbatim |
+| **P1.3** ~~mode pipeline~~ + observability | boot log, outcome counter | Uses P1.0's outcome strings verbatim. The mode gate and `auth.mode` gauge were **removed 2026-09-07** — see the superseded section above |
 | ~~**P1.4** dev-token minting CLI~~ | — | **Dropped 2026-09-06.** Its purpose was Swagger's Authorize button; that workflow is not wanted, and `pnpm dev` already completes a real login against the live IdP from the registered `localhost:5173` redirect URI — a real RS256 token beats a minted HS256 one. Integration tests mint in-process with P1.0's `mintTestToken`, which needs no CLI |
 | **P1.5** `packages/tsed-auth` guard | guard, decorators, injectable `Principal` | Substance. Tests against `FakeTokenVerifier` |
 | **P1.6** OpenAPI security metadata | swaps `security: []` for the real scheme | Small |
@@ -385,9 +408,8 @@ real 401/403 tests are a different kind of work from package construction.
    an actuating HTTP device exists.
 2. **k8s SA vs IdP `client_credentials` for service-to-service** — start with SA tokens: no IdP
    dependency and no stored secrets. Both are issuer rows, so switching later is configuration.
-3. **Whether `disabled` survives Phase 1** — P1.F1 has landed and removed its original premise (that no
-   UI could hold a token), leaving only "no IdP reachable right now". Decide when P1.F2 lands; the
-   answer is plausibly "delete it".
+3. ~~**Whether `disabled` survives Phase 1**~~ — **Answered 2026-09-07: no.** All three modes are
+   deleted, not just `disabled`. See the superseded modes section.
 4. **How deep authorization goes in Phase 1** — plumbing only, or a config-driven subject → roles map.
    Recommendation: plumbing only. A roles table has no human subjects to hold until the IdP work lands.
 5. **Which app is onboarded first in Phase 1b** — see above.

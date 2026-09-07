@@ -758,6 +758,9 @@ importers:
       '@radoslavirha/resilience':
         specifier: workspace:*
         version: link:../../packages/resilience
+      '@radoslavirha/tsed-auth':
+        specifier: workspace:*
+        version: file:packages/tsed-auth(9fd47a0796369b6f25b99d073c512ec7)
       '@radoslavirha/tsed-common':
         specifier: 'catalog:'
         version: 0.5.8(@tsed/core@8.38.2)(@tsed/json-mapper@8.38.2(@tsed/core@8.38.2)(@tsed/schema@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/openspec@8.38.2)))(@tsed/schema@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/openspec@8.38.2))(zod@4.4.3)
@@ -942,6 +945,58 @@ importers:
       tslib:
         specifier: 'catalog:'
         version: 2.8.1
+      typescript-eslint:
+        specifier: 'catalog:'
+        version: 8.67.0(eslint@10.9.0)(typescript@6.0.3)
+      vitest:
+        specifier: 'catalog:'
+        version: 4.1.11(@opentelemetry/api@1.9.1)(@types/node@26.2.0)(@vitest/coverage-v8@4.1.11)(jsdom@30.0.1(@noble/hashes@1.8.0))(vite@8.2.2(@types/node@26.2.0)(esbuild@0.28.2)(yaml@2.9.0))
+
+  packages/auth:
+    dependencies:
+      '@opentelemetry/api':
+        specifier: catalog:otel
+        version: 1.9.1
+      '@radoslavirha/config-typescript':
+        specifier: 'catalog:'
+        version: 1.1.4(tslib@2.8.1)(typescript@6.0.3)
+      '@radoslavirha/utils':
+        specifier: 'catalog:'
+        version: 0.9.0
+      jose:
+        specifier: 'catalog:'
+        version: 6.2.10
+      typescript:
+        specifier: 'catalog:'
+        version: 6.0.3
+      zod:
+        specifier: 'catalog:'
+        version: 4.4.3
+    devDependencies:
+      '@opentelemetry/sdk-metrics':
+        specifier: catalog:otel
+        version: 2.10.0(@opentelemetry/api@1.9.1)
+      '@radoslavirha/config-eslint':
+        specifier: 'catalog:'
+        version: 0.4.7(eslint@10.9.0)(typescript@6.0.3)
+      '@radoslavirha/config-tsdown':
+        specifier: 'catalog:'
+        version: 0.2.3(tsdown@0.22.14(oxc-resolver@11.24.2)(typescript@6.0.3))
+      '@radoslavirha/config-vitest':
+        specifier: 'catalog:'
+        version: 0.4.5(@swc/core@1.16.1(@swc/helpers@0.5.23))(@vitest/coverage-v8@4.1.11)(esbuild@0.28.2)(rolldown@1.2.5)(vite@8.2.2(@types/node@26.2.0)(esbuild@0.28.2)(yaml@2.9.0))(vitest@4.1.11)
+      '@types/node':
+        specifier: 'catalog:'
+        version: 26.2.0
+      '@vitest/coverage-v8':
+        specifier: 'catalog:'
+        version: 4.1.11(vitest@4.1.11)
+      eslint:
+        specifier: 'catalog:'
+        version: 10.9.0
+      tsdown:
+        specifier: 'catalog:'
+        version: 0.22.14(oxc-resolver@11.24.2)(typescript@6.0.3)
       typescript-eslint:
         specifier: 'catalog:'
         version: 8.67.0(eslint@10.9.0)(typescript@6.0.3)
@@ -1219,6 +1274,76 @@ importers:
       mongoose:
         specifier: 'catalog:'
         version: 9.9.3(socks@2.8.9)
+      tsdown:
+        specifier: 'catalog:'
+        version: 0.22.14(oxc-resolver@11.24.2)(typescript@6.0.3)
+      typescript-eslint:
+        specifier: 'catalog:'
+        version: 8.67.0(eslint@10.9.0)(typescript@6.0.3)
+      vitest:
+        specifier: 'catalog:'
+        version: 4.1.11(@opentelemetry/api@1.9.1)(@types/node@26.2.0)(@vitest/coverage-v8@4.1.11)(jsdom@30.0.1(@noble/hashes@1.8.0))(vite@8.2.2(@types/node@26.2.0)(esbuild@0.28.2)(yaml@2.9.0))
+
+  packages/tsed-auth:
+    dependencies:
+      '@radoslavirha/auth':
+        specifier: workspace:*
+        version: link:../auth
+      '@radoslavirha/config-typescript':
+        specifier: 'catalog:'
+        version: 1.1.4(tslib@2.8.1)(typescript@6.0.3)
+      '@radoslavirha/tsed-swagger':
+        specifier: 'catalog:'
+        version: 9.1.5(8847d033c5bb1f54c814baea4e299e8a)
+      '@radoslavirha/utils':
+        specifier: 'catalog:'
+        version: 0.9.0
+      '@swc/helpers':
+        specifier: catalog:swc
+        version: 0.5.23
+      typescript:
+        specifier: 'catalog:'
+        version: 6.0.3
+    devDependencies:
+      '@radoslavirha/config-eslint':
+        specifier: 'catalog:'
+        version: 0.4.7(eslint@10.9.0)(typescript@6.0.3)
+      '@radoslavirha/config-tsdown':
+        specifier: 'catalog:'
+        version: 0.2.3(tsdown@0.22.14(oxc-resolver@11.24.2)(typescript@6.0.3))
+      '@radoslavirha/config-vitest':
+        specifier: 'catalog:'
+        version: 0.4.5(@swc/core@1.16.1(@swc/helpers@0.5.23))(@vitest/coverage-v8@4.1.11)(esbuild@0.28.2)(rolldown@1.2.5)(vite@8.2.2(@types/node@26.2.0)(esbuild@0.28.2)(yaml@2.9.0))(vitest@4.1.11)
+      '@tsed/core':
+        specifier: catalog:tsed
+        version: 8.38.2
+      '@tsed/di':
+        specifier: catalog:tsed
+        version: 8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/logger@8.0.5)
+      '@tsed/exceptions':
+        specifier: catalog:tsed
+        version: 8.38.2(@tsed/core@8.38.2)
+      '@tsed/platform-http':
+        specifier: catalog:tsed
+        version: 8.38.2(@tsed/engines@8.38.2)(@tsed/logger@8.0.5)(@tsed/openspec@8.38.2)(@types/multer@2.2.0)
+      '@tsed/platform-middlewares':
+        specifier: catalog:tsed
+        version: 8.38.2(@tsed/core@8.38.2)(@tsed/di@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/logger@8.0.5))(@tsed/schema@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/openspec@8.38.2))
+      '@tsed/platform-params':
+        specifier: catalog:tsed
+        version: 8.38.2(@tsed/core@8.38.2)(@tsed/di@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/logger@8.0.5))(@tsed/exceptions@8.38.2(@tsed/core@8.38.2))(@tsed/json-mapper@8.38.2(@tsed/core@8.38.2)(@tsed/schema@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/openspec@8.38.2)))(@tsed/schema@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/openspec@8.38.2))
+      '@tsed/schema':
+        specifier: catalog:tsed
+        version: 8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/openspec@8.38.2)
+      '@types/node':
+        specifier: 'catalog:'
+        version: 26.2.0
+      '@vitest/coverage-v8':
+        specifier: 'catalog:'
+        version: 4.1.11(vitest@4.1.11)
+      eslint:
+        specifier: 'catalog:'
+        version: 10.9.0
       tsdown:
         specifier: 'catalog:'
         version: 0.22.14(oxc-resolver@11.24.2)(typescript@6.0.3)
@@ -3005,6 +3130,11 @@ packages:
   '@quansync/fs@1.0.0':
     resolution: {integrity: sha512-4TJ3DFtlf1L5LDMaM6CanJ/0lckGNtJcMjQ1NAV6zDmA0tEHKZtxNKin8EgPaVX1YzljbxckyT2tJrpQKAtngQ==}
 
+  '@radoslavirha/auth@file:packages/auth':
+    resolution: {directory: packages/auth, type: directory}
+    peerDependencies:
+      '@opentelemetry/api': catalog:otel
+
   '@radoslavirha/config-eslint@0.4.7':
     resolution: {integrity: sha512-ptkUIl6bv8uVOXD2A+u1RHwh5BrTNLFr0vbdJFA8Qzxs+iCAfZoKDNOhouEYCSWatHHyGcot22vmTyrneU/QAA==, tarball: https://npm.pkg.github.com/download/@radoslavirha/config-eslint/0.4.7/881021338e7ff519e8a89836506866ec09080bba}
     engines: {node: '>= 24', pnpm: '>= 11.8'}
@@ -3051,6 +3181,18 @@ packages:
 
   '@radoslavirha/resilience@file:packages/resilience':
     resolution: {directory: packages/resilience, type: directory}
+
+  '@radoslavirha/tsed-auth@file:packages/tsed-auth':
+    resolution: {directory: packages/tsed-auth, type: directory}
+    engines: {node: '>= 24', pnpm: '>= 11.8'}
+    peerDependencies:
+      '@tsed/core': catalog:tsed
+      '@tsed/di': catalog:tsed
+      '@tsed/exceptions': catalog:tsed
+      '@tsed/platform-http': catalog:tsed
+      '@tsed/platform-middlewares': catalog:tsed
+      '@tsed/platform-params': catalog:tsed
+      '@tsed/schema': catalog:tsed
 
   '@radoslavirha/tsed-common@0.5.8':
     resolution: {integrity: sha512-/Pj+9vwlcVjZ1atQd5J2i46ISV9DPMoESv3M9bqaxi51gh91w4oPtCmsC/3+EW3EfohXGu0dtsqJqBMejJFFBw==, tarball: https://npm.pkg.github.com/download/@radoslavirha/tsed-common/0.5.8/0dbe713325f8481c4da8ced801d0c28a71c8e942}
@@ -7972,6 +8114,17 @@ snapshots:
     dependencies:
       quansync: 1.0.0
 
+  '@radoslavirha/auth@file:packages/auth(@opentelemetry/api@1.9.1)(tslib@2.8.1)':
+    dependencies:
+      '@opentelemetry/api': 1.9.1
+      '@radoslavirha/config-typescript': 1.1.4(tslib@2.8.1)(typescript@6.0.3)
+      '@radoslavirha/utils': 0.9.0
+      jose: 6.2.10
+      typescript: 6.0.3
+      zod: 4.4.3
+    transitivePeerDependencies:
+      - tslib
+
   '@radoslavirha/config-eslint@0.4.7(eslint@10.9.0(supports-color@5.5.0))(typescript@6.0.3)':
     dependencies:
       '@stylistic/eslint-plugin': 5.10.0(eslint@10.9.0(supports-color@5.5.0))
@@ -8048,6 +8201,32 @@ snapshots:
       typescript: 6.0.3
       zod: 4.4.3
     transitivePeerDependencies:
+      - tslib
+
+  '@radoslavirha/tsed-auth@file:packages/tsed-auth(9fd47a0796369b6f25b99d073c512ec7)':
+    dependencies:
+      '@radoslavirha/auth': file:packages/auth(@opentelemetry/api@1.9.1)(tslib@2.8.1)
+      '@radoslavirha/config-typescript': 1.1.4(tslib@2.8.1)(typescript@6.0.3)
+      '@radoslavirha/tsed-swagger': 9.1.5(8847d033c5bb1f54c814baea4e299e8a)
+      '@radoslavirha/utils': 0.9.0
+      '@swc/helpers': 0.5.23
+      '@tsed/core': 8.38.2
+      '@tsed/di': 8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/logger@8.0.5)
+      '@tsed/exceptions': 8.38.2(@tsed/core@8.38.2)
+      '@tsed/platform-http': 8.38.2(@tsed/engines@8.38.2)(@tsed/logger@8.0.5)(@tsed/openspec@8.38.2)(@types/multer@2.2.0)
+      '@tsed/platform-middlewares': 8.38.2(@tsed/core@8.38.2)(@tsed/di@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/logger@8.0.5))(@tsed/schema@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/openspec@8.38.2))
+      '@tsed/platform-params': 8.38.2(@tsed/core@8.38.2)(@tsed/di@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/logger@8.0.5))(@tsed/exceptions@8.38.2(@tsed/core@8.38.2))(@tsed/json-mapper@8.38.2(@tsed/core@8.38.2)(@tsed/schema@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/openspec@8.38.2)))(@tsed/schema@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/openspec@8.38.2))
+      '@tsed/schema': 8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/openspec@8.38.2)
+      typescript: 6.0.3
+    transitivePeerDependencies:
+      - '@opentelemetry/api'
+      - '@radoslavirha/tsed-configuration'
+      - '@radoslavirha/tsed-logger'
+      - '@radoslavirha/tsed-platform'
+      - '@tsed/json-mapper'
+      - '@tsed/openspec'
+      - '@tsed/platform-views'
+      - '@tsed/swagger'
       - tslib
 
   '@radoslavirha/tsed-common@0.5.8(@tsed/core@8.38.2)(@tsed/json-mapper@8.38.2(@tsed/core@8.38.2)(@tsed/schema@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/openspec@8.38.2)))(@tsed/schema@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/openspec@8.38.2))(zod@4.4.3)':

@@ -35,6 +35,8 @@
     "dependencies": {
         "@radoslavirha/auth": "workspace:*",
         "@radoslavirha/config-typescript": "catalog:",
+        "@radoslavirha/tsed-swagger": "catalog:",
+        "@radoslavirha/utils": "catalog:",
         "@swc/helpers": "catalog:swc",
         "typescript": "catalog:"
     },

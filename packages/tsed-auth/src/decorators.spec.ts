@@ -3,12 +3,13 @@ import { Store } from '@tsed/core';
 import { Get } from '@tsed/schema';
 import { Controller } from '@tsed/di';
 import { AuthGuard } from './AuthGuard.js';
+import { TEST_METHOD } from '@radoslavirha/auth';
 import { Anonymous, Authenticate, CurrentPrincipal } from './decorators.js';
 import type { AuthGuardOptions } from './AuthGuard.js';
 import type { Principal } from '@radoslavirha/auth';
 
 @Controller('/things')
-@Authenticate()
+@Authenticate(TEST_METHOD)
 class ProtectedController {
     @Get('/')
     list(@CurrentPrincipal() principal: Principal | undefined): string {
@@ -51,5 +52,28 @@ describe('@CurrentPrincipal', () => {
         // The decorator's real behaviour is the pipe's, which has its own spec;
         // what matters here is that composing it onto a parameter is valid.
         expect(Store.fromMethod(ProtectedController, 'list')).toBeDefined();
+    });
+});
+
+describe('@Authenticate(method)', () => {
+    @Controller('/devices')
+    @Authenticate(TEST_METHOD)
+    class ExplicitController {
+        @Get('/')
+        list(): string {
+            return '';
+        }
+    }
+
+    it('records the method the route asked for', () => {
+        const options = Store.fromMethod(ExplicitController, 'list').get(AuthGuard) as { method?: string };
+
+        expect(options.method).toBe(TEST_METHOD);
+    });
+
+    it('is required, so no route can be guarded without saying by what', () => {
+        // A compile-time guarantee, restated at runtime: the guard refuses an
+        // endpoint whose store carries no method rather than letting it through.
+        expect(guardOptionsOn('list')?.method).toBe(TEST_METHOD);
     });
 });

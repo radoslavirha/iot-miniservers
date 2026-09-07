@@ -1,5 +1,7 @@
-import { VerificationReason } from '@radoslavirha/auth';
+import { AuthConfigurationError, VerificationReason } from '@radoslavirha/auth';
+import { CommonUtils, StringUtils } from '@radoslavirha/utils';
 import type { Principal } from '@radoslavirha/auth';
+import { inject } from '@tsed/di';
 import { ServiceUnavailable, Unauthorized } from '@tsed/exceptions';
 import { Middleware } from '@tsed/platform-middlewares';
 import { Context } from '@tsed/platform-params';
@@ -29,24 +31,47 @@ export interface AuthGuardOptions {
      * leave it open and silent.
      */
     readonly anonymous?: boolean;
+    /**
+     * Which named set of callers this endpoint admits.
+     *
+     * Carried per endpoint rather than per service, so one API can admit its
+     * people on admin routes and a device fleet elsewhere without either
+     * learning about the other. Required, and set by `@Authenticate(method)` — a
+     * default would silently pick one for a route that meant to ask for another.
+     *
+     * A `string`, because the names belong to the service: it declares its own
+     * enum and uses it here and in `createAuthConfigSchema`, so the two cannot
+     * disagree.
+     */
+    readonly method?: string;
 }
 
 /**
  * Turns the framework-agnostic decision into an HTTP outcome.
  *
  * All the policy lives in `Authenticator`; this class only knows how to read a
- * header, throw the right exception, and park the principal. That is why the
- * three modes are testable without a server.
+ * header, throw the right exception, and park the principal. That is why every
+ * outcome is testable without a server.
  */
 @Middleware()
 export class AuthGuard {
     /**
-     * Constructor injection rather than `@Inject()` on a property: the property
-     * decorator installs a getter-only accessor, so a test cannot substitute a
-     * verifier without going through the DI container. Ts.ED resolves this from
-     * `design:paramtypes` exactly the same way.
+     * Resolved per call rather than injected as a field.
+     *
+     * Ts.ED gives a `@Middleware()` neither constructor injection nor a working
+     * `@Inject()` property here: the constructor argument arrives `undefined`,
+     * and the property form resolves the token but yields `undefined` at call
+     * time. Both produce a 500 where a 401 belongs, on the very first guarded
+     * request. `inject()` resolves from the active container when the request is
+     * actually being handled, which is the one form that works.
+     *
+     * Hand-built unit tests cannot see any of this, because they supply the
+     * dependency themselves. It took an integration test through the real
+     * container to surface it — twice.
      */
-    public constructor(protected readonly authenticator: AuthenticationService) {}
+    protected authenticator(): AuthenticationService {
+        return inject(AuthenticationService);
+    }
 
     async use(@Context() ctx: PlatformContext): Promise<void> {
         const options = ctx.endpoint?.store.get(AuthGuard) as AuthGuardOptions | undefined;
@@ -57,19 +82,25 @@ export class AuthGuard {
             return;
         }
 
-        const decision = await this.authenticator.authenticate(bearerFrom(ctx.request.get('authorization')));
+        if (CommonUtils.isUndefined(options?.method)) {
+            // The guard ran on a route that never said what it wanted verified,
+            // which means it was wired up by hand rather than by `@Authenticate`.
+            // Loud, because the alternative is a route silently open.
+            throw new AuthConfigurationError(
+                'AuthGuard ran on an endpoint with no auth method; use @Authenticate(method) or @Anonymous().'
+            );
+        }
+
+        const decision = await this.authenticator().authenticate(
+            bearerFrom(ctx.request.get('authorization')),
+            options.method
+        );
 
         if (!decision.allowed) {
             throw exceptionFor(decision.reason);
         }
 
-        // Absent in `disabled`, and in `permissive` when nothing verified. The
-        // context simply has no principal then — no placeholder is invented,
-        // because a fabricated subject in an audit column is worse than an empty
-        // one.
-        if (decision.principal !== undefined) {
-            ctx.set(PRINCIPAL_CONTEXT_KEY, decision.principal);
-        }
+        ctx.set(PRINCIPAL_CONTEXT_KEY, decision.principal);
     }
 }
 
@@ -84,7 +115,7 @@ export class AuthGuard {
  * case-insensitive, and clients do send `bearer`.
  */
 export const bearerFrom = (header: string | undefined): string | undefined => {
-    if (header === undefined) {
+    if (!StringUtils.isNotEmpty(header)) {
         return undefined;
     }
 

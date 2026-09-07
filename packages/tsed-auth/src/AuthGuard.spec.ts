@@ -1,21 +1,35 @@
 import { describe, expect, it, vi } from 'vitest';
-import { AuthConfigSchema, FakeTokenVerifier, VerificationReason, failureOutcome, successOutcome } from '@radoslavirha/auth';
+import {
+    AuthConfigSchema,
+    AuthConfigurationError,
+    FakeTokenVerifier,
+    VerificationReason,
+    failureOutcome,
+    successOutcome,
+    verifiersFor,
+    VerifierType,
+    TEST_METHOD
+} from '@radoslavirha/auth';
 import type { Principal } from '@radoslavirha/auth';
 import { ServiceUnavailable, Unauthorized } from '@tsed/exceptions';
 import type { PlatformContext } from '@tsed/platform-http';
 import { AuthGuard, PRINCIPAL_CONTEXT_KEY, bearerFrom, principalOf } from './AuthGuard.js';
 import { AuthenticationService } from './AuthenticationService.js';
 
-const config = (mode: string) =>
-    AuthConfigSchema.parse({
-        mode,
+const config = AuthConfigSchema.parse({
+    [TEST_METHOD]: {
+        type: VerifierType.BearerJwt,
         trustedIssuers: [{
             name: 'dev-local',
             issuer: 'dev',
             audience: 'my-api',
             key: { source: 'value', algorithm: 'HS256', value: 'secret' }
         }]
-    });
+    }
+});
+
+/** The store `@Authenticate(TEST_METHOD)` writes onto every endpoint. */
+const GUARDED = { method: TEST_METHOD };
 
 /**
  * A stand-in for the bits of `PlatformContext` the guard touches. Booting a
@@ -36,7 +50,12 @@ const contextOf = (header?: string, endpointOptions?: unknown) => {
     } as unknown as PlatformContext;
 };
 
-const guardWith = (service: AuthenticationService): AuthGuard => new AuthGuard(service);
+const guardWith = (service: AuthenticationService): AuthGuard => {
+    const guard = new AuthGuard();
+    // Stands in for the container: the guard resolves its service per call.
+    Object.defineProperty(guard, 'authenticator', { value: () => service, configurable: true });
+    return guard;
+};
 
 describe('bearerFrom', () => {
     it('extracts the token from a bearer header', () => {
@@ -71,8 +90,8 @@ describe('bearerFrom', () => {
 describe('AuthGuard', () => {
     it('parks the principal on the context when verification succeeds', async () => {
         const principal: Partial<Principal> = { subject: 'radoslav' };
-        const service = new AuthenticationService(config('enforced'), new FakeTokenVerifier(successOutcome(principal)));
-        const ctx = contextOf('Bearer a-token');
+        const service = new AuthenticationService(config, verifiersFor(new FakeTokenVerifier(successOutcome(principal))));
+        const ctx = contextOf('Bearer a-token', GUARDED);
 
         await guardWith(service).use(ctx);
 
@@ -81,41 +100,32 @@ describe('AuthGuard', () => {
 
     it('hands the extracted token to the verifier, not the whole header', async () => {
         const verifier = new FakeTokenVerifier(successOutcome());
-        const service = new AuthenticationService(config('enforced'), verifier);
+        const service = new AuthenticationService(config, verifiersFor(verifier));
 
-        await guardWith(service).use(contextOf('Bearer a-token'));
+        await guardWith(service).use(contextOf('Bearer a-token', GUARDED));
 
         expect(verifier.seen).toEqual(['a-token']);
     });
 
     it('throws Unauthorized when the credential is refused', async () => {
-        const service = new AuthenticationService(
-            config('enforced'),
-            new FakeTokenVerifier(failureOutcome(VerificationReason.Invalid, 'bad signature'))
-        );
+        const service = new AuthenticationService(config, verifiersFor(new FakeTokenVerifier(failureOutcome(VerificationReason.Invalid, 'bad signature'))));
 
-        await expect(guardWith(service).use(contextOf('Bearer nope'))).rejects.toBeInstanceOf(Unauthorized);
+        await expect(guardWith(service).use(contextOf('Bearer nope', GUARDED))).rejects.toBeInstanceOf(Unauthorized);
     });
 
     it('throws ServiceUnavailable when verification could not be attempted', async () => {
         // Our problem, not the caller's. A 401 here would blame a token that was
         // never at fault, and is not retriable.
-        const service = new AuthenticationService(
-            config('enforced'),
-            new FakeTokenVerifier(failureOutcome(VerificationReason.Indeterminate, 'JWKS timeout'))
-        );
+        const service = new AuthenticationService(config, verifiersFor(new FakeTokenVerifier(failureOutcome(VerificationReason.Indeterminate, 'JWKS timeout'))));
 
-        await expect(guardWith(service).use(contextOf('Bearer t'))).rejects.toBeInstanceOf(ServiceUnavailable);
+        await expect(guardWith(service).use(contextOf('Bearer t', GUARDED))).rejects.toBeInstanceOf(ServiceUnavailable);
     });
 
     it('does not leak the operator-facing detail to the caller', async () => {
-        const service = new AuthenticationService(
-            config('enforced'),
-            new FakeTokenVerifier(failureOutcome(VerificationReason.WrongAudience, 'aud was other-api'))
-        );
+        const service = new AuthenticationService(config, verifiersFor(new FakeTokenVerifier(failureOutcome(VerificationReason.WrongAudience, 'aud was other-api'))));
 
         const error = await guardWith(service)
-            .use(contextOf('Bearer t'))
+            .use(contextOf('Bearer t', GUARDED))
             .then(() => undefined, (e: unknown) => e as Error);
 
         // Telling an attacker which part of the forgery to fix is a gift.
@@ -126,7 +136,7 @@ describe('AuthGuard', () => {
 
     it('skips everything for an endpoint marked anonymous', async () => {
         const verifier = new FakeTokenVerifier(failureOutcome(VerificationReason.Missing));
-        const service = new AuthenticationService(config('enforced'), verifier);
+        const service = new AuthenticationService(config, verifiersFor(verifier));
         const ctx = contextOf(undefined, { anonymous: true });
 
         await expect(guardWith(service).use(ctx)).resolves.toBeUndefined();
@@ -135,39 +145,36 @@ describe('AuthGuard', () => {
     });
 
     it('protects an endpoint that carries other options but not anonymous', async () => {
-        const service = new AuthenticationService(
-            config('enforced'),
-            new FakeTokenVerifier(failureOutcome(VerificationReason.Missing))
-        );
+        const service = new AuthenticationService(config, verifiersFor(new FakeTokenVerifier(failureOutcome(VerificationReason.Missing))));
 
-        await expect(guardWith(service).use(contextOf(undefined, { role: 'admin' })))
+        await expect(guardWith(service).use(contextOf(undefined, { ...GUARDED, role: 'admin' })))
             .rejects.toBeInstanceOf(Unauthorized);
     });
 
-    it('allows and parks nobody in permissive when the credential fails', async () => {
-        const service = new AuthenticationService(
-            config('permissive'),
-            new FakeTokenVerifier(failureOutcome(VerificationReason.Missing))
-        );
-        const ctx = contextOf(undefined);
+    it('parks no principal when the credential is refused', async () => {
+        const service = new AuthenticationService(config, verifiersFor(new FakeTokenVerifier(failureOutcome(VerificationReason.Missing))));
+        const ctx = contextOf(undefined, GUARDED);
 
-        await expect(guardWith(service).use(ctx)).resolves.toBeUndefined();
-        // No placeholder principal is invented.
+        await expect(guardWith(service).use(ctx)).rejects.toBeInstanceOf(Unauthorized);
+        // No placeholder principal is invented — a fabricated subject in an
+        // audit column is worse than an empty one.
         expect(principalOf(ctx)).toBeUndefined();
     });
 
-    it('allows without verifying at all when disabled', async () => {
-        const verifier = new FakeTokenVerifier();
-        const service = new AuthenticationService(AuthConfigSchema.parse({}), verifier);
-        const ctx = contextOf('Bearer t');
+    it('refuses rather than allowing when nothing is configured to verify with', async () => {
+        // The state a disable flag or an observe-only mode used to make
+        // survivable. It is now a loud error, so a values file that dropped the
+        // auth block cannot leave a guarded route open.
+        const service = new AuthenticationService(AuthConfigSchema.parse({}));
 
-        await expect(guardWith(service).use(ctx)).resolves.toBeUndefined();
-        expect(verifier.seen).toEqual([]);
-        expect(principalOf(ctx)).toBeUndefined();
+        await expect(guardWith(service).use(contextOf('Bearer t', GUARDED)))
+            .rejects.toBeInstanceOf(AuthConfigurationError);
     });
 
-    it('survives an endpoint with no store, which is how a non-endpoint context arrives', async () => {
-        const service = new AuthenticationService(config('permissive'), new FakeTokenVerifier(successOutcome()));
+    it('fails loudly on an endpoint that named no method, rather than letting it through', async () => {
+        // Only reachable by wiring the middleware by hand instead of using
+        // @Authenticate. Allowing it would be a silently public route.
+        const service = new AuthenticationService(config, verifiersFor(new FakeTokenVerifier(successOutcome())));
         const ctx = {
             request: { get: () => 'Bearer t' },
             endpoint: undefined,
@@ -175,7 +182,7 @@ describe('AuthGuard', () => {
             get: vi.fn()
         } as unknown as PlatformContext;
 
-        await expect(guardWith(service).use(ctx)).resolves.toBeUndefined();
+        await expect(guardWith(service).use(ctx)).rejects.toBeInstanceOf(AuthConfigurationError);
     });
 });
 

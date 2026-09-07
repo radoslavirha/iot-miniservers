@@ -1,22 +1,24 @@
-import { AuthMode } from './AuthMode.js';
+import { CommonUtils } from '@radoslavirha/utils';
+import { VerifierType } from './VerifierType.js';
 import { recordVerification } from './authTelemetry.js';
+import { createKeySource } from './keys/createKeySource.js';
+import { JwtVerifier } from './verifiers/JwtVerifier.js';
 import type { ITokenVerifier } from './ITokenVerifier.js';
 import type { Principal } from './Principal.js';
-import type { AuthConfig } from './schemas/auth.schema.js';
+import type { AuthConfig, VerifierConfig } from './schemas/auth.schema.js';
 import { VerificationReason, type VerificationOutcome } from './VerificationOutcome.js';
 
 /**
  * What the caller should do with a request, once the credential has been
  * considered.
  *
- * `allowed` and `principal` are separate because they genuinely come apart: in
- * `disabled`, and in `permissive` with no credential, the request proceeds and
- * there is nobody to attribute it to. No synthetic "local-dev" principal is
- * ever fabricated — a fake subject in an audit column is worse than an empty
- * one, because it is indistinguishable from a real one later.
+ * `allowed` and `principal` are separate because a refusal has nobody to
+ * attribute. No synthetic "local-dev" principal is ever fabricated — a fake
+ * subject in an audit column is worse than an empty one, because it is
+ * indistinguishable from a real one later.
  */
 export type AuthDecision =
-    | { readonly allowed: true; readonly principal?: Principal; readonly reason: VerificationReason }
+    | { readonly allowed: true; readonly principal: Principal; readonly reason: typeof VerificationReason.Ok }
     | {
         readonly allowed: false;
         readonly reason: Exclude<VerificationReason, typeof VerificationReason.Ok>;
@@ -26,52 +28,61 @@ export type AuthDecision =
     };
 
 /**
- * Runs the configured mode over a credential.
+ * Runs a credential past the verifier the route asked for.
  *
- * Framework-agnostic on purpose: this decides, and something else — P1.5's
- * Ts.ED guard, an MQTT hook, a test — applies the decision. That split is what
- * keeps the three modes testable without a server.
+ * Framework-agnostic on purpose: this decides, and something else — the Ts.ED
+ * guard, an MQTT hook, a test — applies the decision. That split is what keeps
+ * every outcome testable without a server.
+ *
+ * There is no "allow anyway" path. A credential verifies or the request is
+ * refused; whether a route is guarded at all is decided at the route, by
+ * `@Authenticate()` or `@Anonymous()`, where it is visible in the source.
  */
 export class Authenticator {
-    readonly #mode: AuthMode;
-    readonly #verifier: ITokenVerifier;
+    readonly #verifiers: AuthVerifiers;
 
-    constructor(config: AuthConfig, verifier: ITokenVerifier) {
-        assertUsableConfig(config);
-        this.#mode = config.mode;
-        this.#verifier = verifier;
+    /**
+     * `verifiers` is a parameter so a test can inject fakes and drive outcomes a
+     * real verifier can barely be made to produce — `indeterminate` in
+     * particular. Left out, one is built per configured method.
+     */
+    constructor(config: AuthConfig, verifiers: AuthVerifiers = buildVerifiers(config)) {
+        this.#verifiers = verifiers;
     }
 
-    get mode(): AuthMode {
-        return this.#mode;
+    /** Which named methods this service can actually verify. Used by the boot log. */
+    get methods(): readonly string[] {
+        return [...this.#verifiers.keys()];
     }
 
     /**
      * `credential` is whatever the transport extracted, or `undefined` when it
      * found nothing. Extraction is the transport's job; this never sees a
      * request.
+     *
+     * `method` is required rather than defaulted: the route says which set of
+     * callers it admits, and a default here would silently pick one for a route
+     * that asked for something else. It is the service's own name — this package
+     * defines no vocabulary of them, because which callers a deployment admits is
+     * not a shared concern.
      */
-    async authenticate(credential: string | undefined): Promise<AuthDecision> {
-        // Not merely "allow": `disabled` does not verify at all. Verifying and
-        // discarding the answer would put a JWKS fetch on the request path of a
-        // service that has explicitly opted out.
-        if (this.#mode === AuthMode.Disabled) {
-            return { allowed: true, reason: VerificationReason.Ok };
+    async authenticate(credential: string | undefined, method: string): Promise<AuthDecision> {
+        const verifier = this.#verifiers.get(method);
+        if (CommonUtils.isUndefined(verifier)) {
+            // A route asked for a method this service was not configured for.
+            // Programmer or deployment error, not a caller's — so it is loud
+            // rather than a 401 that would send someone hunting for a bad token.
+            // Configuring with `createAuthConfigSchema` moves this to boot time.
+            throw new AuthConfigurationError(
+                `No verifier is configured for auth method '${method}'.`
+            );
         }
 
-        const outcome = await this.#verifier.verify(credential ?? '');
+        const outcome = await verifier.verify(credential ?? '');
         recordVerification(outcome.reason, issuerOf(outcome));
 
         if (outcome.reason === VerificationReason.Ok) {
             return { allowed: true, principal: outcome.principal, reason: outcome.reason };
-        }
-
-        // The point of `permissive`: the outcome is counted, and the request is
-        // let through anyway. It answers "how many callers would this break"
-        // with real traffic instead of a guess, which is what removes the
-        // big-bang cutover.
-        if (this.#mode === AuthMode.Permissive) {
-            return { allowed: true, reason: outcome.reason };
         }
 
         return {
@@ -82,6 +93,35 @@ export class Authenticator {
         };
     }
 }
+
+/**
+ * One verifier per configured entry, filed under the entry's name.
+ *
+ * The name is what a route asks for; the entry's `type` is what decides which
+ * verifier is built. Two entries may share a type — the IdP's tokens and a
+ * cluster's — and each gets its own verifier over its own trusted issuers, which
+ * is the whole reason the two are separate.
+ *
+ * The `switch` is exhaustive over `VerifierType`, so adding a member makes this
+ * fail to compile until its verifier exists.
+ */
+export const buildVerifiers = (config: AuthConfig): AuthVerifiers => {
+    const built = new Map<string, ITokenVerifier>();
+
+    for (const [method, entry] of Object.entries(config) as [string, VerifierConfig | undefined][]) {
+        if (CommonUtils.isUndefined(entry)) {
+            continue;
+        }
+
+        switch (entry.type) {
+            case VerifierType.BearerJwt:
+                built.set(method, new JwtVerifier(entry.trustedIssuers, createKeySource(entry.trustedIssuers)));
+                break;
+        }
+    }
+
+    return built;
+};
 
 /**
  * HTTP status for a refusal.
@@ -103,21 +143,8 @@ export const statusForReason = (reason: VerificationReason): number => {
     }
 };
 
-/**
- * Refuses a configuration that cannot do what it claims.
- *
- * `enforced` with no trusted issuers verifies nothing and therefore rejects
- * every request. Failing at boot turns that into one loud startup error instead
- * of a service that is up, healthy, and refusing all traffic — which reads as a
- * network fault and gets debugged for an hour.
- */
-export const assertUsableConfig = (config: AuthConfig): void => {
-    if (config.mode !== AuthMode.Disabled && config.trustedIssuers.length === 0) {
-        throw new AuthConfigurationError(
-            `auth.mode is '${config.mode}' but no trustedIssuers are configured; nothing could ever be verified.`
-        );
-    }
-};
+/** The verifiers a service has, addressed by the name a route asks for. */
+export type AuthVerifiers = ReadonlyMap<string, ITokenVerifier>;
 
 export class AuthConfigurationError extends Error {
     constructor(message: string) {

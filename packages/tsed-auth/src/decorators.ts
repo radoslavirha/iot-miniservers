@@ -2,21 +2,21 @@ import { Store, decorateMethodsOf, decoratorTypeOf, DecoratorTypes, useDecorator
 import { UseAuth } from '@tsed/platform-middlewares';
 import { ParamTypes, UseParam, UsePipe } from '@tsed/platform-params';
 import { Returns, Security } from '@tsed/schema';
+import { SwaggerSecurityScheme } from '@radoslavirha/tsed-swagger';
 import { AuthGuard } from './AuthGuard.js';
 import type { AuthGuardOptions } from './AuthGuard.js';
 import { PrincipalPipe } from './PrincipalPipe.js';
 
 /**
- * Name of the OpenAPI security scheme these decorators reference.
+ * The OpenAPI security scheme these decorators reference.
  *
- * It matches `SwaggerSecurityScheme.BEARER_JWT` from `@radoslavirha/tsed-swagger`,
- * which defines the scheme itself as `{ type: http, scheme: bearer, bearerFormat:
- * JWT }`. The literal is repeated here rather than imported so this package does
- * not depend on the swagger one — a service that documents nothing still gets a
- * working guard, and the two only have to agree on a string that is part of the
- * published OpenAPI document anyway.
+ * Taken from `@radoslavirha/tsed-swagger`, which owns the scheme and maps it to
+ * `{ type: http, scheme: bearer, bearerFormat: JWT }` under
+ * `components.securitySchemes`. Re-exported so a service can name it without a
+ * second import, and so the operation-level reference and the document-level
+ * definition are provably the same value rather than two matching literals.
  */
-export const BEARER_JWT_SCHEME = 'BEARER_JWT';
+export const BEARER_JWT_SCHEME = SwaggerSecurityScheme.BEARER_JWT;
 
 /**
  * Requires a verified caller, and says so in the OpenAPI document.
@@ -27,17 +27,30 @@ export const BEARER_JWT_SCHEME = 'BEARER_JWT';
  * moment it is written. Protecting method by method is the arrangement where the
  * next route is one forgotten decorator away from being public.
  *
- * What "requires" means depends on the configured mode: in `disabled` nothing is
- * checked, in `permissive` the outcome is counted and the request proceeds, and
- * only in `enforced` is anyone refused. The decorator does not change per mode —
- * the whole point is that the same code runs in all three.
- *
  * Everything it adds to the document is standard OpenAPI 3: a `security`
  * requirement naming the bearer scheme, and the two responses a caller can
  * actually receive from the guard. No vendor extensions, nothing invented.
+ *
+ * ```ts
+ * @Controller('/qr-codes')
+ * @Authenticate(AuthMethod.Idp)
+ * export class QrCodeController { }
+ * ```
+ *
+ * **The method is required, and it names callers rather than a mechanism.** It
+ * says which set of callers the endpoint admits; how their credentials are
+ * checked is the `type` inside that entry's configuration. So an endpoint can
+ * admit a deployment's people without also admitting its cluster's
+ * ServiceAccount tokens, even though both arrive as JWTs.
+ *
+ * `AuthMethod` above is the **service's own** enum, not this package's — which
+ * callers a deployment admits is not something a shared package can name. Since
+ * that same enum keys the configuration,
+ * `createAuthConfigSchema(Object.values(AuthMethod))` makes a deployment that
+ * never configured a method fail at boot instead of at the first request.
  */
-export const Authenticate = (): ClassDecorator & MethodDecorator =>
-    useDecorators(UseAuth(AuthGuard), documentAuth()) as ClassDecorator & MethodDecorator;
+export const Authenticate = (method: string): ClassDecorator & MethodDecorator =>
+    useDecorators(UseAuth(AuthGuard, { method }), documentAuth()) as ClassDecorator & MethodDecorator;
 
 /**
  * Opens one endpoint to anonymous callers.

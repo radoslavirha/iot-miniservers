@@ -35,6 +35,7 @@
     "dependencies": {
         "@opentelemetry/api": "catalog:otel",
         "@radoslavirha/config-typescript": "catalog:",
+        "@radoslavirha/utils": "catalog:",
         "jose": "catalog:",
         "typescript": "catalog:",
         "zod": "catalog:"

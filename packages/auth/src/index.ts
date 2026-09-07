@@ -4,16 +4,13 @@
  * **Written complete by P1.0 and touched by nobody else.** A barrel only
  * re-exports, so several units appending their own line to it in parallel is
  * several conflicts on one file. The exports for units that have not been built
- * yet are listed below, commented out, in the order they will land — a later
- * unit uncomments its line rather than deciding where to put it.
- *
- * P1.0 ships contracts only. There is no implementation in this package yet:
- * everything exported here is a type, a schema, or a test double.
+ * yet are listed below in the order they will land, so a later unit adds its
+ * line rather than deciding where to put it.
  */
 
 // ─── Contracts ────────────────────────────────────────────────────────────────
 
-export { AuthMode } from './AuthMode.js';
+export { VerifierType } from './VerifierType.js';
 export { VerificationReason } from './VerificationOutcome.js';
 
 export type { Principal, PrincipalKind } from './Principal.js';
@@ -24,10 +21,10 @@ export type { IKeySource, KeyLookup, VerificationKey } from './IKeySource.js';
 
 // ─── Pipeline ─────────────────────────────────────────────────────────────────
 
-export { Authenticator, AuthConfigurationError, assertUsableConfig, statusForReason } from './Authenticator.js';
+export { Authenticator, AuthConfigurationError, buildVerifiers, statusForReason } from './Authenticator.js';
 export { describeAuthConfig } from './describeAuthConfig.js';
 
-export type { AuthDecision } from './Authenticator.js';
+export type { AuthDecision, AuthVerifiers } from './Authenticator.js';
 export type { AuthConfigSummary, IssuerSummary } from './describeAuthConfig.js';
 
 // ─── Observability ────────────────────────────────────────────────────────────
@@ -36,10 +33,7 @@ export {
     ATTR_AUTH_ISSUER,
     ATTR_AUTH_OUTCOME,
     AUTH_METER_NAME,
-    AUTH_MODE_VALUE,
-    METRIC_AUTH_MODE,
     METRIC_AUTH_VERIFICATIONS,
-    observeAuthMode,
     recordVerification
 } from './authTelemetry.js';
 
@@ -47,25 +41,30 @@ export {
 
 export {
     AuthConfigSchema,
+    createAuthConfigSchema,
     JwksKeySchema,
+    JwtVerifierSchema,
     KeySchema,
     StaticKeySchema,
-    TrustedIssuerSchema
+    TrustedIssuerSchema,
+    VerifierSchema
 } from './schemas/auth.schema.js';
 
 export type {
     AuthConfig,
     AuthConfigInput,
     JwksKey,
+    JwtVerifierConfig,
     KeyConfig,
     StaticKey,
-    TrustedIssuer
+    TrustedIssuer,
+    VerifierConfig
 } from './schemas/auth.schema.js';
 
 // ─── Test kit ─────────────────────────────────────────────────────────────────
 
 export { mintTestToken, TEST_SECRET, testSecretBytes } from './test/mintTestToken.js';
-export { FakeTokenVerifier, failureOutcome, successOutcome } from './test/FakeTokenVerifier.js';
+export { FakeTokenVerifier, TEST_METHOD, failureOutcome, successOutcome, verifiersFor } from './test/FakeTokenVerifier.js';
 
 export type { MintTestTokenOptions } from './test/mintTestToken.js';
 

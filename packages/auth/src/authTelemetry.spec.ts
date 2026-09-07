@@ -5,13 +5,9 @@ import type { DataPoint, ResourceMetrics } from '@opentelemetry/sdk-metrics';
 import {
     ATTR_AUTH_ISSUER,
     ATTR_AUTH_OUTCOME,
-    AUTH_MODE_VALUE,
-    METRIC_AUTH_MODE,
     METRIC_AUTH_VERIFICATIONS,
-    observeAuthMode,
     recordVerification
 } from './authTelemetry.js';
-import { AuthMode } from './AuthMode.js';
 import { VerificationReason } from './VerificationOutcome.js';
 
 /**
@@ -49,7 +45,7 @@ describe('recordVerification', () => {
         expect(points[0]?.attributes[ATTR_AUTH_OUTCOME]).toBe('invalid');
     });
 
-    it('separates outcomes by reason, which is what makes permissive readable', async () => {
+    it('separates outcomes by reason, so a rate of refusals is readable per cause', async () => {
         const { reader } = withRealProvider();
 
         recordVerification(VerificationReason.Missing);
@@ -91,31 +87,5 @@ describe('recordVerification', () => {
 
         const points = pointsFor((await reader.collect()).resourceMetrics, METRIC_AUTH_VERIFICATIONS);
         expect(points[0]?.value).toBe(1);
-    });
-});
-
-describe('observeAuthMode', () => {
-    it('publishes the mode as a number an alert can compare', async () => {
-        const { reader } = withRealProvider();
-
-        const stop = observeAuthMode(AuthMode.Permissive);
-
-        const points = pointsFor((await reader.collect()).resourceMetrics, METRIC_AUTH_MODE);
-        expect(points[0]?.value).toBe(1);
-        stop();
-    });
-
-    it('orders the values by how much they enforce, so `< 2` means "not enforcing"', () => {
-        expect(AUTH_MODE_VALUE).toEqual({ disabled: 0, permissive: 1, enforced: 2 });
-    });
-
-    it('stops publishing once detached', async () => {
-        const { reader } = withRealProvider();
-
-        const stop = observeAuthMode(AuthMode.Enforced);
-        stop();
-
-        const points = pointsFor((await reader.collect()).resourceMetrics, METRIC_AUTH_MODE);
-        expect(points).toHaveLength(0);
     });
 });

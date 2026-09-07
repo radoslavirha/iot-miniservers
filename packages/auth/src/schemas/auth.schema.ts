@@ -1,20 +1,20 @@
 import { z } from 'zod';
-import { AuthMode } from '../AuthMode.js';
+import { VerifierType } from '../VerifierType.js';
 
 /**
  * An inline key, carried in the configuration itself.
  *
- * This is what makes `config/localhost.json` an *issuer row* rather than a
- * bypass flag: local development runs `mode: enforced` against an HS256 secret,
- * so the code exercised locally is the code that runs in production and the 401
- * and 403 paths stop being the only ones never covered. The outbound half
- * already exists — `JwtSelfSignedStrategy` in `http-provider` signs with the
- * same `{ source: 'value' }` shape — so the two halves meet in a real signed
- * round trip on a laptop.
+ * This is what lets `config/localhost.json` be a real *issuer row* rather than a
+ * bypass flag: local development verifies against an HS256 secret, so the code
+ * exercised locally is the code that runs in production and the 401 path stops
+ * being the only one never covered. The outbound half already exists —
+ * `JwtSelfSignedStrategy` in `http-provider` signs with the same
+ * `{ source: 'value' }` shape — so the two halves meet in a real signed round
+ * trip on a laptop.
  *
- * It fails closed in a way `enabled: false` does not: a leftover dev issuer row
- * is exploitable only by someone who also holds the dev secret, where a
- * leftover disable flag *is* the whole vulnerability.
+ * It fails closed in a way a disable flag does not: a leftover dev issuer row is
+ * exploitable only by someone who also holds the dev secret, where a leftover
+ * disable flag *is* the whole vulnerability.
  */
 export const StaticKeySchema = z.object({
     source: z.literal('value'),
@@ -30,10 +30,7 @@ export const StaticKeySchema = z.object({
     value: z.string().min(1)
 });
 
-/**
- * Keys fetched from a remote JWKS endpoint. Consumed by P1.2; the shape is
- * fixed here so a config file written today does not have to change.
- */
+/** Keys fetched from a remote JWKS endpoint. */
 export const JwksKeySchema = z.object({
     source: z.literal('jwks'),
     uri: z.url(),
@@ -114,32 +111,109 @@ export const TrustedIssuerSchema = z.object({
 });
 
 /**
- * The `auth` block of a service's configuration.
+ * Settings for a `bearer-jwt` verifier.
  *
- * Every field carries a default, per the repo's configuration contract, so a
- * service that says nothing gets `disabled` and behaves exactly as it does
- * today. Turning authentication on is an explicit act.
+ * The `type` discriminates it from the other verifier kinds an entry could hold;
+ * the entry's *name* is the key it is filed under in the `auth` block, and is
+ * chosen by the service. Two entries may share this type — one
+ * trusting the IdP, another trusting a cluster — and a route admits one by name
+ * without admitting the other.
  */
-export const AuthConfigSchema = z.object({
-    mode: z.enum([AuthMode.Disabled, AuthMode.Permissive, AuthMode.Enforced]).default(AuthMode.Disabled),
+export const JwtVerifierSchema = z.object({
+    type: z.literal(VerifierType.BearerJwt),
     /**
      * Trust sources, in no particular order — a token is matched to one by its
      * `iss`, never by position.
      *
-     * Defaults to empty, which is only coherent in `disabled`. `enforced` with
-     * no issuers can verify nothing and should fail at boot rather than refuse
-     * every request at runtime; that check is P1.3's, because it is a startup
-     * concern rather than a shape concern.
+     * At least one, because an entry that trusts nobody rejects every request.
+     * Refusing the config is one loud startup error; accepting it is a service
+     * that is up, healthy, and turning away all traffic — which reads as a
+     * network fault and gets debugged for an hour.
      */
-    trustedIssuers: z.array(TrustedIssuerSchema).default([]),
-    /**
-     * Routes that stay open, as an explicit allowlist.
-     *
-     * An allowlist rather than a denylist because the next catch-all route is
-     * one decorator away, and a denylist fails open when somebody forgets.
-     */
-    anonymousRoutes: z.array(z.string().min(1)).default([])
+    trustedIssuers: z.array(TrustedIssuerSchema)
+        .min(1, 'a bearer-jwt verifier needs at least one trusted issuer; with none it could never verify anything')
 });
+
+/**
+ * One entry of the `auth` block: whichever verifier kind it declares.
+ *
+ * A discriminated union on `type`, so a second mechanism — an API key, an HMAC
+ * signature — is a new member here plus a new `ITokenVerifier`, and no change to
+ * any controller. Controllers name an `AuthMethod`; they never name a type.
+ *
+ * **There is deliberately no permissive member.** A `dummy` or `allow-all` type
+ * would be `mode: disabled` under a new name: a value in a config file that
+ * leaves a guarded route open, which is exactly the fail-open state this schema
+ * was reshaped to make unrepresentable. Tests do not need one — `config/test.json`
+ * verifies real signatures against an inline HS256 key, and `FakeTokenVerifier`
+ * drives a guard through any outcome without a config at all.
+ */
+export const VerifierSchema = z.discriminatedUnion('type', [JwtVerifierSchema]);
+
+/**
+ * The `auth` block of a service's configuration: named entries, each declaring
+ * how its callers are verified.
+ *
+ * ```jsonc
+ * "auth": {
+ *     "IDP": { "type": "bearer-jwt", "trustedIssuers": [ … ] }
+ * }
+ * ```
+ *
+ * **The names are the service's, not this package's.** They describe which
+ * callers a deployment admits — its people, its cluster, its devices — which is
+ * knowledge no shared package has. Each service declares its own enum and passes
+ * it to {@link createAuthConfigSchema}, exactly as it declares `ExternalApi` and
+ * passes it to `createExternalApisSchema` on the outbound side.
+ *
+ * This open form is the runtime's view: `Authenticator` builds whatever it finds
+ * and knows nothing about which routes exist. Services should configure with
+ * {@link createAuthConfigSchema} instead, which is the form that can check
+ * anything.
+ *
+ * The block is *only* that map. There is no wrapper key and nothing beside it —
+ * no on/off switch, no route list. Every field ever proposed for this level
+ * turned out to be either a state where a forgotten config key leaves a service
+ * unauthenticated, or a copy of something the source already says. A route is
+ * guarded by `@Authenticate()` or opened by `@Anonymous()`, and both are visible
+ * next to the route rather than in a file that can drift from it.
+ */
+export const AuthConfigSchema = z.record(z.string(), VerifierSchema);
+
+/**
+ * The `auth` block tied to the methods a service's routes actually ask for.
+ *
+ * The counterpart of `createExternalApisSchema`, and for the same reason: a
+ * service names what its own code depends on, and Zod then refuses a
+ * configuration that is missing it — at boot, naming the path.
+ *
+ * ```ts
+ * // apis/<api>/src/models/config/AuthMethod.enum.ts
+ * export enum AuthMethod { Idp = 'IDP' }
+ *
+ * // apis/<api>/src/models/config/ConfigModel.ts
+ * auth: createAuthConfigSchema(Object.values(AuthMethod))
+ * ```
+ *
+ * Each named method becomes a **required** key, so a deployment that forgets one
+ * fails at boot with `auth.IDP` in the error rather than at the first request to
+ * a route decorated `@Authenticate(AuthMethod.Idp)`. A map is what makes that
+ * possible at all: a key can be required, where an array element can only be
+ * counted after the fact.
+ *
+ * Strict, so a `USRE` typo is a rejected key rather than a silently stripped one
+ * — Zod's default would leave the service with no verifier, booting healthy and
+ * answering 500 on its first guarded request.
+ */
+export function createAuthConfigSchema<M extends string>(
+    methods: readonly M[]
+): z.ZodObject<Record<M, typeof VerifierSchema>, z.core.$strict> {
+    const shape = Object.fromEntries(
+        methods.map(method => [method, VerifierSchema])
+    ) as Record<M, typeof VerifierSchema>;
+
+    return z.strictObject(shape);
+}
 
 /** Config as **authored** — every defaulted field may be omitted. */
 export type AuthConfigInput = z.input<typeof AuthConfigSchema>;
@@ -151,3 +225,5 @@ export type StaticKey = z.output<typeof StaticKeySchema>;
 export type JwksKey = z.output<typeof JwksKeySchema>;
 export type KeyConfig = z.output<typeof KeySchema>;
 export type TrustedIssuer = z.output<typeof TrustedIssuerSchema>;
+export type JwtVerifierConfig = z.output<typeof JwtVerifierSchema>;
+export type VerifierConfig = z.output<typeof VerifierSchema>;

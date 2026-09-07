@@ -1,3 +1,4 @@
+import type { AuthVerifiers } from '../Authenticator.js';
 import type { Credential, ITokenVerifier } from '../ITokenVerifier.js';
 import type { Principal } from '../Principal.js';
 import { VerificationReason, type VerificationOutcome } from '../VerificationOutcome.js';
@@ -53,3 +54,23 @@ export const failureOutcome = (
     reason: Exclude<VerificationReason, typeof VerificationReason.Ok>,
     detail?: string
 ): VerificationOutcome => ({ reason, detail });
+
+/**
+ * Wraps one verifier as the registry an `Authenticator` takes.
+ *
+ * Most tests care about a single entry; spelling out a `Map` at every call site
+ * would be noise that says nothing about what is under test.
+ */
+export const verifiersFor = (
+    verifier: ITokenVerifier,
+    method: string = TEST_METHOD
+): AuthVerifiers => new Map([[method, verifier]]);
+
+/**
+ * The method name the test kit uses when a test does not care which.
+ *
+ * Exported so a guard test can put the same name in an endpoint's store — the
+ * two have to agree, and a literal repeated in both places is a silent 500 the
+ * day one of them changes.
+ */
+export const TEST_METHOD = 'TEST';

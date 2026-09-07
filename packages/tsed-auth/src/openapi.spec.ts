@@ -1,11 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { Controller } from '@tsed/di';
 import { Get, Post, SpecTypes, getSpec } from '@tsed/schema';
+import { TEST_METHOD } from '@radoslavirha/auth';
+import { SwaggerSecurityScheme } from '@radoslavirha/tsed-swagger';
 import type { Principal } from '@radoslavirha/auth';
 import { Anonymous, Authenticate, BEARER_JWT_SCHEME, CurrentPrincipal } from './decorators.js';
 
 @Controller('/qr-codes')
-@Authenticate()
+@Authenticate(TEST_METHOD)
 class DocumentedController {
     @Get('/')
     list(@CurrentPrincipal() principal: Principal | undefined): string {
@@ -33,7 +35,7 @@ class PartlyProtectedController {
     }
 
     @Get('/closed')
-    @Authenticate()
+    @Authenticate(TEST_METHOD)
     closed(): string {
         return 'closed';
     }
@@ -87,10 +89,11 @@ describe('generated OpenAPI', () => {
         expect(asText).not.toMatch(/"x-/);
     });
 
-    it('does not name a scheme the document has not defined', () => {
-        // The scheme itself is declared once, by the swagger config, under
-        // components.securitySchemes. Operations only reference it by name.
-        expect(BEARER_JWT_SCHEME).toBe('BEARER_JWT');
+    it('references the very scheme the swagger package defines', () => {
+        // Not a matching literal — the same value. The document-level definition
+        // under components.securitySchemes comes from this enum too, so an
+        // operation cannot end up naming a scheme that was never declared.
+        expect(BEARER_JWT_SCHEME).toBe(SwaggerSecurityScheme.BEARER_JWT);
     });
 });
 

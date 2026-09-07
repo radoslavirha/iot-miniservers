@@ -1,44 +1,24 @@
 import { metrics } from '@opentelemetry/api';
-import type { Counter, MeterProvider, ObservableGauge } from '@opentelemetry/api';
-import { AuthMode } from './AuthMode.js';
+import { CommonUtils } from '@radoslavirha/utils';
+import type { Counter, MeterProvider } from '@opentelemetry/api';
 import type { VerificationReason } from './VerificationOutcome.js';
 
 export const AUTH_METER_NAME = 'auth';
 
 /**
- * Which mode the service is running in, as `0` / `1` / `2`.
- *
- * A gauge rather than a log line because the alert this exists for is a
- * *standing* question — "is any production app still not enforcing?" — which a
- * boot-time message cannot answer an hour later.
- */
-export const METRIC_AUTH_MODE = 'auth.mode';
-
-/**
  * Verification outcomes, labelled by reason.
  *
- * This is what makes `permissive` more than a slogan: turn it on in production,
- * watch for `missing` and `invalid`, find the caller nobody remembered, then
- * flip to `enforced`.
+ * The standing question this answers is "who is being turned away, and why" —
+ * a rate of `invalid` that starts at a deploy is a broken caller, a rate of
+ * `indeterminate` is our own IdP. Neither is visible in a boot-time log line.
  */
 export const METRIC_AUTH_VERIFICATIONS = 'auth.verifications';
 
 export const ATTR_AUTH_OUTCOME = 'auth.outcome';
 export const ATTR_AUTH_ISSUER = 'auth.issuer';
 
-/**
- * Numeric encoding of the mode, ordered by how much it enforces, so an alert
- * can be written as `auth_mode < 2`.
- */
-export const AUTH_MODE_VALUE: Readonly<Record<AuthMode, number>> = {
-    [AuthMode.Disabled]: 0,
-    [AuthMode.Permissive]: 1,
-    [AuthMode.Enforced]: 2
-};
-
 interface AuthInstruments {
     readonly verifications: Counter;
-    readonly mode: ObservableGauge;
 }
 
 /**
@@ -67,9 +47,6 @@ const authInstruments = (): AuthInstruments => {
         verifications: meter.createCounter(METRIC_AUTH_VERIFICATIONS, {
             description: 'Credential verification outcomes, by reason.',
             unit: '{verification}'
-        }),
-        mode: meter.createObservableGauge(METRIC_AUTH_MODE, {
-            description: 'Authentication mode: 0 disabled, 1 permissive, 2 enforced.'
         })
     };
 
@@ -92,24 +69,6 @@ const authInstruments = (): AuthInstruments => {
 export const recordVerification = (reason: VerificationReason, issuer?: string): void => {
     authInstruments().verifications.add(1, {
         [ATTR_AUTH_OUTCOME]: reason,
-        ...(issuer === undefined ? {} : { [ATTR_AUTH_ISSUER]: issuer })
+        ...(CommonUtils.isUndefined(issuer) ? {} : { [ATTR_AUTH_ISSUER]: issuer })
     });
-};
-
-/**
- * Publishes the current mode as a gauge.
- *
- * Returns a function that stops publishing, so a test or a shutdown path can
- * detach the callback rather than leaking it into the next provider.
- */
-export const observeAuthMode = (mode: AuthMode): (() => void) => {
-    const { mode: gauge } = authInstruments();
-    const callback = (result: { observe: (value: number) => void }) => {
-        result.observe(AUTH_MODE_VALUE[mode]);
-    };
-
-    gauge.addCallback(callback);
-    return () => {
-        gauge.removeCallback(callback);
-    };
 };

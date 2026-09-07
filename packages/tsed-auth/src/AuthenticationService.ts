@@ -1,5 +1,4 @@
-import { Authenticator, JwtVerifier, createKeySource } from '@radoslavirha/auth';
-import type { AuthConfig, ITokenVerifier } from '@radoslavirha/auth';
+import { Authenticator } from '@radoslavirha/auth';
 import { Injectable, ProviderScope, Scope } from '@tsed/di';
 
 /**
@@ -23,18 +22,10 @@ import { Injectable, ProviderScope, Scope } from '@tsed/di';
  * this class without an override fails with "Given token is undefined". That is
  * the same contract the three services above carry.
  *
- * The verifier is a constructor parameter so a test can inject a
- * `FakeTokenVerifier` and drive outcomes a real one can barely be made to
- * produce. Left out, it builds the ordinary JWT verifier over whichever key
- * sources the configuration implies.
+ * Nothing but the decorators: building a verifier per configured method is
+ * `Authenticator`'s own job, and lives in `@radoslavirha/auth` where a non-Ts.ED
+ * transport can reach it too.
  */
 @Injectable()
 @Scope(ProviderScope.SINGLETON)
-export class AuthenticationService extends Authenticator {
-    public constructor(config: AuthConfig, verifier: ITokenVerifier = defaultVerifier(config)) {
-        super(config, verifier);
-    }
-}
-
-const defaultVerifier = (config: AuthConfig): ITokenVerifier =>
-    new JwtVerifier(config.trustedIssuers, createKeySource(config.trustedIssuers));
+export class AuthenticationService extends Authenticator {}

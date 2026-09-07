@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { describeAuthConfig } from './describeAuthConfig.js';
 import { AuthConfigSchema } from './schemas/auth.schema.js';
-
-const parse = (input: unknown) => AuthConfigSchema.parse(input);
+import { VerifierType } from './VerifierType.js';
+import { TEST_METHOD } from './test/FakeTokenVerifier.js';
 
 const staticIssuer = {
     name: 'dev-local',
@@ -19,31 +19,23 @@ const jwksIssuer = {
     key: { source: 'jwks', uri: 'https://auth.irha.cz/application/o/app/jwks/' }
 };
 
+const summaryOf = (...trustedIssuers: unknown[]) =>
+    describeAuthConfig(AuthConfigSchema.parse({ [TEST_METHOD]: { type: VerifierType.BearerJwt, trustedIssuers } }));
+
 describe('describeAuthConfig', () => {
-    it('warns when nothing is being verified, because that state is otherwise invisible', () => {
-        const summary = describeAuthConfig(parse({}));
+    it('warns when no verifier is configured, because that state is otherwise invisible', () => {
+        const summary = describeAuthConfig(AuthConfigSchema.parse({}));
 
         expect(summary.level).toBe('warn');
-        expect(summary.message).toContain('disabled');
-        expect(summary.message).toContain('every request is anonymous');
+        expect(summary.message).toContain('no verifier is configured');
     });
 
-    it('warns in permissive, which is a waypoint and not a destination', () => {
-        const summary = describeAuthConfig(parse({ mode: 'permissive', trustedIssuers: [staticIssuer] }));
-
-        expect(summary.level).toBe('warn');
-        expect(summary.message).toContain('records but does not reject');
-    });
-
-    it('is informational only once enforcing', () => {
-        const summary = describeAuthConfig(parse({ mode: 'enforced', trustedIssuers: [staticIssuer] }));
-
-        expect(summary.level).toBe('info');
-        expect(summary.message).toContain('rejects');
+    it('is informational once something can actually be verified', () => {
+        expect(summaryOf(staticIssuer).level).toBe('info');
     });
 
     it('names the issuer and audience, which is the answer to "why is my token rejected"', () => {
-        const summary = describeAuthConfig(parse({ mode: 'enforced', trustedIssuers: [jwksIssuer] }));
+        const summary = summaryOf(jwksIssuer);
 
         expect(summary.message).toContain('https://auth.irha.cz/application/o/app/');
         expect(summary.message).toContain('aud app');
@@ -56,7 +48,7 @@ describe('describeAuthConfig', () => {
     });
 
     it('describes where keys come from without ever printing one', () => {
-        const summary = describeAuthConfig(parse({ mode: 'enforced', trustedIssuers: [staticIssuer] }));
+        const summary = summaryOf(staticIssuer);
 
         expect(summary.issuers[0]?.keySource).toBe('inline HS256 key');
         // The secret is the whole credential. It must not reach a log line.
@@ -64,32 +56,26 @@ describe('describeAuthConfig', () => {
     });
 
     it('marks a serviceaccount-authenticated JWKS, so the Kubernetes case is visible', () => {
-        const summary = describeAuthConfig(parse({
-            mode: 'enforced',
-            trustedIssuers: [{ ...jwksIssuer, key: { ...jwksIssuer.key, auth: 'serviceAccountToken' } }]
-        }));
+        const summary = summaryOf({ ...jwksIssuer, key: { ...jwksIssuer.key, auth: 'serviceAccountToken' } });
 
         expect(summary.issuers[0]?.keySource).toContain('serviceaccount-authenticated');
     });
 
-    it('reports the anonymous allowlist, since those routes bypass everything', () => {
-        const summary = describeAuthConfig(parse({
-            mode: 'enforced',
-            trustedIssuers: [staticIssuer],
-            anonymousRoutes: ['/health', '/r/:slug']
-        }));
-
-        expect(summary.anonymousRoutes).toEqual(['/health', '/r/:slug']);
-    });
-
     it('lists every trusted issuer when there are several', () => {
-        const summary = describeAuthConfig(parse({
-            mode: 'enforced',
-            trustedIssuers: [staticIssuer, jwksIssuer]
-        }));
+        const summary = summaryOf(staticIssuer, jwksIssuer);
 
         expect(summary.issuers).toHaveLength(2);
         expect(summary.message).toContain('dev-local');
         expect(summary.message).toContain('idp');
+    });
+});
+
+describe('describeAuthConfig — methods', () => {
+    it('reports which named methods are configured', () => {
+        expect(summaryOf(staticIssuer).methods).toEqual([TEST_METHOD]);
+    });
+
+    it('reports no methods when nothing is configured', () => {
+        expect(describeAuthConfig(AuthConfigSchema.parse({})).methods).toEqual([]);
     });
 });
