@@ -1,13 +1,14 @@
 import { Platform, ServerConfiguration } from '@radoslavirha/tsed-platform';
 import { createShutdownHandler } from '@radoslavirha/tsed-health';
 import { openTelemetry } from '@radoslavirha/otel';
-import { SwaggerConfig, SwaggerDocumentConfig, SwaggerProvider } from '@radoslavirha/tsed-swagger';
+import { SwaggerConfig, SwaggerDocumentConfig, SwaggerProvider, SwaggerSecurityScheme } from '@radoslavirha/tsed-swagger';
 import { CommonUtils, ObjectUtils } from '@radoslavirha/utils';
 import { Server } from './Server.js';
 import { injector } from '@tsed/di';
 import { ConfigService } from './services/ConfigService.js';
 import { SwaggerDocs } from './models/SwaggerDocs.enum.js';
 import { Logger } from '@radoslavirha/tsed-logger';
+import { describeAuthConfig } from '@radoslavirha/tsed-auth';
 
 /**
  * Signals that should drain and shut down gracefully.
@@ -31,7 +32,7 @@ try {
         documents: ObjectUtils.values(SwaggerDocs).map((doc) =>
             CommonUtils.buildModelStrict(SwaggerDocumentConfig, {
                 docs: doc,
-                security: []
+                security: [SwaggerSecurityScheme.BEARER_JWT]
             })
         ),
         swaggerUIOptions: {
@@ -56,6 +57,13 @@ try {
 
     const platform = await Platform.bootstrap(configuration);
     await platform.listen();
+
+    // Says out loud what this process will accept. When a token is rejected, the
+    // issuer and audience printed here are the answer nine times in ten — they
+    // have to match the token's own claims exactly, and that comparison is the
+    // one nobody makes by eye without seeing both sides.
+    const auth = describeAuthConfig(config.config.auth);
+    logger[auth.level](auth.message, { event: 'AUTH_CONFIG', issuers: auth.issuers });
 
     // Flips /health/ready to 503, waits for in-flight requests, then stops. Ts.ED has no
     // pre-shutdown hook — `platform.stop()` destroys the injector before closing the

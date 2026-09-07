@@ -17,12 +17,59 @@ pnpm start
 
 Swagger UI is served at <http://localhost:4011/>. The redirect endpoint is `GET /:slug`.
 
+## Authentication
+
+`config/localhost.json` is **gitignored**, so the `auth` block is not handed to you — add it, or the
+API refuses to boot:
+
+```jsonc
+"auth": {
+    "IDP": {
+        "type": "bearer-jwt",
+        "trustedIssuers": [{
+            "name": "idp-sandbox",
+            "issuer": "https://auth.irha.cz/application/o/qr-manager-server1-sandbox/",
+            "audience": "qr-manager-server1-sandbox",
+            "subjectKind": "human",
+            "key": {
+                "source": "jwks",
+                "uri": "https://auth.irha.cz/application/o/qr-manager-server1-sandbox/jwks/"
+            }
+        }]
+    }
+}
+```
+
+**Refuses to boot, not "boots unauthenticated".** `ConfigModel` declares
+`createAuthConfigSchema(Object.values(AuthMethod))` over its own
+[AuthMethod.enum.ts](./src/models/config/AuthMethod.enum.ts), so `IDP` is a required key: forget it
+and the config fails to parse with `auth.IDP` in the error. There is no disable flag and no
+observe-only mode — every such switch is a state where a forgotten key leaves the API up, healthy and
+open.
+
+**The real IdP, not a local secret.** `localhost:5173` is a registered redirect URI on the sandbox
+applications, so `pnpm --filter=qr-manager-ui dev` completes a genuine login and sends a genuine
+RS256 token here — the same token, the same JWKS and the same code path production will use. There is
+nothing to mint and nothing to fake.
+
+The boot log names every trusted issuer with its audience. When a token is rejected, that line is the
+answer nine times in ten — `iss` and `aud` are compared exactly, and nobody spots the mismatch without
+seeing both sides.
+
+`config/test.json` uses an inline HS256 key instead, so the integration tests verify a real signature
+with no network at all.
+
 ## Smoke test
+
+`/qr-codes` answers `401` without a token — that is the point, not a fault. Get one by signing in through the UI (`pnpm --filter=qr-manager-ui dev`) and copying it from
+devtools, then pass it as `-H "Authorization: Bearer $TOKEN"`. `GET /r/:slug`, `/health*` and
+`GET /qr-codes/:id/image` stay open.
 
 ```bash
 # Create a QR mapping
 curl -s -X POST http://localhost:4011/qr-codes \
   -H 'Content-Type: application/json' \
+  -H "Authorization: Bearer $TOKEN" \
   -d '{"targetURL":"https://example.com","label":"Demo","type":"other"}' | jq
 
 # List
