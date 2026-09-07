@@ -1,58 +1,19 @@
-import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { handleCallback, useAuth, type AuthClient, type CallbackResult } from '@radoslavirha/ui-auth';
+import { AuthCallback, type AuthClient } from '@radoslavirha/ui-auth';
+import { useRuntimeConfig } from '../runtime/RuntimeConfigContext.js';
 
 /**
- * The registered redirect URI. Always a top-level return — there is no iframe
- * variant, because Authentik refuses to be framed at all.
+ * The registered redirect URI.
  *
- * Three outcomes, and only one of them is an error:
- *  - signed-in  the code was exchanged; go where the user was headed
- *  - no-session the prompt=none probe found no SSO session. Ordinary: fall
- *               through to the app, which renders the sign-in page
- *  - failed     a replayed code or a stale state entry. Offer a retry
+ * Everything that can go wrong here — the single-use code, the `no-session`
+ * outcome that must settle the provider, the return path a renewal has to
+ * preserve, the basename the router prepends twice — lives in `AuthCallback`,
+ * because none of it is specific to this app. What is left is this app's three
+ * answers: how it navigates, where it lives, and where "home" is.
  */
 export const CallbackPage = ({ client }: { client: AuthClient }) => {
     const navigate = useNavigate();
-    const { resolveAnonymous } = useAuth();
-    const [result, setResult] = useState<CallbackResult | undefined>();
-    /**
-     * An authorization code is single-use: exchanging it twice returns 400
-     * invalid_grant. StrictMode double-invokes effects, so without this the
-     * second run fails and can flash the retry screen at a user who is already
-     * signed in. Observed as a 400 on every dev login.
-     */
-    const started = useRef(false);
+    const { basePath } = useRuntimeConfig();
 
-    useEffect(() => {
-        if (started.current) {
-            return;
-        }
-        started.current = true;
-
-        void handleCallback(client).then(outcome => {
-            setResult(outcome);
-            if (outcome === 'signed-in') {
-                navigate('/admin', { replace: true });
-                return;
-            }
-            if (outcome === 'no-session') {
-                // No userLoaded event is coming, so the provider must be told
-                // to settle — otherwise it waits forever and the app shows
-                // Loading… where the sign-in page belongs.
-                resolveAnonymous();
-                navigate('/admin', { replace: true });
-            }
-        });
-    }, [client, navigate, resolveAnonymous]);
-
-    if (result === 'failed') {
-        return (
-            <p role="alert">
-                Sign-in could not be completed. Reload the page to try again.
-            </p>
-        );
-    }
-
-    return <p>Signing in…</p>;
+    return <AuthCallback client={client} navigate={navigate} basePath={basePath} defaultPath="/admin" />;
 };
