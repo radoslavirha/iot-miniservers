@@ -1,6 +1,6 @@
 # IoT Miniservers — Knowledge Base
 
-> Maintained by `/update-docs` skill. Last updated: 2026-08-01.
+> Maintained by `/update-docs` skill. Last updated: 2026-09-07.
 
 pnpm monorepo of small independent Node.js APIs and UIs (Ts.ED, TypeScript ESM).
 
@@ -18,22 +18,60 @@ pnpm monorepo of small independent Node.js APIs and UIs (Ts.ED, TypeScript ESM).
 
 | Package | Purpose |
 |---------|---------|
+| `@radoslavirha/auth` | Framework-free inbound authentication: `Principal`, the verification-outcome vocabulary, a JWT verifier over static or JWKS keys, and the Zod config schema. Reads no request — a transport extracts the credential and applies the decision |
 | `@radoslavirha/health` | Framework-free health check contract, registry and `application/health+json` report. Checks declare `critical`, which decides whether a failure gates readiness |
 | `@radoslavirha/http-provider` | Auth-aware axios factory from Zod config: auth strategies, transport interpolation, resilience policy. Framework-free, no logging |
 | `@radoslavirha/miot-device` | Stateful MIoT device client: UDP transport, per-device stamp/handshake lifecycle |
 | `@radoslavirha/otel` | OpenTelemetry bootstrap — traces + custom metrics via OTLP; logs via stdout JSON (no OTLP log export) |
 | `@radoslavirha/resilience` | Transport-agnostic timeout / retry / circuit breaker over `AbortSignal`, backed by cockatiel |
+| `@radoslavirha/tsed-auth` | Ts.ED wiring for `auth` — the request guard, `@Authenticate` / `@Anonymous` / `@CurrentPrincipal`, OpenAPI security metadata, and a SuperTest helper |
 | `@radoslavirha/tsed-health` | Ts.ED wiring for `health` — `/health/live`, `/health/ready`, `/health`, a `HEALTH_CHECKS` provider-type registry, and the SIGTERM drain sequence. Ships `MongoHealthCheck` on the `/mongoose` subpath (optional peers, so database-free apps never resolve mongoose) |
 | `@radoslavirha/tsed-http-provider` | Ts.ED wiring for `http-provider` — builds clients from `externalApis` config and adds redacted outbound request/response logging |
 | `@radoslavirha/tsed-resilience` | Ts.ED `@RequestSignal()` decorator — an `AbortSignal` tied to the HTTP request lifecycle |
 | `@radoslavirha/ui-auth` | OIDC authorization-code + PKCE login for the browser apps. Public client, **access token in memory only**, and **no iframe anywhere** — Authentik sets `X-Frame-Options: DENY`, so session recovery and renewal are top-level `prompt=none` redirects |
 | `@radoslavirha/ui-kit` | Shared design system and UI components for the UIs |
 
-## Frontend auth
+## Auth
+
+Design and live status: [`superpowers/specs/2026-09-05-auth-design.md`](./superpowers/specs/2026-09-05-auth-design.md).
+IdP facts: [`superpowers/specs/2026-09-04-authentik-integration-contract.md`](./superpowers/specs/2026-09-04-authentik-integration-contract.md).
+
+### Which APIs verify (2026-09-07)
+
+| API | State |
+|-----|-------|
+| `qr-manager-api` | **Enforcing.** `/qr-codes` answers `401` without a valid token. `GET /r/:slug`, `/health*` and `GET /qr-codes/:id/image` stay open |
+| `miot-bridge-api` | **Open.** `/command` actuates physical devices on the LAN with no credential |
+| `interactive-map-feeder-api` | **Open.** Read-only radar data |
+
+An API's `auth` block is a map of trust domains it accepts, keyed by the service's own `AuthMethod`
+enum — the inbound mirror of `ExternalApi` and `externalApis`:
+
+```jsonc
+"auth": { "IDP": { "type": "bearer-jwt", "trustedIssuers": [ … ] } }
+```
+
+Three properties worth knowing before changing any of it:
+
+- **There is no off switch.** No mode, no `enabled` flag, no permissive verifier type. Every such
+  state is one where a forgotten key in a values file leaves a service up, healthy and unauthenticated.
+  A route is guarded by `@Authenticate()` or opened by `@Anonymous()`, both visible in the source.
+- **A misconfiguration fails at boot, not at the first request.** The schema requires a key per
+  declared `AuthMethod`, requires at least one trusted issuer, and is strict — a typo is a rejected
+  key, not a silently stripped one.
+- **A name is not a mechanism.** The entry key says which callers a route admits; its `type` says how
+  they are checked. That is what lets a cluster's ServiceAccount tokens be a second entry that
+  human-facing routes do not admit, even though both are bearer JWTs.
+
+### Frontend
 
 `qr-manager-ui` logs in through Authentik (`auth.irha.cz`) as a public client. The whole app is gated:
-an anonymous visitor gets a sign-in page and none of the routes. **That is UX, not security** — no API
-verifies a token yet, so an unauthenticated request still returns everything until Phase 1b.
+an anonymous visitor gets a sign-in page and none of the routes.
+
+**Known gap, live since 2026-09-07:** `packages/ui-auth` has no token renewal, `getAccessToken()`
+ignores `user.expired`, and a `401` classifies as `client-error` — which the health banner reports as
+`ok`. Now that `qr-manager-api` enforces, an admin session breaks roughly thirty minutes in and claims
+to be healthy while doing so. Track A in the design doc.
 
 Four facts that are load-bearing and easy to get wrong:
 
@@ -53,8 +91,6 @@ Four facts that are load-bearing and easy to get wrong:
 `http://localhost:5173/callback` is registered on **sandbox applications only**, so `pnpm dev` performs
 a real login against the real IdP. Use the **`verify-auth-in-browser`** skill before calling any auth
 change done: six bugs in this area passed a green test suite.
-
-Contract: [`superpowers/specs/2026-09-04-authentik-integration-contract.md`](./superpowers/specs/2026-09-04-authentik-integration-contract.md).
 
 ## Observability (OTel signal routing)
 

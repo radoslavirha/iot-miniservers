@@ -115,6 +115,7 @@ apis/<api-name>/
         dto/              # DTO models for storage repositories.
         *Repository.ts    # Repository service that accepts/returns only DTOs. SINGLETON scoped when possible.
     otel/                 # OpenTelemetry bootstrap (`instrument.ts`), per-API OTel config, and `telemetry.ts` — the span names, tracer scopes, `job.name` values and app attribute keys this API emits.
+    providers/            # Overrides that hand a toolkit service its config (`LoggerProvider`, `HealthProvider`, `AuthProvider`). Each subclasses the package's service and re-declares its token; the override is mandatory, since a plain config object has no DI token to resolve.
     ModelGroups.ts        # Groups used in `@Groups()` decorator. Groups belong on Controller endpoints (request/response models) and Models. If `@Groups()` is used in a child model, the parent model must use `@ForwardGroups()` on that property.
     Server.ts
     index.ts
@@ -230,12 +231,50 @@ ui/<ui-name>/
    | `src/Server.ts` | Mount `SwaggerController` and `HealthController` at `/` plus controllers from `controllers/index.ts` |
    | `src/index.ts` | Bootstrap entrypoint — identical across APIs |
    | `src/health/index.ts` | Health checks — see [Health checks](#health-checks) |
+   | `src/models/config/AuthMethod.enum.ts` | Trust domains the API accepts — see [Authentication](#authentication) |
+   | `src/providers/AuthProvider.ts` | Supplies `config.auth` to `AuthenticationService` — see [Authentication](#authentication) |
    | `src/otel/instrument.ts` | OTel SDK preload (loaded via `node --import` in `start:prod`) |
 
 2. New workspace members are auto-discovered via `apis/*` glob in `pnpm-workspace.yaml` — no changes needed there.
 3. Run `pnpm install` from the repo root (requires `NODE_AUTH_TOKEN` in env).
 4. Add a `.README.md`.
 5. Add a `Dockerfile` stage in the root `Dockerfile` following the `qr-manager-api` pattern (deps → build → final image with `pnpm start:prod`).
+
+## Authentication
+
+Inbound auth is `@radoslavirha/auth` (decides) plus `@radoslavirha/tsed-auth` (guards the request).
+Full guidance is in [`packages/tsed-auth/README.md`](./packages/tsed-auth/README.md); live status and
+which APIs are still open is in
+[`docs/superpowers/specs/2026-09-05-auth-design.md`](./docs/superpowers/specs/2026-09-05-auth-design.md).
+The rules that matter when adding or onboarding an API:
+
+- **`@Authenticate` goes on the controller class, not on each method.** Ts.ED's `UseAuth` decorates
+  every method of the class it sits on, so a route added tomorrow is protected the moment it is
+  written. Per-method application is the arrangement where the next route is one forgotten decorator
+  away from being public. `@Anonymous()` is the per-route opt-out, and **every use of it needs a
+  reason in a comment next to it.**
+- **Declare `AuthMethod` in the app**, beside `ExternalApi`, and feed it to the config schema:
+
+  ```ts
+  auth: createAuthConfigSchema(Object.values(AuthMethod))
+  ```
+
+  It names *trust domains* — where a caller's credential comes from — not caller classes and not
+  mechanisms. `IDP` covers a signed-in person and a device holding a PAT from the same provider
+  alike; a cluster's ServiceAccount tokens are a separate entry, so a route can admit one without
+  admitting the other. The mechanism is the entry's `type` in configuration.
+- **There is no way to switch it off**, deliberately: no mode, no `enabled` flag, no permissive
+  verifier type. Every such state is one where a forgotten key in a values file leaves a service up,
+  healthy and unauthenticated. Local development uses the sandbox IdP's real JWKS
+  (`config/localhost.json`); tests use an inline HS256 key (`config/test.json`) and verify real
+  signatures with no network.
+- **A misconfiguration must fail at boot.** That is what `createAuthConfigSchema` buys: a missing
+  entry, a verifier trusting no issuers, or a mistyped key are all parse errors naming the path,
+  rather than a 500 on the first guarded request.
+- **Test the paths that only ever fail.** A forged signature, another audience, an expired token, a
+  non-bearer scheme, and a refusal that leaks nothing about why. `authenticateBearerJwt` from
+  `@radoslavirha/tsed-auth` gives an integration suite a pre-authenticated agent; build it with
+  `SuperTest.agent(app)`, and keep a second bare agent for the anonymous cases.
 
 ## Health checks
 

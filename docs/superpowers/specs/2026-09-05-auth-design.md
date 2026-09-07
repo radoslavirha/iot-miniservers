@@ -1,12 +1,93 @@
 # Auth design and work packages
 
-**Status: P1.0–P1.6 are built; nothing enforces yet.** `packages/auth` and `packages/tsed-auth` exist,
-are tested, and can verify a token and guard a route. No API has been onboarded, so every HTTP API in
-this repo still answers an unauthenticated request in full. That closes in Phase 1b.
+**Status 2026-09-07: P1.0–P1.6 built, and `qr-manager-api` enforces.** An unauthenticated `GET
+/qr-codes` now answers `401`. Every *other* HTTP API in this repo still answers in full — including
+`miot-bridge-api`'s `/command`, which actuates physical devices. See
+[Where the work stands](#where-the-work-stands) for what is done, what is next, and which pieces can
+run in parallel.
 
 **Read [`2026-09-04-authentik-integration-contract.md`](./2026-09-04-authentik-integration-contract.md)
 first.** It is the authority for every concrete IdP fact — endpoints, `client_id`s, claims, traps.
 This document is the other half: what we build here, in what order, and why the shape is what it is.
+
+## Where the work stands
+
+Updated 2026-09-07. **Read this before starting anything**; the sections below are design rationale,
+not status.
+
+### Done
+
+| | Evidence |
+| --- | --- |
+| `packages/auth` — contracts, JWT verifier, static + JWKS key sources, config schema, test kit | 109 tests |
+| `packages/tsed-auth` — guard, decorators, injectable `Principal`, OpenAPI security, test helper | 43 tests |
+| `qr-manager-api` enforces on `/qr-codes` | `d1c02b8`; 96 tests incl. forged / wrong-audience / expired / non-bearer |
+| Local verification against the live IdP | Browser login → real RS256 token → verified against live JWKS |
+
+The design settled on three things that the older sections below still argue about. **These are
+decided, not open:** there are no auth modes (`AuthMode` is deleted); the `auth` block is a map of
+service-named entries whose `type` picks the verifier; and `AuthMethod` is declared per API, not by the
+package. See [the superseded modes section](#three-modes-not-an-onoff-switch--no-modes-at-all).
+
+### Which APIs are still open
+
+| API | State | Risk if left |
+| --- | --- | --- |
+| `qr-manager-api` | **Enforcing** | — |
+| `miot-bridge-api` | Open | `/command` actuates physical devices. Highest-risk endpoint in the repo |
+| `interactive-map-feeder-api` | Open | Read-only radar data; lowest risk |
+
+### Next, and what can run in parallel
+
+Three tracks. **They touch disjoint files and can be taken by three agents at once.** Anything
+outside its own listed paths is somebody else's track.
+
+**Track A — frontend session handling.** `packages/ui-auth`, `ui/qr-manager-ui`.
+The most urgent, because `d1c02b8` made it a live bug rather than a latent one: an admin session now
+breaks about thirty minutes in, and reports itself healthy while doing so. Three defects, all found by
+reading the shipped code in P1.F2:
+
+1. **No token renewal exists at all.** Renewal must be a top-level `prompt=none` redirect — never an
+   iframe, because Authentik sends `X-Frame-Options: DENY` on every response.
+2. **`getAccessToken()` ignores `user.expired`**, so the request seam attaches a dead token.
+3. **A `401` classifies as `client-error`**, which `statusForOutcome` maps to `ok` — right for a
+   validation error, wrong for an expired session. It needs its own outcome so the banner stops
+   claiming health.
+
+Use the **`verify-auth-in-browser`** skill before calling any of this done. Six bugs in this area have
+passed a green test suite.
+
+**Track B — onboard `miot-bridge-api`.** `apis/miot-bridge-api/**` only.
+Follow `d1c02b8` as the worked example; it is the same five pieces. Rank every route explicitly rather
+than blanket-guarding, because `/command` actuating a device is a different question from reading a
+registry. Decide what the poller and any MQTT path present as — they are not browser callers, and a
+ServiceAccount or a second trust-domain entry may be the answer rather than a human's token.
+
+**Track C — onboard `interactive-map-feeder-api`.** `apis/interactive-map-feeder-api/**` only.
+The smallest of the three. Its consumer is a LaskaKit device on the LAN, not a browser, so the caller
+question is the whole of the work — a device holding a PAT from the IdP is one entry; a wholly public
+read-only API is a defensible answer too, but it must be written down rather than left by omission.
+
+**Not parallel, and not yet:** P1.7 authorization (`@Scopes()`, roles on `Principal`) still blocks
+nothing and should wait for a route that genuinely needs "admins only". The changeset and release for
+the two new packages come after all three tracks land.
+
+### Onboarding an API — the five pieces
+
+What `d1c02b8` actually did, in order. Each is small; the thinking is all in the second step.
+
+1. `src/models/config/AuthMethod.enum.ts` — the service's own names, beside `ExternalApi`. Name the
+   trust domain (`IDP`), not the caller class and not the mechanism.
+2. Rank every route. Guarded is the default; each `@Anonymous()` needs a reason in a comment next to
+   it. `qr-manager-api`'s image route is anonymous because `<img src>` cannot send a header — that is
+   the shape of an acceptable reason.
+3. `ConfigSchema`: `auth: createAuthConfigSchema(Object.values(AuthMethod))`, plus the `auth` block in
+   `config/test.json` (inline HS256 key) and `config/localhost.json` (the sandbox IdP's JWKS).
+4. `providers/AuthProvider.ts` overriding `AuthenticationService`, and
+   `security: [SwaggerSecurityScheme.BEARER_JWT]` in `index.ts`.
+5. Integration tests for the paths that only ever fail: forged signature, wrong audience, expired
+   token, non-bearer scheme, and a refusal that leaks nothing about why.
+
 
 ## Why this work exists
 
@@ -15,9 +96,9 @@ This document is the other half: what we build here, in what order, and why the 
 `miot-bridge-api`'s `/command` actuates physical devices on the same terms. The dashboard's UniFi proxy
 is reachable by anyone who can resolve `dashboard.server3.homelab.irha.cz`.
 
-**That does not close when login works.** P1.F ends with the frontends sending a bearer token and the
-APIs still ignoring it. It closes in Phase 1b, when an API first rejects a request — and no document
-here should read as though anything earlier delivers security.
+**That does not close when login works.** P1.F ended with the frontends sending a bearer token and the
+APIs still ignoring it. It began closing on 2026-09-07, when `qr-manager-api` first rejected a
+request. It is not closed while any API in the table below is still open.
 
 ## What is already done, so it is not re-derived
 
@@ -340,7 +421,9 @@ the graduation checklist. Then types and schemas, no logic:
   strings are simultaneously P1.3's metric labels, the log vocabulary and the HTTP status mapping.
   Three units inventing three spellings is the likely failure.
 - `src/schemas/auth.schema.ts` — Zod. Trusted-source rows as a discriminated union (one member today).
-  Every field optional and defaulted, per the `AGENTS.md` configuration contract.
+  Every field optional and defaulted, per the `AGENTS.md` configuration contract. *(Reshaped since: the
+  block is a map of named entries and the required keys come from the service's own enum — see
+  [Where the work stands](#where-the-work-stands).)*
 - `src/index.ts` — **written complete, with every planned export, including ones whose files do not
   exist yet.** A barrel only re-exports, so six agents appending to it in parallel is six conflicts on
   one file.
@@ -374,19 +457,17 @@ once. Beyond that, file ownership is disjoint.
 
 ## Phase 1b — onboarding
 
-Not in scope for Phase 1, and it is where the security actually arrives. Per-route threat ranking and
-real 401/403 tests are a different kind of work from package construction.
+Where the security actually arrives. Per-route threat ranking and real 401 tests are a different kind
+of work from package construction.
 
-- Extend each app's `ConfigSchema` with the auth block.
-- `localhost.json`: the dev issuer row above, `mode: enforced`, plus the matching `externalApis` entry.
-- Anonymous allowlist per route: `GET /r/:slug` and `/health*` stay open, explicitly. `GET
-  /qr-codes/:id/image` needs a decision too — the UI loads it with `<img src>` and cannot send a header.
-- Frontend follow-up, all three from P1.F2: add renewal, make `getAccessToken()` expiry-aware, and give
-  401/403 their own outcome so an expired session stops reporting as healthy.
-- Swap `security: []` for the real scheme in each app's `index.ts`.
-- 401/403 integration tests, and `config/test.json` coverage of the failure paths.
-- **Which app goes first is undecided.** `miot-bridge-api`'s `/command` actuates physical devices and is
-  the highest-risk endpoint in the repo; `qr-manager-api` has full unauthenticated CRUD.
+**Started 2026-09-07** with `qr-manager-api` (`d1c02b8`). It went first because it was the app whose
+frontend already held a token, which made the whole path verifiable in a browser on the first attempt.
+`miot-bridge-api` is the higher-risk one and is next.
+
+**The live status, remaining APIs and parallel tracks are in
+[Where the work stands](#where-the-work-stands).** The five steps to onboard an API are there too.
+The list that used to sit here has been folded into it, so there is one place to read rather than two
+that drift.
 
 ## Later, and deliberately not now
 
