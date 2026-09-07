@@ -532,6 +532,9 @@ importers:
       '@opentelemetry/winston-transport':
         specifier: catalog:otel
         version: 0.31.0
+      '@radoslavirha/auth':
+        specifier: workspace:*
+        version: link:../../packages/auth
       '@radoslavirha/config-typescript':
         specifier: 'catalog:'
         version: 1.1.4(tslib@2.8.1)(typescript@6.0.3)
@@ -541,6 +544,9 @@ importers:
       '@radoslavirha/otel':
         specifier: workspace:*
         version: link:../../packages/otel
+      '@radoslavirha/tsed-auth':
+        specifier: workspace:*
+        version: file:packages/tsed-auth(9fd47a0796369b6f25b99d073c512ec7)
       '@radoslavirha/tsed-common':
         specifier: 'catalog:'
         version: 0.5.8(@tsed/core@8.38.2)(@tsed/json-mapper@8.38.2(@tsed/core@8.38.2)(@tsed/schema@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/openspec@8.38.2)))(@tsed/schema@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/openspec@8.38.2))(zod@4.4.3)

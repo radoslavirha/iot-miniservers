@@ -7,6 +7,33 @@ Responsibilities:
 - Sends commands: `GetProperty`, `SetProperty`, `Action` — unified payload across HTTP, UDP, MQTT
 - Polls device properties on interval; dispatches change notifications via HTTP, UDP, or MQTT
 
+## Authentication
+
+**Every REST route requires a bearer token.** There is no per-route ranking: the four controllers —
+commands, devices, device notifications and model-property overrides — all carry
+`@Authenticate(AuthMethod.Idp)`. Telling "read the registry" apart from "actuate a device" is
+authorization, and waits for scopes rather than being approximated with separate trust domains.
+
+Guarded routes answer `401` without a valid token, and `503` when the token could not be verified — a
+JWKS fetch that failed is our problem, not the caller's, and unlike `401` it is retriable. Neither
+response says why; the operator-facing detail stays in the logs.
+
+**The decorator reaches HTTP only, and HTTP is the smallest of the three inbound command paths.**
+Commands also arrive over MQTT (`[prefix/]miot-bridge/device/{deviceId}/command`) and over the UDP
+listener, neither of which passes through a controller. MQTT identity belongs to the broker — EMQX
+per-client credentials and topic ACLs, configured in `homelab` — and the UDP listener has no identity
+at all. So authentication here protects a human surface and a possible future UI; it is **not** what
+stops an unauthorized device command on the LAN.
+
+`DeviceNotificationsController` is a child of `DevicesController` and carries its own decorator. Ts.ED
+applies `UseAuth` to the class it decorates, and a child controller is a separate class — inheriting
+the parent's guard is exactly the assumption that would leave those four routes open beside twelve
+closed ones.
+
+| Open route | Why |
+|------------|-----|
+| `/health*` | Kubernetes probes |
+
 ## Consumed By
 
 - Loxone / other HA controllers: send commands via HTTP, UDP, or MQTT; receive property-change notifications

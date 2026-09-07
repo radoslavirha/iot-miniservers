@@ -3,6 +3,8 @@ import { PathParams, BodyParams } from '@tsed/platform-params';
 import { Delete, Description, Get, Post, Required, Returns } from '@tsed/schema';
 import { Docs } from '@tsed/swagger';
 import { SwaggerDocs } from '../models/SwaggerDocs.enum.js';
+import { Authenticate } from '@radoslavirha/tsed-auth';
+import { AuthMethod } from '../models/config/AuthMethod.enum.js';
 import { NotificationDeleteAllHandler } from '../handlers/notifications/NotificationDeleteAllHandler.js';
 import { NotificationDeleteHandler } from '../handlers/notifications/NotificationDeleteHandler.js';
 import { NotificationGetAllHandler } from '../handlers/notifications/NotificationGetAllHandler.js';
@@ -14,6 +16,7 @@ import { NotificationRequest } from '../models/notifications/NotificationRequest
 @Controller('/:deviceId/notifications')
 @Scope(ProviderScope.SINGLETON)
 @Docs(SwaggerDocs.API)
+@Authenticate(AuthMethod.Idp)
 export class DeviceNotificationsController {
     constructor(
         private readonly notificationPostHandler: NotificationPostHandler,

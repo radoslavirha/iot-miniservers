@@ -8,7 +8,18 @@
     "mongodb": {
         "enabled": false
     },
-    "logger": {},
+    "logger": {
+        "requests": {
+            "headers": {
+                "redactPaths": [
+                    "authorization",
+                    "cookie",
+                    "[\"proxy-authorization\"]",
+                    "[\"x-api-key\"]"
+                ]
+            }
+        }
+    },
     "auth": {
         "IDP": {
             "type": "bearer-jwt",

@@ -9,11 +9,14 @@ import { CommandRequestModel } from '../models/CommandRequestModel.js';
 import { RawCommandRequestModel } from '../models/RawCommandRequestModel.js';
 import { CommandValueResponse } from '../models/CommandValueResponse.js';
 import { SwaggerDocs } from '../models/SwaggerDocs.enum.js';
+import { Authenticate } from '@radoslavirha/tsed-auth';
+import { AuthMethod } from '../models/config/AuthMethod.enum.js';
 
 @Description('Endpoint for sending commands (read/write property, execute action) to registered devices.')
 @Controller('/command')
 @Scope(ProviderScope.SINGLETON)
 @Docs(SwaggerDocs.COMMANDS)
+@Authenticate(AuthMethod.Idp)
 export class CommandController {
     constructor(
         private readonly commandHandler: CommandHandler,
