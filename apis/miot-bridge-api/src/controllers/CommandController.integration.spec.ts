@@ -10,8 +10,8 @@ import { MqttClientProvider } from '../providers/MqttClientProvider.js';
  *
  * Guarded like every other route and for the same reason — it is a human
  * surface. It is **not** what stops an unauthorized device command: the same
- * commands arrive over MQTT and over the UDP listener without passing a
- * controller, and no decorator here reaches either.
+ * commands arrive over MQTT without passing a controller, and no decorator here
+ * reaches that path.
  */
 describe('CommandController (integration)', () => {
     let request: SuperTest.Agent;

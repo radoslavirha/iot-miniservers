@@ -7,7 +7,6 @@ import { HealthConfigSchema } from '@radoslavirha/tsed-health';
 import { MongoConfigSchema } from '@radoslavirha/tsed-mongoose';
 import { MqttConfigSchema } from './MqttConfig.js';
 import { PollingConfigSchema } from './PollingConfig.js';
-import { UdpConfigSchema } from './UdpConfig.js';
 import { LoggerOptionsSchema } from '@radoslavirha/tsed-logger';
 import { OtelConfigSchema } from '@radoslavirha/otel';
 // From `@radoslavirha/auth`, not the Ts.ED wrapper that re-exports it. The
@@ -21,7 +20,6 @@ import { AuthMethod } from './AuthMethod.enum.js';
 export const ConfigSchema = BaseConfig.extend({
     cachePath: z.string().optional().describe('Path to the JSON device cache file. Relative to CWD.'),
     mongodb: MongoConfigSchema.optional().describe('MongoDB configuration. When mongodb.enabled is true, MongoDB is used as the device storage.'),
-    udp: UdpConfigSchema.optional().describe('UDP listener configuration. When udp.enabled is true, the server accepts commands over UDP.'),
     polling: PollingConfigSchema.optional().describe('Device property polling configuration. When polling.enabled is true, subscribed properties are polled at the configured interval.'),
     http: HttpConfigSchema.optional().describe('HTTP notification configuration.'),
     externalApis: createExternalApisSchema(Object.values(ExternalApi)).describe('External APIs this service calls — base URL, auth, resilience and logging per API.'),

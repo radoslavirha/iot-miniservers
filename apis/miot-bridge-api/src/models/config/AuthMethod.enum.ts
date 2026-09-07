@@ -11,13 +11,12 @@
  * and it is `bearer-jwt`; they stop coinciding the moment a second trust domain
  * uses the same mechanism.
  *
- * **This covers the REST surface only.** The bridge takes commands over three
- * transports — HTTP, MQTT and UDP — and a decorator reaches exactly one of
- * them. MQTT identity is the broker's (per-client credentials and topic ACLs,
- * configured in `homelab`), and the UDP listener has no identity at all. So an
- * entry here is not a statement about who may actuate a device; it is a
- * statement about who may use the HTTP API, which is a human surface and a
- * possible future UI.
+ * **This covers the REST surface only.** The bridge also takes commands over
+ * MQTT, which never passes a controller, so no decorator here reaches it — that
+ * identity is the broker's (per-client credentials and topic ACLs, configured in
+ * `homelab`). An entry here is a statement about who may use the HTTP API, which
+ * is a human surface and a possible future UI; it is not, on its own, what stops
+ * an unauthorized device command.
  */
 export enum AuthMethod {
     /** Anyone the identity provider vouches for — a signed-in person, or a device holding a PAT. */

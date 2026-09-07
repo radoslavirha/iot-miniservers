@@ -4,8 +4,8 @@ Gateway between home automation controllers (Loxone and others) and Xiaomi devic
 
 Responsibilities:
 - Registers devices: performs handshake, fetches MIoT spec from `miot-spec.org`, caches device capabilities
-- Sends commands: `GetProperty`, `SetProperty`, `Action` — unified payload across HTTP, UDP, MQTT
-- Polls device properties on interval; dispatches change notifications via HTTP, UDP, or MQTT
+- Sends commands: `GetProperty`, `SetProperty`, `Action` — unified payload across HTTP and MQTT
+- Polls device properties on interval; dispatches change notifications via HTTP or MQTT
 
 ## Authentication
 
@@ -18,12 +18,11 @@ Guarded routes answer `401` without a valid token, and `503` when the token coul
 JWKS fetch that failed is our problem, not the caller's, and unlike `401` it is retriable. Neither
 response says why; the operator-facing detail stays in the logs.
 
-**The decorator reaches HTTP only, and HTTP is the smallest of the three inbound command paths.**
-Commands also arrive over MQTT (`[prefix/]miot-bridge/device/{deviceId}/command`) and over the UDP
-listener, neither of which passes through a controller. MQTT identity belongs to the broker — EMQX
-per-client credentials and topic ACLs, configured in `homelab` — and the UDP listener has no identity
-at all. So authentication here protects a human surface and a possible future UI; it is **not** what
-stops an unauthorized device command on the LAN.
+**The decorator reaches HTTP only, and commands also arrive over MQTT**
+(`[prefix/]miot-bridge/device/{deviceId}/command`), which never passes through a controller. That
+identity belongs to the broker — EMQX per-client credentials and topic ACLs, configured in `homelab`.
+So authentication here protects a human surface and a possible future UI; on its own it is **not**
+what stops an unauthorized device command.
 
 `DeviceNotificationsController` is a child of `DevicesController` and carries its own decorator. Ts.ED
 applies `UseAuth` to the class it decorates, and a child controller is a separate class — inheriting
@@ -36,9 +35,14 @@ closed ones.
 
 ## Consumed By
 
-- Loxone / other HA controllers: send commands via HTTP, UDP, or MQTT; receive property-change notifications
+- Loxone / other HA controllers: send commands via MQTT; receive property-change notifications over MQTT
 
 ## External Dependencies
+
+The only UDP left in this service is the outbound MIoT protocol to the devices themselves. The
+inbound UDP command listener and the outbound UDP notification transport were removed — the
+controllers use MQTT, and an unauthenticated datagram socket accepting device commands on the LAN was
+a command path no decorator or broker ACL could reach.
 
 | System | Protocol | Condition | Purpose |
 |--------|----------|-----------|---------|
@@ -117,11 +121,6 @@ Hidden from Swagger, excluded from traces and request logs. See
 | `[prefix/]miot-bridge/device/{deviceId}/notification` | outbound | Property change event |
 
 Command payload: `{ deviceId: number, command: "service:property", operation: "GetProperty|SetProperty|Action", [value] }`
-
-## UDP
-
-Command payload: same as HTTP.
-Response sent back to sender address/port.
 
 ## Notification Payload (all transports)
 

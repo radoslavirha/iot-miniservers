@@ -41,7 +41,7 @@ IdP facts: [`superpowers/specs/2026-09-04-authentik-integration-contract.md`](./
 | API | State |
 |-----|-------|
 | `qr-manager-api` | **Enforcing.** `/qr-codes` answers `401` without a valid token. `GET /r/:slug`, `/health*` and `GET /qr-codes/:id/image` stay open |
-| `miot-bridge-api` | **Enforcing.** All 16 REST routes need a token; `/health*` stays open. Commands also arrive over MQTT and UDP, which no decorator reaches — that identity is the broker's and the LAN's |
+| `miot-bridge-api` | **Enforcing.** All 16 REST routes need a token; `/health*` stays open. Commands also arrive over MQTT, which no decorator reaches — that identity is the broker's. The UDP command listener is gone |
 | `interactive-map-feeder-api` | **Open.** Read-only radar data |
 
 An API's `auth` block is a map of trust domains it accepts, keyed by the service's own `AuthMethod`
@@ -122,7 +122,6 @@ A log line without a `trace_id` is a missing span, not a logging fault: `Winston
 | Inbound HTTP | `HttpInstrumentation` / `ExpressInstrumentation` |
 | Inbound + outbound MQTT | `withMqttConsumeSpan` / `withMqttPublishSpan` (`packages/otel`), per-app broker identity via `MqttTracingService` |
 | Poll tick, startup task, any scheduled work | `runJob` (`packages/otel/src/jobTelemetry.ts`) — span **and** `job.*` metrics |
-| Inbound UDP datagram | `withEntryPointSpan` (`packages/otel/src/spanTracing.ts`) |
 | miot device UDP call, other uninstrumented outbound calls | `withClientSpan`, wrapped for miot by `apis/miot-bridge-api/src/otel/miotTracing.ts` |
 
 Span names, tracer scopes, `job.name` values and `miot.*` attribute keys are constants in `apis/<api>/src/otel/telemetry.ts`. Adding a background job or listener: `.apm/skills/instrument-entry-point`.
@@ -160,12 +159,12 @@ graph LR
     LaskaKit["LaskaKit IoT Map\nhardware"] -->|HTTP GET /data-sources/:src/cities/iot| IMA["interactive-map-feeder-api"]
     IMA -->|HTTPS| CHMI["ČHMÚ radar\nexternal"]
 
-    HA["Loxone / HA controller"] -->|HTTP · UDP · MQTT| MBA["miot-bridge-api"]
+    HA["Loxone / HA controller"] -->|MQTT · HTTP| MBA["miot-bridge-api"]
     MBA -->|MIoT binary UDP| Xiaomi["Xiaomi devices\nLAN"]
     MBA -->|HTTPS| MiotSpec["miot-spec.org\nexternal"]
     MBA <-->|MQTT| MQTTBroker["MQTT broker"]
     MBA <-->|TCP| MongoDB1[("MongoDB")]
-    MBA -->|HTTP · UDP · MQTT notifications| HA
+    MBA -->|MQTT · HTTP notifications| HA
 
     QRU["qr-manager-ui"] -->|REST| QRA["qr-manager-api"]
     Phone["Phone / scanner"] -->|HTTP GET /:slug| QRA

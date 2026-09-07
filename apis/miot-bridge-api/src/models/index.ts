@@ -8,7 +8,6 @@ export * from './DeviceCommandOperation.enum.js';
 export * from './config/MqttConfig.js';
 export * from './config/PollingConfig.js';
 export * from './PropertyChangeEvent.js';
-export * from './config/UdpConfig.js';
 export * from './simplified-miot-spec/index.js';
 export * from './DeviceCommandRequest.js';
 export * from './CommandResponseModel.js';

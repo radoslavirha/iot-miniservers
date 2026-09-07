@@ -31,12 +31,14 @@ the `verify-auth-in-browser` skill. `git log -p -- <this file>` has the original
 | `interactive-map-feeder-api` | Open | Read-only radar data. Low |
 
 **`miot-bridge-api` was never the dangerous one, and its HTTP guard does not make it safe.**
-`/command` actuates devices, but it is one of **three** inbound command paths — HTTP, a UDP socket
-(`UdpListenerService`, bound on the configured port), and an MQTT subscription
-(`miot-bridge/device/{deviceId}/command`). Loxone and the other controllers use MQTT and UDP; the REST
-endpoints exist for people. `@Authenticate` reaches the HTTP path only, so guarding it closes nothing
-on the LAN — **the device-actuation risk is EMQX topic ACLs and the UDP listener's exposure, and both
-are `homelab` work, not this repo's.** Guard the HTTP surface because it is a human surface, not as a
+`/command` actuates devices, but HTTP is not the only way in: commands also arrive on an MQTT
+subscription (`miot-bridge/device/{deviceId}/command`), which never passes a controller. Loxone and
+the other controllers use MQTT; the REST endpoints exist for people. There was a third path — an
+unauthenticated UDP command listener — and it has been **deleted**, along with the UDP notification
+transport. `homelab` had already stopped exposing it (owner, 2026-08-27: never used), so the code was
+a dead socket that no decorator or broker ACL could ever have covered. `@Authenticate` reaches the HTTP path only, so guarding it closes nothing
+on the LAN — **what remains of the device-actuation risk is EMQX topic ACLs, which are `homelab`
+work, not this repo's.** Guard the HTTP surface because it is a human surface, not as a
 device control.
 
 *(The README's "Consumed By" row still lists HTTP among the controller transports. If any Loxone block
