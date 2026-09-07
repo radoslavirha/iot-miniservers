@@ -5,7 +5,7 @@ description: Verify an OIDC login flow by actually running it in a browser again
 
 # Verify auth in a browser
 
-Auth in this repo has been wrong four times, and **every single time it was a thing that could have
+Auth in this repo has been wrong five times, and **every single time it was a thing that could have
 been checked in under a minute and was assumed instead**:
 
 | Assumed | Reality | The check that would have caught it |
@@ -14,8 +14,9 @@ been checked in under a minute and was assumed instead**:
 | The IdP gate keeps people out of the app | It gates tokens, not pages; the app was fully usable signed out | Open the app without signing in |
 | Skipping the probe on the callback fixes the loop | It did, and replaced it with a permanent `Loading…` | Sign in and watch |
 | One `Log out` ends the session | It ran the *provider* flow, which preserves the session | `prompt=none` after logout |
+| A session that stops working shows as broken | It reported healthy: `401` classified as an ordinary client error | Force a `401` and read the banner |
 
-The tests passed for all four. **Unit tests cannot see redirects, framing, cookies, or the IdP.**
+The tests passed for all five. **Unit tests cannot see redirects, framing, cookies, or the IdP.**
 
 ## The rule
 
@@ -64,17 +65,34 @@ Authentik's flow UI is web components, so:
   };
   ```
 
-Count **main-frame navigations** — that is how a redirect loop shows up, and nothing else reveals it:
+Count **main-frame navigation requests** — that is how a redirect loop shows up, and nothing else
+reveals it:
 
 ```js
-const nav = [];
-page.on('framenavigated', f => f === page.mainFrame() && nav.push(f.url()));
+const hops = [];
+page.on('request', r => {
+    if (r.isNavigationRequest() && r.frame() === page.mainFrame()) hops.push(r.url());
+});
 ```
 
-Count navigations **to the IdP**, not to the callback: `/callback` legitimately appears twice
-(document load, then the router's `replace`). One navigation to `auth.irha.cz` is healthy. Four
-callbacks with repeated IdP hops is a loop that happened to terminate — the user sees it as
-"never ending".
+**Use `request`, not `framenavigated`.** `framenavigated` fires only for *committed documents*, and
+the healthy `prompt=none` path never commits one: with a live SSO session the IdP answers the
+authorize request with a `302` straight back to `/callback`, so Chromium commits nothing at
+`auth.irha.cz`. Measured on 2026-09-07, a reload of a signed-in app reported **0 IdP hops by
+`framenavigated` and 1 by `request`** — and 1 is the correct answer. A loop built out of `302`s, which
+is the common shape, is exactly what `framenavigated` cannot see.
+
+Count hops **to the IdP**, not to the callback: `/callback` legitimately appears twice (document load,
+then the router's `replace`). One request to `auth.irha.cz` is healthy. Four callbacks with repeated
+IdP hops is a loop that happened to terminate — the user sees it as "never ending".
+
+Count **sub-frame** navigations too, and assert there are none. That is the check that catches an
+iframe creeping back in, and it is one line:
+
+```js
+const frames = [];
+page.on('framenavigated', f => f !== page.mainFrame() && frames.push(f.url()));
+```
 
 ### 3. Against a deployed environment
 
@@ -98,7 +116,25 @@ you test the wrong build. Use local dev (1) instead. That is what the registered
    `await page.evaluate(() => Object.keys(localStorage))`.
 5. **Log out** — returns to the app AND ends the IdP session. Prove the second half:
    `prompt=none` afterwards must return `error=login_required`, not a code.
-6. **Console** — a clean run has no errors. `X-Frame-Options` and CORS failures appear only here.
+6. **Session renewal** — the access token lives 30 minutes, so do not wait for it. Install
+   Playwright's clock before navigating and advance past the renewal point:
+
+   ```js
+   await page.clock.install({ time: new Date() });
+   // … sign in …
+   await page.clock.fastForward('29:10');   // renewal fires a minute before expiry
+   ```
+
+   Three things must hold: the renewal is a **top-level** `prompt=none` request with **no sub-frame
+   navigation at all**, the app is still signed in afterwards, and it lands back on **the page it left**
+   rather than the app's home route. Check the last one from a detail URL, not the landing page —
+   that is the only place the difference shows.
+
+   Then check the failure path, by answering the authorize request with `login_required` instead of
+   letting it succeed: the app must land on the sign-in page and send **no further requests carrying
+   the dead token**.
+
+7. **Console** — a clean run has no errors. `X-Frame-Options` and CORS failures appear only here.
    A `400` on every login means the authorization code is being exchanged twice: codes are
    single-use, and StrictMode double-invokes effects, so the callback needs a `useRef` guard. It is
    invisible without a browser, because the first exchange succeeds and the user still lands signed in.

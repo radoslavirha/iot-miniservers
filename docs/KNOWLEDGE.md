@@ -68,10 +68,18 @@ Three properties worth knowing before changing any of it:
 `qr-manager-ui` logs in through Authentik (`auth.irha.cz`) as a public client. The whole app is gated:
 an anonymous visitor gets a sign-in page and none of the routes.
 
-**Known gap, live since 2026-09-07:** `packages/ui-auth` has no token renewal, `getAccessToken()`
-ignores `user.expired`, and a `401` classifies as `client-error` — which the health banner reports as
-`ok`. Now that `qr-manager-api` enforces, an admin session breaks roughly thirty minutes in and claims
-to be healthy while doing so. Track A in the design doc.
+Session handling closed on 2026-09-07 (`ed0bb43`): the access token is renewed a minute before it
+expires, an expired one is never attached to a request, and a `401` reports as `unauthenticated`
+rather than healthy.
+
+**Renewal is a top-level `prompt=none` redirect, and cannot be anything else.** `automaticSilentRenew`
+in oidc-client-ts uses a hidden iframe, which Authentik's `X-Frame-Options: DENY` forbids. The visible
+cost is that the page reloads about twice an hour and unsaved form state does not survive it; the
+return path is carried through the redirect so the user lands back where they were.
+
+The callback route is `<AuthCallback>` from `@radoslavirha/ui-auth`. A frontend mounts it and supplies
+how it navigates, its basename, and its home route — navigation is a prop rather than a `useNavigate()`
+inside the package, since `homelab-dashboard-ui` has no router at all.
 
 Four facts that are load-bearing and easy to get wrong:
 
@@ -90,7 +98,9 @@ Four facts that are load-bearing and easy to get wrong:
 
 `http://localhost:5173/callback` is registered on **sandbox applications only**, so `pnpm dev` performs
 a real login against the real IdP. Use the **`verify-auth-in-browser`** skill before calling any auth
-change done: six bugs in this area passed a green test suite.
+change done: six bugs in this area passed a green test suite, and the skill carries the checklist plus
+the Playwright traps (Authentik's shadow DOM, `ak-loading-overlay`, and counting redirect hops with
+`request` rather than `framenavigated`).
 
 ## Observability (OTel signal routing)
 

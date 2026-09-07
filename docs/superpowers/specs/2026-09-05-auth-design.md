@@ -22,6 +22,7 @@ not status.
 | `packages/auth` — contracts, JWT verifier, static + JWKS key sources, config schema, test kit | 109 tests |
 | `packages/tsed-auth` — guard, decorators, injectable `Principal`, OpenAPI security, test helper | 43 tests |
 | `qr-manager-api` enforces on `/qr-codes` | `d1c02b8`; 96 tests incl. forged / wrong-audience / expired / non-bearer |
+| Frontend session handling — renewal, expiry-aware token, 401 status (Track A) | `ed0bb43`; verified in Chromium against the live IdP |
 | Local verification against the live IdP | Browser login → real RS256 token → verified against live JWKS |
 
 The design settled on three things that the older sections below still argue about. **These are
@@ -42,20 +43,21 @@ package. See [the superseded modes section](#three-modes-not-an-onoff-switch--no
 Three tracks. **They touch disjoint files and can be taken by three agents at once.** Anything
 outside its own listed paths is somebody else's track.
 
-**Track A — frontend session handling.** `packages/ui-auth`, `ui/qr-manager-ui`.
-The most urgent, because `d1c02b8` made it a live bug rather than a latent one: an admin session now
-breaks about thirty minutes in, and reports itself healthy while doing so. Three defects, all found by
-reading the shipped code in P1.F2:
+**~~Track A — frontend session handling~~ — DONE `ed0bb43`.** Renewal is a top-level `prompt=none`
+redirect scheduled a minute before expiry, `getAccessToken()` withholds an expired token, and a 401
+reports as `unauthenticated` rather than healthy. Two things it turned up on the way: `state.returnTo`
+was written on every redirect and never read, and an existing test passed only because a zero-delay
+timer had not fired yet.
 
-1. **No token renewal exists at all.** Renewal must be a top-level `prompt=none` redirect — never an
-   iframe, because Authentik sends `X-Frame-Options: DENY` on every response.
-2. **`getAccessToken()` ignores `user.expired`**, so the request seam attaches a dead token.
-3. **A `401` classifies as `client-error`**, which `statusForOutcome` maps to `ok` — right for a
-   validation error, wrong for an expired session. It needs its own outcome so the banner stops
-   claiming health.
+Two consequences worth knowing before touching this area:
 
-Use the **`verify-auth-in-browser`** skill before calling any of this done. Six bugs in this area have
-passed a green test suite.
+- **The callback route now lives in `@radoslavirha/ui-auth` as `<AuthCallback>`.** A new frontend
+  mounts it and supplies three things — how it navigates, its basename, and its home route. Navigation
+  is a prop rather than a `useNavigate()` call inside the package, because `homelab-dashboard-ui` has
+  no router at all and a future single-screen app should not have to adopt one to get a login.
+- **`homelab-dashboard-ui` inherits the 401 change** through `packages/ui-runtime`: a UniFi 401 now
+  shows a banner where it previously read as healthy. Its tests pass; nobody has looked at whether the
+  wording suits that app.
 
 **Track B — onboard `miot-bridge-api`.** `apis/miot-bridge-api/**` only.
 Follow `d1c02b8` as the worked example; it is the same five pieces. Rank every route explicitly rather
@@ -67,6 +69,11 @@ ServiceAccount or a second trust-domain entry may be the answer rather than a hu
 The smallest of the three. Its consumer is a LaskaKit device on the LAN, not a browser, so the caller
 question is the whole of the work — a device holding a PAT from the IdP is one entry; a wholly public
 read-only API is a defensible answer too, but it must be written down rather than left by omission.
+
+**Before calling any auth change done, run the `verify-auth-in-browser` skill.** Six bugs in this area
+have passed a green test suite. If it is not in your skill list, `apm install` has not been run since
+it was added — the source is `.apm/skills/verify-auth-in-browser/`, and it is worth reading directly
+rather than skipping.
 
 **Not parallel, and not yet:** P1.7 authorization (`@Scopes()`, roles on `Principal`) still blocks
 nothing and should wait for a route that genuinely needs "admins only". The changeset and release for
