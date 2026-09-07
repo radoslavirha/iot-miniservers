@@ -27,9 +27,17 @@ cannot run it, say which specific thing is unverified and why — never let it r
 
 ### 1. Local dev against the real IdP — the default
 
-`http://localhost:5173/callback` is a **registered redirect URI on sandbox applications only**
-(`homelab` → `authentik-blueprints/templates/configmap.yaml`, gated on `stage == "sandbox"`). So
-local development does the real flow against the real IdP.
+Each app has a **`<app>-local` application of its own** in Authentik — its own `client_id`, issuer and
+role groups — whose registered redirect URIs are `http://localhost:5173/callback` and
+`http://localhost:5173/`. Declared as `{ stage: local }` in
+`homelab` → `gitops/helm-values/server3/authentik-blueprints.yaml`. So local development does the real
+flow against the real IdP.
+
+**Sandbox applications no longer carry a loopback URI** (they did until 2026-09-07). If a login from
+`pnpm dev` fails with `Invalid redirect URI`, the app's config is still pointing at the sandbox
+`client_id` — point it at `<app>-local`. And a local token is **not** a sandbox token: its `iss` and
+`aud` are the local application's, so an API accepts it only through a trusted-issuer row in that
+developer's own `config/localhost.json`, which never ships.
 
 ```bash
 pnpm --filter=<ui> dev          # http://localhost:5173
@@ -40,7 +48,8 @@ secure context, PKCE is real, the token is the same token.
 
 **Never point a UI's local config at a production client**, and never add a loopback redirect URI to a
 production application — anything running on a developer's machine could then complete a production
-login.
+login. The `local` applications exist so that nobody has a reason to: the chart `fail`s on
+`{ cluster: …, stage: local }`, and every other stage renders its deployed host and nothing else.
 
 ### 2. Driving it with Playwright
 

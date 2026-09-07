@@ -41,7 +41,7 @@ IdP facts: [`superpowers/specs/2026-09-04-authentik-integration-contract.md`](./
 | API | State |
 |-----|-------|
 | `qr-manager-api` | **Enforcing.** `/qr-codes` answers `401` without a valid token. `GET /r/:slug`, `/health*` and `GET /qr-codes/:id/image` stay open |
-| `miot-bridge-api` | **Open.** `/command` actuates physical devices on the LAN with no credential |
+| `miot-bridge-api` | **Enforcing.** All 16 REST routes need a token; `/health*` stays open. Commands also arrive over MQTT and UDP, which no decorator reaches — that identity is the broker's and the LAN's |
 | `interactive-map-feeder-api` | **Open.** Read-only radar data |
 
 An API's `auth` block is a map of trust domains it accepts, keyed by the service's own `AuthMethod`

@@ -1,7 +1,10 @@
 # Graduating the Health Packages to toolkit-hub
 
-> **Status:** Planned — expected soon. **Re-checked 2026-09-05: not started.** `packages/health`,
-> `packages/tsed-health` and `packages/ui-runtime` are all still `private: true`.
+> **Status:** Planned, not started. **Re-checked 2026-09-07:** `packages/health`,
+> `packages/tsed-health` and `packages/ui-runtime` are all still `private: true`, and
+> `packages/auth`, `packages/tsed-auth` and `packages/ui-auth` have since joined them on the same
+> incubation path — this checklist is the one they will follow too, so what is decided here is decided
+> for six packages, not three.
 > **Repos:** `iot-miniservers` (source) → `toolkit-hub` (destination).
 > **Related:** [`2026-08-06-backend-health-checks.md`](./archive/2026-08-06-backend-health-checks.md), which
 > built these packages here and always intended this move.

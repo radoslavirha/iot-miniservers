@@ -1,19 +1,18 @@
 # Auth design and work packages
 
-**Status 2026-09-07: P1.0–P1.6 built, and `qr-manager-api` enforces.** An unauthenticated `GET
-/qr-codes` now answers `401`. Every *other* HTTP API in this repo still answers in full — including
-`miot-bridge-api`'s `/command`, which actuates physical devices. See
-[Where the work stands](#where-the-work-stands) for what is done, what is next, and which pieces can
-run in parallel.
+**Status 2026-09-07: the packages are built and `qr-manager-api` enforces.** An unauthenticated
+`GET /qr-codes` answers `401`. The other two HTTP APIs still answer in full; onboarding them is Tracks
+B and C below, and both are ordinary work — see the risk note under [Still open](#still-open).
 
 **Read [`2026-09-04-authentik-integration-contract.md`](./2026-09-04-authentik-integration-contract.md)
 first.** It is the authority for every concrete IdP fact — endpoints, `client_id`s, claims, traps.
-This document is the other half: what we build here, in what order, and why the shape is what it is.
+This document is the other half: what is left, and the design decisions a new caller has to fit into.
+
+*Trimmed 2026-09-07. The P1.F/P1.0–P1.6 unit plans, the mode-vs-no-mode argument and the frontend
+postmortems were deleted once shipped; their lessons live in `AGENTS.md`, the two package READMEs and
+the `verify-auth-in-browser` skill. `git log -p -- <this file>` has the originals.*
 
 ## Where the work stands
-
-Updated 2026-09-07. **Read this before starting anything**; the sections below are design rationale,
-not status.
 
 ### Done
 
@@ -21,67 +20,110 @@ not status.
 | --- | --- |
 | `packages/auth` — contracts, JWT verifier, static + JWKS key sources, config schema, test kit | 109 tests |
 | `packages/tsed-auth` — guard, decorators, injectable `Principal`, OpenAPI security, test helper | 43 tests |
+| `packages/ui-auth` — login, renewal, expiry-aware token, shared `<AuthCallback>` | `ed0bb43`; verified in Chromium against the live IdP |
 | `qr-manager-api` enforces on `/qr-codes` | `d1c02b8`; 96 tests incl. forged / wrong-audience / expired / non-bearer |
-| Frontend session handling — renewal, expiry-aware token, 401 status (Track A) | `ed0bb43`; verified in Chromium against the live IdP |
-| Local verification against the live IdP | Browser login → real RS256 token → verified against live JWKS |
+| `miot-bridge-api` enforces on every REST route (Track B) | 56 tests over all 16 routes; verified live — `401`, `503` on an unreachable JWKS, `BEARER_JWT` in both Swagger documents |
 
-The design settled on three things that the older sections below still argue about. **These are
-decided, not open:** there are no auth modes (`AuthMode` is deleted); the `auth` block is a map of
-service-named entries whose `type` picks the verifier; and `AuthMethod` is declared per API, not by the
-package. See [the superseded modes section](#three-modes-not-an-onoff-switch--no-modes-at-all).
-
-### Which APIs are still open
+### Still open
 
 | API | State | Risk if left |
 | --- | --- | --- |
-| `qr-manager-api` | **Enforcing** | — |
-| `miot-bridge-api` | Open | `/command` actuates physical devices. Highest-risk endpoint in the repo |
-| `interactive-map-feeder-api` | Open | Read-only radar data; lowest risk |
+| `interactive-map-feeder-api` | Open | Read-only radar data. Low |
 
-### Next, and what can run in parallel
+**`miot-bridge-api` was never the dangerous one, and its HTTP guard does not make it safe.**
+`/command` actuates devices, but it is one of **three** inbound command paths — HTTP, a UDP socket
+(`UdpListenerService`, bound on the configured port), and an MQTT subscription
+(`miot-bridge/device/{deviceId}/command`). Loxone and the other controllers use MQTT and UDP; the REST
+endpoints exist for people. `@Authenticate` reaches the HTTP path only, so guarding it closes nothing
+on the LAN — **the device-actuation risk is EMQX topic ACLs and the UDP listener's exposure, and both
+are `homelab` work, not this repo's.** Guard the HTTP surface because it is a human surface, not as a
+device control.
 
-Three tracks. **They touch disjoint files and can be taken by three agents at once.** Anything
-outside its own listed paths is somebody else's track.
+*(The README's "Consumed By" row still lists HTTP among the controller transports. If any Loxone block
+really does call HTTP `/command`, guarding it breaks that automation — worth one look before Track B
+lands, since it is the one thing here that a test cannot tell you.)*
 
-**~~Track A — frontend session handling~~ — DONE `ed0bb43`.** Renewal is a top-level `prompt=none`
-redirect scheduled a minute before expiry, `getAccessToken()` withholds an expired token, and a 401
-reports as `unauthenticated` rather than healthy. Two things it turned up on the way: `state.returnTo`
-was written on every redirect and never read, and an existing test passed only because a zero-delay
-timer had not fired yet.
+### Next
 
-Two consequences worth knowing before touching this area:
+Two tracks. **They touch disjoint files and can be taken by two agents at once.** Anything outside a
+track's listed paths belongs to the other one.
 
-- **The callback route now lives in `@radoslavirha/ui-auth` as `<AuthCallback>`.** A new frontend
-  mounts it and supplies three things — how it navigates, its basename, and its home route. Navigation
-  is a prop rather than a `useNavigate()` call inside the package, because `homelab-dashboard-ui` has
-  no router at all and a future single-screen app should not have to adopt one to get a login.
-- **`homelab-dashboard-ui` inherits the 401 change** through `packages/ui-runtime`: a UniFi 401 now
-  shows a banner where it previously read as healthy. Its tests pass; nobody has looked at whether the
-  wording suits that app.
+**~~Track B — onboard `miot-bridge-api`~~ — DONE.** All four controllers guarded with one
+`AuthMethod.Idp`; no per-route ranking, because separating "read the registry" from "actuate a device"
+is authorization and waits for scopes. Three things it turned up, none of them predicted:
 
-**Track B — onboard `miot-bridge-api`.** `apis/miot-bridge-api/**` only.
-Follow `d1c02b8` as the worked example; it is the same five pieces. Rank every route explicitly rather
-than blanket-guarding, because `/command` actuating a device is a different question from reading a
-registry. Decide what the poller and any MQTT path present as — they are not browser callers, and a
-ServiceAccount or a second trust-domain entry may be the answer rather than a human's token.
+1. **`DeviceNotificationsController` is a child controller**, and Ts.ED's `UseAuth` decorates only the
+   class it sits on. Without its own decorator those four routes would have shipped open beside twelve
+   closed ones. There is now a route-by-route test table rather than one call per controller.
+2. **Importing `createAuthConfigSchema` from `@radoslavirha/tsed-auth` registers a DI provider.** The
+   barrel also exports `AuthenticationService`, whose `@Injectable()` runs on import — so a config
+   schema import made every unit test in the service resolve an `AuthenticationService` with no config,
+   failing 90 tests with an injection error nowhere near authentication. Import it from
+   `@radoslavirha/auth`, which is framework-free. `qr-manager-api` has the same import and the same
+   latent trap.
+3. **The refusal logged the credential.** See the redaction note below.
 
-**Track C — onboard `interactive-map-feeder-api`.** `apis/interactive-map-feeder-api/**` only.
-The smallest of the three. Its consumer is a LaskaKit device on the LAN, not a browser, so the caller
-question is the whole of the work — a device holding a PAT from the IdP is one entry; a wholly public
-read-only API is a defensible answer too, but it must be written down rather than left by omission.
+**The IdP side of Track B is now declared** in `homelab` (uncommitted): `miot-bridge` gains the same
+four deployed applications `qr-manager` has, and every app gains a `{ stage: local }` environment —
+`qr-manager-local`, `miot-bridge-local`, `homelab-dashboard-local`. **Sandbox applications no longer
+carry a loopback redirect URI.** Local configs in this repo now point at the `-local` clients.
 
-**Before calling any auth change done, run the `verify-auth-in-browser` skill.** Six bugs in this area
-have passed a green test suite. If it is not in your skill list, `apm install` has not been run since
-it was added — the source is `.apm/skills/verify-auth-in-browser/`, and it is worth reading directly
-rather than skipping.
+Still needed before a local login works, and only you can do it: **group membership**. The blueprint
+creates `qr-manager-local-admin`, `miot-bridge-local-admin` and `homelab-dashboard-local-viewer`, but
+does not put anyone in them.
 
-**Not parallel, and not yet:** P1.7 authorization (`@Scopes()`, roles on `Principal`) still blocks
-nothing and should wait for a route that genuinely needs "admins only". The changeset and release for
-the two new packages come after all three tracks land.
+**Track C — onboard `interactive-map-feeder-api`.** `apis/interactive-map-feeder-api/**` only. The
+smaller of the two. Its consumer is a LaskaKit device on the LAN, not a browser, so the caller question
+is the whole of the work — a device holding a PAT from the IdP is one entry; a wholly public read-only
+API is a defensible answer too, but it must be written down rather than left by omission.
+
+### The refusal was logging the credential
+
+Found by reading the logs of the first unauthenticated request to `miot-bridge-api`, not by a test.
+`@radoslavirha/tsed-logger` writes the request headers on every failed request, and its
+`requests.headers.redactPaths` **defaults to `[]`** — so the `Authorization` header went to the log
+verbatim, at `level: error`, on exactly the requests authentication had just started producing:
+
+```
+"headers":"{…,\"authorization\":\"Bearer supersecrettokenvalue123\"}"  status:401
+```
+
+A rejected token is frequently still a live token — minted for another audience, expired by seconds,
+or valid against a different API — and these logs ship to Loki.
+
+Fixed here by configuring `logger.requests.headers.redactPaths` in both APIs' `localhost.json` and
+`test.json`; verified live, the entry now reads `"authorization":"***"` with the secret absent from the
+whole record. `cookie`, `proxy-authorization` and `x-api-key` are redacted alongside it.
+
+**Two things this repo cannot fix, both still open:**
+
+- **The default belongs upstream.** `redactPaths: []` on a field that is *always* headers is a
+  fail-open default: every service must remember, and the failure is silent. `@radoslavirha/tsed-logger`
+  in `toolkit-hub` should default to redacting `authorization`, `cookie` and `proxy-authorization`.
+- **Production config lives in `homelab`.** The ConfigMaps for both APIs need the same `logger` block,
+  or production keeps logging tokens while local development does not.
+
+**Still open: the `postman` client.** Contract §7 designed it and deferred it to "the same pass as the
+first enforcing API" — that pass has happened. It is a **separate** client from the `-local` ones, and
+deliberately so: `-local` mimics one deployed app, whereas Postman wants the opposite shape — one token
+spanning every API, `offline_access` bound (a desktop app has no XSS surface), possibly a longer
+lifetime. Those are settings no browser client should inherit, which is exactly why it cannot be folded
+into `<app>-local`.
+
+It needs the `accesses` multi-audience mapping, which is designed but unbuilt in the chart — without it
+a `postman` client's token carries `aud: postman` and reaches nothing. Until then, `<app>-local` is the
+way to hold a token by hand, one app at a time.
+
+**After both land:** a changeset and release covering `@radoslavirha/auth`, `@radoslavirha/tsed-auth`,
+`@radoslavirha/ui-auth`, `qr-manager-api` and `qr-manager-ui`. Nothing since `qr-manager-ui@0.10.1` is
+released.
+
+**Parked, blocking nothing:** P1.7 authorization (`@Scopes()`, roles on `Principal`). It waits for a
+route that genuinely needs "admins only"; plumbing only when it comes.
 
 ### Onboarding an API — the five pieces
 
-What `d1c02b8` actually did, in order. Each is small; the thinking is all in the second step.
+What `d1c02b8` did, in order. Each is small; the thinking is all in the second step.
 
 1. `src/models/config/AuthMethod.enum.ts` — the service's own names, beside `ExternalApi`. Name the
    trust domain (`IDP`), not the caller class and not the mechanism.
@@ -95,37 +137,15 @@ What `d1c02b8` actually did, in order. Each is small; the thinking is all in the
 5. Integration tests for the paths that only ever fail: forged signature, wrong audience, expired
    token, non-bearer scheme, and a refusal that leaks nothing about why.
 
-
-## Why this work exists
-
-**Every HTTP API in this repo is unauthenticated on the LAN.** Verified 2026-08-29: an unauthenticated
-`curl` to `https://api.server1.homelab.irha.cz/iot/qr-manager/qr-codes` returns the full record list.
-`miot-bridge-api`'s `/command` actuates physical devices on the same terms. The dashboard's UniFi proxy
-is reachable by anyone who can resolve `dashboard.server3.homelab.irha.cz`.
-
-**That does not close when login works.** P1.F ended with the frontends sending a bearer token and the
-APIs still ignoring it. It began closing on 2026-09-07, when `qr-manager-api` first rejected a
-request. It is not closed while any API in the table below is still open.
-
-## What is already done, so it is not re-derived
-
-| | State |
-| --- | --- |
-| IdP | Authentik 2026.8.1 on server3, five applications, nine role groups — `homelab`, 2026-09-04 |
-| Its contract | Verified end to end against the live instance; see the contract doc |
-| A human account | `radoslav`, non-superuser, in `qr-manager-server1-sandbox-admin` only — the login for the happy path and the refused user for the other four apps |
-| API pods reaching the IdP | Fixed — `homelab` `0b903db`, JWKS fetch verified from a pod in all four namespaces |
-| TLS on every exposed hop | Done 2026-09-03 |
-
-**P1.F is finished.** Its two execution plans were written 2026-09-05, executed, and deleted. The next
-unit is **P1.0**.
+**Before calling any auth change done, run the `verify-auth-in-browser` skill.** Six bugs in this area
+have passed a green test suite. If it is not in your skill list, `apm install` has not been run since it
+was added — the source is `.apm/skills/verify-auth-in-browser/`.
 
 ---
 
-## The principle everything rests on
+## The design, in the parts that still decide things
 
-Every verifier — IdP JWT, apiserver JWT, API key, MQTT client identity — resolves to the **same
-shape**:
+### Every verifier resolves to one shape
 
 ```ts
 interface Principal {
@@ -141,8 +161,8 @@ Business logic, audit fields and OTel attributes consume `Principal` and never l
 produced it. Adding a mechanism later is a new verifier returning the same shape — not a change to
 anything downstream.
 
-This is also what keeps the design Kubernetes-agnostic. A ServiceAccount token is not a special case
-in the code; it is "an issuer whose JWKS fetch happens to need a bearer token", which is transport
+This is also what keeps the design Kubernetes-agnostic. A ServiceAccount token is not a special case in
+the code; it is "an issuer whose JWKS fetch happens to need a bearer token", which is transport
 configuration. Delete that config row and the same binary runs on a VM.
 
 **One consequence for the application API.** On an `@Anonymous()` route there is no `Principal`. The
@@ -150,9 +170,10 @@ injected value is therefore `Principal | undefined`, and **no synthetic "local-d
 fabricated** — a fake subject in an audit column is worse than an empty one, because it is
 indistinguishable from a real subject later.
 
-## Caller classes
+### Caller classes
 
-Four kinds of caller. Using one mechanism for all of them is the mistake to avoid.
+Four kinds of caller — the table Tracks B and C have to answer against. Using one mechanism for all of
+them is the mistake to avoid.
 
 | Class | Who | Transport | Mechanism |
 | --- | --- | --- | --- |
@@ -166,38 +187,12 @@ concern, not an application concern — and the broker already has per-client id
 application-layer work is smaller than it first appears; the broker-layer work is larger, and it lives
 in `homelab`.
 
-**Anonymous routes are an allowlist, not an exception.** Auth is opt-in per route, because the next
-catch-all route is one decorator away.
-
 **Identity does not propagate by forwarding a token.** When A calls B on a human's behalf, B sees A's
 *service* identity and no user (`sub: system:serviceaccount:…`, kind `service`). Token pass-through is
-rejected: the token's `aud` was minted for A, B would inherit the user's full powers, and compromising
-A would yield every caller's token. The correct upgrade — RFC 8693 token exchange with an `act` claim —
-is available (`TokenExchangeStrategy` in `packages/http-provider` already implements the client half)
-and deliberately unbuilt: there is no user-initiated cross-service call yet.
-
-## What gets built
-
-- **`packages/auth`** — framework-free, `private: true`, exportable from day one. `ITokenVerifier`,
-  multi-issuer JWKS verification over `jose.createRemoteJWKSet`, audience validation, subject →
-  `Principal` mapping, Zod schemas in the style of `packages/http-provider/src/schemas/auth.schema.ts`.
-  **Zero Kubernetes imports.** Also static-key issuer rows, the boot-time issuer log, and the outcome
-  counter. (The token-minting script that was listed here
-  is dropped — see P1.4.)
-  Graduation checklist: [`2026-08-11-health-packages-graduation.md`](./2026-08-11-health-packages-graduation.md).
-- **`packages/tsed-auth`** — `@Authenticated()` / `@Scopes()`, injectable `Principal`, redaction
-  integration so tokens never reach a log, OTel attributes, and wiring of the already-present-but-unused
-  `SwaggerSecurityScheme.BEARER_JWT`. Ergonomic target: hikers-book's
-  `src/auth/decorators/JWTAuth.ts`, which composes `Authenticate` + `Security(BEARER_JWT)` +
-  `Returns(401)` into one decorator — and records the Swagger trap: do **not** set `.Required(true)` on
-  the header, or Swagger demands it typed manually instead of offering the Authorize button.
-- **A frontend auth package** — OIDC + PKCE as a public client, per-target bearer attachment, React
-  bindings. Its own `private` workspace package on the incubation path: not `ui-kit` (components), not
-  `ui-runtime` (carries neither the dependency nor the concern — it reads `ui-runtime`'s config, it
-  does not live inside it).
-- **`packages/http-provider` fixes** — add `audience` to the k8s SA strategy; **fix its missing cache**
-  (it re-reads the token file on every request and its `invalidate()` is a no-op, violating the caching
-  contract `IAuthStrategy` itself documents).
+rejected: the token's `aud` was minted for A, B would inherit the user's full powers, and compromising A
+would yield every caller's token. The correct upgrade — RFC 8693 token exchange with an `act` claim — is
+available (`TokenExchangeStrategy` in `packages/http-provider` already implements the client half) and
+deliberately unbuilt: there is no user-initiated cross-service call yet.
 
 ### The verifier's configuration is the whole idea
 
@@ -216,275 +211,52 @@ trustedIssuers:
     subjectKind: human
 ```
 
-Same `jose.jwtVerify` call, same `Principal` out. Add a cluster, swap IdPs, or run with no Kubernetes
-at all — each is a config change.
+Same `jose.jwtVerify` call, same `Principal` out. Add a cluster, swap IdPs, or run with no Kubernetes at
+all — each is a config change.
 
-## ~~Three modes, not an on/off switch~~ — no modes at all
+### Settled, not open
 
-**Superseded 2026-09-07. `AuthMode` is deleted; there is no `disabled`, no `permissive`, no
-`enforced`.** The section is kept because the reasoning against `enabled: false` still stands — it
-turned out to apply to the modes themselves.
-
-The case for three modes was that `permissive` answers "how many callers would this break" from real
-traffic, removing the big-bang cutover. That is worth a great deal where the callers are unknown. Here
-there are two UIs and one operator, every API is onboarded in a single release, and the deployment
-target tolerates downtime — so the observation window buys nothing that reading the config does not.
-
-`disabled` was justified by local development, and P1.F2 disproved it: `pnpm dev` completes a real
-login against the live IdP from the registered `localhost:5173` redirect URI, and the local API
-verifies those tokens against the live JWKS. There is nothing to disable. Where an IdP genuinely is
-not reachable, an inline HS256 issuer row verifies for real — which is what `config/test.json` does.
-
-**Deleting the mode is strictly safer, which is the part worth noticing.** The argument against
-`enabled: false` was that it fails open: a values file that forgets the block leaves a service up,
-healthy and unauthenticated. `mode` had exactly that hazard — `disabled` was the *default*, so a
-forgotten block failed open in precisely the way the three modes were introduced to prevent. With no
-mode there is no fail-open state left to reach.
-
-What replaces it is a schema that cannot express "not really on":
-
-- the `auth` block **is** a map of named entries, not an array and not a wrapper around one, and a
-  service declares the names its routes use — `createAuthConfigSchema(Object.values(AuthMethod))`. A
-  config missing one fails to parse at boot naming `auth.IDP`. The array form could only count
-  elements after the fact. That schema is strict, so a `IPD` typo is rejected rather than stripped.
-- a name is **not** a mechanism. `AuthMethod.Idp` says which callers a route admits; the entry's
-  `type` (`VerifierType.BearerJwt`) says how they are checked. Naming entries after their mechanism
-  capped the design at one entry per mechanism, so a cluster's ServiceAccount token would have been
-  accepted on every route a person's token was — see the caller-classes table above.
-- **the names belong to the service.** `AuthMethod` is declared per API, beside `ExternalApi`, and
-  `packages/auth` takes plain strings. Which callers a deployment admits is not something a package
-  that may be published can name.
-- there is no `dummy` or `allow-all` verifier type, for the same reason there is no mode.
-- nothing else lives at that level. An `anonymousRoutes` list was tried and deleted — nothing enforced
-  it, so it was a second copy of what `@Anonymous()` already says, free to drift from it.
-- a `jwt` verifier must carry at least one trusted issuer, so "configured but verifies nothing" is
-  rejected by Zod rather than by a hand-written assertion.
-- `@Authenticate(AuthMethod.Idp)` takes the method as a **required** argument, so what a route asks
-  for and what the config must supply are the same enum.
-
-What survives from the observability half: the boot log naming every trusted issuer with its key
-source (the answer to "why is my token rejected" nine times in ten), and the `auth.verifications`
-counter labelled by outcome. The `auth.mode` gauge is deleted with the modes.
-
-### Local development is an issuer row, never a bypass
-
-`config/localhost.json` verifies for real. As shipped it points at the sandbox IdP's JWKS; where no
-IdP is reachable, a static-key row does the same job with no network — which is what
-`config/test.json` uses:
-
-```jsonc
-"auth": {
-    "IDP": {
-        "type": "bearer-jwt",
-        "trustedIssuers": [
-            {
-                "name": "dev-local",
-                "issuer": "dev",
-                "key": { "source": "value", "algorithm": "HS256", "value": "local-dev-secret" },
-                "audience": "qr-manager-api",
-                "subjectKind": "service"
-            }
-        ]
-    }
-}
-```
-
-A static-key row means `jose.jwtVerify` takes the key directly and no JWKS endpoint has to exist.
-
-**The outbound half already exists.** `JwtSelfSignedStrategy.importKey` handles `HS256` via
-`node:crypto` `createSecretKey`, and `JwtKeySchema` accepts `{ source: 'value', value }` — so a
-caller's `localhost.json` points its `externalApis` entry at `strategy: jwt-self-signed` with the same
-secret and the two halves meet in a real signed round trip on localhost. That turns local development
-into the standing integration test for the whole scheme.
-
-Why this beats a bypass flag, one line each:
-
-- the code exercised locally is the code that runs in production;
-- 401 and 403 become testable locally and in `config/test.json`, instead of being the only paths never
-  covered;
-- **it fails closed** — a leftover dev issuer row is exploitable only by someone who also has the dev
-  secret, where a leftover `enabled: false` *is* the whole vulnerability.
-
-The honest caveat: copy `localhost.json`'s auth block into `production.json` and the dev secret becomes
-a trusted production issuer. The boot-time issuer log is the mitigation that costs nothing.
-
----
-
-# Work packages
-
-Two independent tracks. **P1.F is implemented first** and shares no file with any P1.x unit.
-
-```
-       P1.F1 login  →  P1.F2 token on our calls    (first — own timeline)
-                                    ·
-                        P1.0  contracts + test kit          (gate — one agent, alone)
-                                    │
-        ┌───────────┬───────────┬───┴───────┬───────────┬───────────┐
-      P1.1        P1.2        P1.3        P1.4        P1.5        P1.6      [P1.7 parked]
-    jwt core    remote      mode +      dev mint    tsed-auth   openapi
-   + static     jwks        observ.       cli         guard     security
-      keys                                                       metadata
-        └───────────┴───────────┴───────────┴───────────┴───────────┘
-                                    │
-                              Phase 1b — onboarding
-```
-
-## P1.F — frontend auth, and the first UI
-
-Each SPA performs authorization-code + PKCE against Authentik as a **public client, no secret**, holds
-the token **in memory**, and attaches it to calls to *this repo's* APIs only. Frontends also call third
-parties — `homelab-dashboard-ui` reaches UniFi through an nginx `proxy_pass` with no credential of its
-own — so this is **a per-target client, never a global `fetch` interceptor**. A call with no client
-stays bare.
-
-**Access is gated at the IdP, not in the app.** A user who is not in the application's group never
-reaches the callback. So P1.F1 needs no "you are not allowed here" screen behind the callback; it needs
-to handle a login that ends at the IdP instead of coming back.
-
-Config lives in the runtime `config.json` — `issuer`, `clientId`, `scope`, `redirectUri` and
-`postLogoutRedirectUri` are all non-secret, and the `auth` block is **required** (contract §6). Exact
-keys, values and the reason `redirectUri` is spelled out rather than derived: the contract.
-
-Three Authentik behaviours shape the implementation, all verified, all in the contract:
-
-- **No refresh token is issued.** Recovery is a top-level `prompt=none` redirect against the IdP session
-  cookie. There is no fallback, and as of P1.F2 there is no renewal at all — see P1.F2's finding 1.
-  The access token lives **30 minutes**, not 300 seconds; that changed when renewal became a navigation.
-- **`prompt=none` has three outcomes**, not two. A valid session whose user is not in the group returns
-  a `200` HTML page and never redirects — time it out, and treat the timeout as *not authorized*.
-- **Logout ends the IdP session**, because the provider binds `default-invalidation-flow`. That is a
-  `homelab` decision, not a frontend one. There is one *Log out* button and no *Sign out everywhere*.
-
-### ~~P1.F1 — login~~ — DONE, shipped as `qr-manager-ui@0.10.1`, 2026-09-05
-
-A user logs in, the UI shows who they are, a reload keeps the session. No API call changed.
-
-Verified in Chromium against the live IdP, on all four deployed applications and on `pnpm dev`.
-Cross-environment SSO and global logout confirmed; token claims confirmed per application.
-
-**Four things the plan got wrong, all found by running it, none by tests:**
-
-1. **Silent renewal cannot use an iframe.** Authentik sets `X-Frame-Options: DENY` on every response.
-   Recovery and renewal are top-level `prompt=none` redirects, which is also what makes SSO work.
-2. **The app was usable while signed out.** "Access is decided at the IdP" was wrong: the IdP gates
-   *tokens*, not *pages*, and nothing forced a login. The whole app is now gated behind sign-in —
-   **UX, not security**, since no API verifies anything until Phase 1b.
-3. **The gating fix hung on `Loading…`**, because a no-session callback produces no user-loaded event
-   and the provider never settled.
-4. **The authorization code was exchanged twice per login** — codes are single-use, StrictMode
-   double-invokes effects, and the second attempt returned 400. Invisible without a browser.
-
-Two knock-on decisions, both recorded in the contract: the token lifetime went 5 min → **30 min**
-(renewal is now a navigation, so 5 minutes was unusable; revocation latency grows to match), and
-logout became a **single button that ends the IdP session** by binding `default-invalidation-flow`.
-
-`localhost:5173` is now a registered redirect URI on **sandbox applications only**, so `pnpm dev` can
-complete a real login. That it was not is why all four mistakes reached a deployed environment first.
-Anything touching auth from here uses the **`verify-auth-in-browser`** skill.
-
-### ~~P1.F2 — token on our calls~~ — DONE 2026-09-06, not released
-
-All six calls in `src/api/qrCodes.ts` route through one `request()` seam that attaches the token from an
-injected getter. Verified in Chromium against the live IdP, on `pnpm dev` against a local
-`qr-manager-api`: `GET`, `POST`, `PUT`×3 and `DELETE` all carry the header, no other request carries one,
-and signed out the app issues no API call at all.
-
-**This delivers no security, and the docs must not read as though it does.** An unauthenticated `curl`
-still returns everything. What it delivers is a verified end-to-end human token.
-
-**Three things it left for Phase 1b, all found by reading the shipped code:**
-
-1. **Nothing renews the token.** `automaticSilentRenew` is off — correctly, it uses an iframe — but
-   nothing replaced it. `AuthContext` subscribes only to `addUserLoaded`/`addUserUnloaded`, `recover()`
-   runs once on mount, and there is no timer in the package. A tab open past the 30-minute lifetime
-   holds a dead token.
-2. **`getAccessToken()` does not check `user.expired`**, so the seam attaches that dead token. Harmless
-   while the API ignores it.
-3. **A 401 will report the backend as healthy.** `classifyResponse` maps every 4xx to `client-error`,
-   which `statusForOutcome` maps to `ok`. Right for a validation error, wrong for an expired session:
-   the user gets a green banner and a raw `Request failed with 401` string, and nothing prompts a
-   re-login. 401/403 are the only 4xx that mean "your session, not your input".
-
-**Not every call can carry a header.** `GET /qr-codes/:id/image` is loaded by `<img src>` and offered as
-`<a download>` links, which cannot send one. Phase 1b must rank that route explicitly — leave it public,
-mint a signed URL, or fetch it to a blob.
-
-## P1.0 — contracts and test kit (gate)
-
-**Runs alone, first. Everything else compiles against it.**
-
-Package scaffolding for `packages/auth` — `package.json` (`private: true`), `tsconfig.json`,
-`vitest.config.ts`, `eslint.config.mjs`, `tsdown.config.ts` — following `packages/http-provider` and
-the graduation checklist. Then types and schemas, no logic:
-
-- `src/Principal.ts` — the shape above.
-- ~~`src/AuthMode.ts`~~ — **deleted 2026-09-07**, see the superseded modes section above.
-- `src/ITokenVerifier.ts` — credential material in, outcome out. **No JWT in the signature**, **async**,
-  and the outcome type has room for "could not determine" — a JWKS fetch is I/O that can fail, and a
-  transport failure is not a verification failure. This is what keeps `ApiKeyVerifier` and introspection
-  addable later without touching every implementation.
-- `src/IKeySource.ts` — the seam between P1.1 and P1.2.
-- `src/VerificationOutcome.ts` — `ok | missing | invalid | wrong-audience | unknown-issuer`. These
-  strings are simultaneously P1.3's metric labels, the log vocabulary and the HTTP status mapping.
-  Three units inventing three spellings is the likely failure.
-- `src/schemas/auth.schema.ts` — Zod. Trusted-source rows as a discriminated union (one member today).
-  Every field optional and defaulted, per the `AGENTS.md` configuration contract. *(Reshaped since: the
-  block is a map of named entries and the required keys come from the service's own enum — see
-  [Where the work stands](#where-the-work-stands).)*
-- `src/index.ts` — **written complete, with every planned export, including ones whose files do not
-  exist yet.** A barrel only re-exports, so six agents appending to it in parallel is six conflicts on
-  one file.
-
-Test kit, shared so three units do not each invent one: `src/test/mintTestToken.ts` (HS256 fixture
-signing) and `src/test/FakeTokenVerifier.ts` (lets P1.5 test the guard with no real verifier).
-
-Dependencies declared upfront: `jose`, `zod`, `@opentelemetry/api`. `jose` is already in the tree via
-`packages/http-provider`, so nothing new reaches the lockfile.
-
-**Done when:** the package builds, `index.ts` exports resolve as types, no implementation exists.
-
-## P1.1–P1.7
-
-| Unit | Owns | Notes |
-| --- | --- | --- |
-| **P1.1** jwt core + static keys | `src/verifiers/JwtVerifier.ts`, `src/keys/StaticKeySource.ts` | Needs no infrastructure — HS256 with an inline key makes a full signed round trip locally |
-| **P1.2** remote JWKS | `src/keys/RemoteJwksSource.ts` | The IdP's JWKS is anonymously readable, so build the plain case first and the ServiceAccount-authenticated fetch second. Cache by `kid`, bounded refresh, **explicit timeout** — a blocked JWKS fetch is a hang, not a refusal |
-| **P1.3** ~~mode pipeline~~ + observability | boot log, outcome counter | Uses P1.0's outcome strings verbatim. The mode gate and `auth.mode` gauge were **removed 2026-09-07** — see the superseded section above |
-| ~~**P1.4** dev-token minting CLI~~ | — | **Dropped 2026-09-06.** Its purpose was Swagger's Authorize button; that workflow is not wanted, and `pnpm dev` already completes a real login against the live IdP from the registered `localhost:5173` redirect URI — a real RS256 token beats a minted HS256 one. Integration tests mint in-process with P1.0's `mintTestToken`, which needs no CLI |
-| **P1.5** `packages/tsed-auth` guard | guard, decorators, injectable `Principal` | Substance. Tests against `FakeTokenVerifier` |
-| **P1.6** OpenAPI security metadata | swaps `security: []` for the real scheme | Small |
-| **P1.7** authorization plumbing | `@Scopes()`, roles on `Principal` | **Parked** — a leaf that blocks nothing. Recommendation: plumbing only |
-
-**Sizing, honestly:** P1.0, P1.4 and P1.6 are small. P1.1, P1.3 and P1.5 are the substance. P1.2 is
-medium. Six agents is the ceiling, not the target.
-
-**Conflict hotspots, all handled by the gate:** `index.ts` and `package.json` are written complete by
-P1.0 and touched by nobody else; fixtures come from P1.0; `VerificationOutcome` strings are defined
-once. Beyond that, file ownership is disjoint.
-
-## Phase 1b — onboarding
-
-Where the security actually arrives. Per-route threat ranking and real 401 tests are a different kind
-of work from package construction.
-
-**Started 2026-09-07** with `qr-manager-api` (`d1c02b8`). It went first because it was the app whose
-frontend already held a token, which made the whole path verifiable in a browser on the first attempt.
-`miot-bridge-api` is the higher-risk one and is next.
-
-**The live status, remaining APIs and parallel tracks are in
-[Where the work stands](#where-the-work-stands).** The five steps to onboard an API are there too.
-The list that used to sit here has been folded into it, so there is one place to read rather than two
-that drift.
+- **There are no modes.** No `disabled`, no `permissive`, no `enabled: false`, no `dummy` verifier type.
+  Every such state is one where a forgotten key in a values file leaves a service up, healthy and
+  unauthenticated — which is exactly the hazard modes were introduced to prevent, since `disabled` was
+  their default.
+- **A name is not a mechanism.** `AuthMethod.Idp` says which callers a route admits; the entry's `type`
+  (`VerifierType.BearerJwt`) says how they are checked. Naming entries after their mechanism caps the
+  design at one entry per mechanism, so a cluster's ServiceAccount token would be accepted everywhere a
+  person's token is.
+- **The names belong to the service.** `AuthMethod` is declared per API beside `ExternalApi`;
+  `packages/auth` takes plain strings. Which callers a deployment admits is not something a package that
+  may be published can name.
+- **Misconfiguration fails at boot.** `createAuthConfigSchema` is strict: a missing entry, a verifier
+  trusting no issuers, or a mistyped key are parse errors naming the path.
+- **Local development gets a client per app** — `<app>-local`, declared `{ stage: local }`. The earlier
+  argument here was that a dedicated client is not worth a second trusted-issuer row in every API. That
+  argument was wrong on its own terms: `accesses` widens `aud` but never `iss`, and `issuer_mode` is
+  `per_provider`, so **any** client other than the app's own already needs that row — a Postman client
+  included. The row costs the same either way, and a `-local` client buys what the loopback-on-sandbox
+  arrangement could not: it is separately revocable, its token is useless against a deployed API unless
+  someone deliberately trusts it, and no deployed client carries a loopback URI. The chart `fail`s if a
+  local environment names a cluster.
+- **Postman is the one client that should be broad**, and it cannot be an SPA's client: it wants
+  `accesses` spanning every API, `offline_access` bound (a desktop app has no XSS surface), and
+  possibly a longer token lifetime — three settings no browser client should inherit. Per-Application
+  in the blueprint, revocable by its own group. See contract §7.
+- **Local development is an issuer row, never a bypass.** `config/localhost.json` verifies real tokens
+  against the sandbox IdP's JWKS; `config/test.json` uses an inline HS256 key and needs no network. The
+  code exercised locally is the code that runs in production, and 401/403 are testable. The honest
+  caveat: copy `localhost.json`'s auth block into `production.json` and the dev secret becomes a trusted
+  production issuer — the boot-time issuer log is the mitigation that costs nothing.
 
 ## Later, and deliberately not now
 
 - **Machine identity.** Audience-bound projected SA tokens (`audience: <callee>`,
   `expirationSeconds: 900`; the kubelet rewrites the file at ~80% of its lifetime, which is why
-  `KubernetesServiceAccountStrategy` needs expiry-aware caching), plus the `http-provider` fixes.
-  Authentik's `client_credentials` is the alternative and mints **the same RS256 JWT** a human login
-  produces, verified by the same code — so `JwtVerifier` covers every caller class this repo has.
-- **API-key verification.** Deferred, not dropped: no HTTP-device caller exists, and the protocol
-  (key alone, or key plus HMAC signing) is unspecified. Adding `ApiKeyVerifier` later is a new file
+  `KubernetesServiceAccountStrategy` needs expiry-aware caching), plus the `http-provider` fixes — add
+  `audience` to the k8s SA strategy, and fix its missing cache (it re-reads the token file on every
+  request and its `invalidate()` is a no-op). Authentik's `client_credentials` is the alternative and
+  mints **the same RS256 JWT** a human login produces, verified by the same code.
+- **API-key verification.** Deferred, not dropped: no HTTP-device caller exists, and the protocol (key
+  alone, or key plus HMAC signing) is unspecified. Adding `ApiKeyVerifier` later is a new file
   implementing an existing interface.
 - **MQTT authorization.** Topic ACLs are `homelab` work; whether MQTT moves to JWT auth is a decision
   for after they land.
@@ -493,24 +265,25 @@ that drift.
 ## Open decisions
 
 1. **Device path for actuating HTTP routes** — API key alone, or key plus HMAC signing. Deferred until
-   an actuating HTTP device exists.
+   an actuating HTTP device exists. **Track B may force this**, if the miot poller is judged an HTTP
+   device rather than a service.
 2. **k8s SA vs IdP `client_credentials` for service-to-service** — start with SA tokens: no IdP
    dependency and no stored secrets. Both are issuer rows, so switching later is configuration.
-3. ~~**Whether `disabled` survives Phase 1**~~ — **Answered 2026-09-07: no.** All three modes are
-   deleted, not just `disabled`. See the superseded modes section.
-4. **How deep authorization goes in Phase 1** — plumbing only, or a config-driven subject → roles map.
-   Recommendation: plumbing only. A roles table has no human subjects to hold until the IdP work lands.
-5. **Which app is onboarded first in Phase 1b** — see above.
+3. **How deep authorization goes** — plumbing only, or a config-driven subject → roles map.
+   Recommendation: plumbing only. A roles table has no human subjects to hold yet.
 
 ## Facts worth not re-deriving
 
 | Fact | Evidence |
 | --- | --- |
+| IdP is Authentik 2026.8.1 on server3 — five applications, nine role groups | `homelab`, 2026-09-04 |
+| `radoslav` is a non-superuser in `qr-manager-server1-sandbox-admin` only | The login for the happy path, and the refused user for the other four apps |
+| `localhost:5173` is a registered redirect URI on **sandbox applications only** | So `pnpm dev` completes a real login; never add one to a production application |
 | Cluster SA tokens are OIDC JWTs, issuer **per cluster** | `kubectl get --raw /.well-known/openid-configuration` → issuer is the apiserver URL; server1/2/3 differ |
 | Cluster JWKS is **not** anonymous | anonymous `curl` → `401`; `ClusterRoleBinding system:service-account-issuer-discovery` lets any pod with a token fetch it |
 | Pods project a SA token and `ca.crt` | `iot-applications` chart, opt-in volume (`c43b555`), enabled by all three APIs; verified on a running pod |
-| `jose` is already a dependency | `packages/http-provider/package.json` |
+| API pods can reach the IdP | `homelab` `0b903db`; JWKS fetch verified from a pod in all four namespaces |
 | A local HS256 round trip needs no new outbound code | `JwtSelfSignedStrategy.importKey` + `JwtKeySchema` accept an inline key |
-| Swagger security schemes exist, unused | `SwaggerSecurityScheme.BASIC` / `.BEARER_JWT` in toolkit-hub; every API passes `security: []` |
 | Every dangerous route sits under a named prefix | `qr-manager-api`: `/r/:slug` public, all CRUD under `/qr-codes`. `miot-bridge-api`: `/command`, `/devices`, `/model-property-overrides`, nothing at root |
 | `/health` shadowed by a slug route returns **400, not 404** | `@Pattern(SLUG_PATTERN)` rejects in the params pipeline. Probes stay green while the human endpoint breaks |
+| `GET /qr-codes/:id/image` cannot carry a header | Loaded by `<img src>` and `<a download>`; it is `@Anonymous()` for that reason |

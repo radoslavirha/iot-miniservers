@@ -3,8 +3,9 @@
 **Status: verified against the live IdP on 2026-09-04.** Every fact below was observed, not read in
 documentation. Where something is inferred rather than observed it says so.
 
-**Read this first, before any auth code in this repo.** What we build against it — packages, work
-packages, modes, open decisions — is [`2026-09-05-auth-design.md`](./2026-09-05-auth-design.md).
+**Read this first, before any auth code in this repo.** What we build against it — the remaining
+tracks, the settled design decisions and the open ones — is
+[`2026-09-05-auth-design.md`](./2026-09-05-auth-design.md).
 
 **The IdP is Authentik 2026.8.1**, deployed on server3 by `homelab` (`gitops/argocd-manifests/server3/apps/identity/`).
 Applications, providers and groups are generated from one values file,
@@ -40,7 +41,9 @@ than it looks.
 
 ## 2. The client registry
 
-Five applications exist. All are **public clients with no secret**, all require **PKCE S256**.
+**Twelve applications, as of 2026-09-07** — nine deployed, three `-local`. All are **public clients
+with no secret**, all require **PKCE S256**. The table below lists the deployed nine; the `-local`
+applications are covered under it.
 
 | `client_id` | redirect URI (authorization) | post-logout redirect | groups |
 | --- | --- | --- | --- |
@@ -50,7 +53,33 @@ Five applications exist. All are **public clients with no secret**, all require 
 | `qr-manager-server2-production` | `https://apps.server2.homelab.irha.cz/qr-manager/callback` | `…/qr-manager/` | `-admin`, `-reader` |
 | `homelab-dashboard-server3-production` | `https://dashboard.server3.homelab.irha.cz/callback` | `/` | `-viewer` |
 
+| `miot-bridge-server1-sandbox` | `https://apps.sandbox.server1.homelab.irha.cz/miot-bridge/callback` | `…/miot-bridge/` | `-admin` |
+| `miot-bridge-server1-production` | `https://apps.server1.homelab.irha.cz/miot-bridge/callback` | `…/miot-bridge/` | `-admin` |
+| `miot-bridge-server2-sandbox` | `https://apps.sandbox.server2.homelab.irha.cz/miot-bridge/callback` | `…/miot-bridge/` | `-admin` |
+| `miot-bridge-server2-production` | `https://apps.server2.homelab.irha.cz/miot-bridge/callback` | `…/miot-bridge/` | `-admin` |
+
 Group names are the `client_id` plus the role suffix, e.g. `qr-manager-server1-sandbox-admin`.
+
+**`miot-bridge` has no UI.** Its applications exist so a caller can hold a token *addressed to* that
+API — without an application there is no audience to mint, and the API can trust nothing. The redirect
+URIs are derived by the same rule as everything else and are unused today.
+
+### The `-local` applications
+
+`qr-manager-local`, `miot-bridge-local` and `homelab-dashboard-local`, declared as `{ stage: local }`
+(no cluster) in the blueprint values. Redirect URIs `http://localhost:5173/callback` and
+`http://localhost:5173/`; role groups `<app>-local-<role>`; everything else identical to a deployed
+application.
+
+They replace a pair of loopback URIs that used to be bolted onto every *sandbox* application, removed
+2026-09-07. The reason for the change is that a loopback URI on a sandbox client means anything running
+on a developer's machine can complete a **sandbox** login, and the credential it obtains is a genuine
+sandbox token. A `-local` client is separately revocable, separately grantable, and its token reaches
+an API only where that API's `config/localhost.json` — a file that never ships — names it as a trusted
+issuer.
+
+**A local token is not a sandbox token.** `iss` and `aud` are the local application's, so pointing a UI
+at `<app>-local` while its API still trusts only the sandbox issuer produces a `401`, correctly.
 
 Redirect matching is **strict** — no wildcards, no prefix matching. The four `qr-manager` redirect
 hosts are exactly what the deployed SPAs already serve at
@@ -162,8 +191,8 @@ The name `roles` was chosen because RFC 9068 (*JWT Profile for OAuth 2.0 Access 
 exactly this, borrowing the semantics from SCIM. It is the closest thing to a standard spelling.
 
 **So: read `roles` in exactly one adapter** — the code that turns a verified token into a `Principal`
-— and let everything downstream use `Principal.roles`. That is already what P1.0's `ITokenVerifier`
-contract requires, for a different reason. It also means a change of IdP is one function, not a sweep
+— and let everything downstream use `Principal.roles`. That is already what `ITokenVerifier`
+requires, for a different reason. It also means a change of IdP is one function, not a sweep
 through every handler.
 
 ## 5. Rules for a backend verifying these tokens
@@ -201,10 +230,10 @@ pure computation. No introspection call on the request path.
    speculatively.
 7. **Do not key durable rows on `sub`** while `sub_mode` is `user_username`.
 
-`ITokenVerifier` from P1.0 covers all of this without changes: this is one issuer row with a remote
-JWKS. The contract constraints P1.0 was told to preserve (async, room for "could not determine")
-remain right — see [blocker 1](#blocker-1--api-pods-cannot-reach-the-idp--fixed-and-verified-2026-09-04), which is precisely a
-transport failure distinct from a verification failure.
+`ITokenVerifier` in `@radoslavirha/auth` covers all of this without changes: this is one issuer row
+with a remote JWKS. Its two shape constraints — async, and room for "could not determine" — earn their
+keep here: a blocked JWKS fetch (see [resolved blockers](#resolved-blockers)) is a transport failure,
+which is not a verification failure.
 
 ## 6. Rules for a frontend
 
@@ -396,8 +425,8 @@ registered client with either callback; prefer `http://localhost:PORT/callback` 
 `https://oauth.pstmn.io/v1/callback` — authentik accepts plain HTTP on localhost, and it keeps the
 code off a third party's servers, which matters more once a token carries several audiences.
 
-**Not needed until an API actually enforces.** Today `curl` returns everything, so Postman needs no
-token at all. Build it in the same pass as the first enforcing API.
+**Due as of 2026-09-07.** `qr-manager-api` enforces, so hitting `/qr-codes` by hand now means lifting a
+token out of the browser. Blocked on the `accesses` mapping below, which is designed and unbuilt.
 
 **When it is built, it is the one client that should be broad.** The working pattern is a Postman root
 folder holding the auth, with every collection inheriting it — one token, all APIs. A narrow audience
@@ -502,66 +531,28 @@ Handle it in the SPA by offering a second action — *Sign out everywhere* — p
 
 ---
 
-## Blockers
+## Resolved blockers
 
-### ~~Blocker 1 — API pods cannot reach the IdP~~ — fixed and verified 2026-09-04
+Both were fixed and verified on 2026-09-04. Kept for the two facts that outlive them:
 
-`auth.irha.cz` resolves in-cluster to `192.168.1.202` — server3's Traefik on the LAN — and the
-namespace's only outbound rule, `allow-egress-internet`, is `0.0.0.0/0` **minus `192.168.0.0/16`**.
-So the IdP sat on the wrong side of the one exclusion that rule makes, and a JWKS fetch from a
-running pod timed out.
-
-`homelab` commit `0b903db` adds `NetworkPolicy.egress-idp.yaml` to all four namespaces
-(server1 and server2 × sandbox and production), opening exactly `192.168.1.202/32` on TCP 443.
-Synced and verified from a `qr-manager-api` pod in each:
-
-```
-server1 sandbox     JWKS OK 274ms
-server1 production  JWKS OK 508ms
-server2 sandbox     JWKS OK 358ms
-server2 production  JWKS OK 343ms
-```
-
-The rule is as narrow as it looks — from the same pod, `192.168.1.201:443` (server2's Traefik) and
-`192.168.1.1:443` (the router) still time out, and public HTTPS still works through
-`allow-egress-internet`.
-
-**Worth remembering when this breaks again:** a blocked JWKS fetch is a *hang*, not a refusal. An API
-that cannot reach the IdP does not log "forbidden" — it stalls for whatever timeout its HTTP client
-carries. Give the JWKS fetch an explicit timeout, and treat "could not determine" as its own outcome
-rather than folding it into "invalid token".
-
-### ~~Blocker 2 — no human account is in any group~~ — resolved 2026-09-04
-
-`radoslav` exists, is **not** a superuser, and is in exactly one group:
-`qr-manager-server1-sandbox-admin`. `akadmin` stays untouched as break-glass.
-
-Verified through authentik's own policy engine (`check_access`, per application):
-
-| application | passing |
-| --- | --- |
-| `qr-manager-server1-sandbox` | **True** |
-| `qr-manager-server1-production` | False |
-| `qr-manager-server2-sandbox` | False |
-| `qr-manager-server2-production` | False |
-| `homelab-dashboard-server3-production` | False |
-
-One app open, four shut, from one group membership. **P1.F1 has a real account to log in with**, and
-it also has a ready-made negative test: the same user against any of the other four is refused with
-`Permission denied` and no code — no second account needed to prove the gate.
-
-Widening to the other environments is one group membership each, whenever you want them.
+- **API pods reach the IdP** through `homelab` `0b903db`, which opens exactly `192.168.1.202/32` on
+  TCP 443 from all four namespaces — `auth.irha.cz` resolves in-cluster to server3's Traefik, which sat
+  inside the one exclusion (`192.168.0.0/16`) that `allow-egress-internet` makes. **A blocked JWKS fetch
+  is a hang, not a refusal**: give it an explicit timeout, and treat "could not determine" as its own
+  outcome rather than folding it into "invalid token".
+- **`radoslav`** is a non-superuser in exactly one group, `qr-manager-server1-sandbox-admin`; `akadmin`
+  stays untouched as break-glass. One application passes `check_access`, four are refused. That is a
+  ready-made negative test — the same user against any other application gets `Permission denied` and
+  no code, so proving the gate needs no second account.
 
 ## Open decisions
 
 ### ~~1. Which account do you log in with~~ — settled 2026-09-04
 
-A personal account (`radoslav`), in the groups it needs and nothing else, with `akadmin` kept as
-break-glass. See [blocker 2](#blocker-2--no-human-account-is-in-any-group--resolved-2026-09-04).
-
-Rejected: adding `akadmin` to the groups. An administrator silently entitled to every application is
-exactly the property the per-app gate was built to remove — and since `sub` is the username, every
-token and audit row would have read `akadmin`.
+`radoslav`, in the groups it needs and nothing else, with `akadmin` kept as break-glass. Rejected:
+adding `akadmin` to the groups — an administrator silently entitled to every application is exactly the
+property the per-app gate was built to remove, and since `sub` is the username, every token and audit
+row would have read `akadmin`.
 
 ### 2. `sub` is the username
 
@@ -605,25 +596,15 @@ this environment only", and nobody should be told there is.
 
 ### ~~5. `issuer_mode`: global, or per application~~ — settled 2026-09-04: `per_provider`
 
-Measured on the live provider (set, observed, reverted), then adopted:
+`iss` is now `https://auth.irha.cz/application/o/<client_id>/`, unique per application, where `global`
+gave all five the same `https://auth.irha.cz/`. Endpoints and the signing key are unchanged and still
+shared — issuer mode does not touch keys.
 
-| | `global` (was) | `per_provider` (is) |
-| --- | --- | --- |
-| `iss` | `https://auth.irha.cz/` — same for all five | `https://auth.irha.cz/application/o/<client_id>/` — unique per app |
-| `jwks_uri` | already per-app | already per-app |
-| authorize / token endpoints | shared | **unchanged, still shared** |
-| signing key | shared | **still shared** — issuer mode does not touch keys |
-
-**Why.** With one shared signing key, `aud` was the only claim separating the applications, and `aud`
-is an optional argument in every JWT library — omit it and nothing complains. `per_provider` adds a
-second discriminator that a discovery-built client pins structurally.
-
-**Why now rather than later.** It costs one line while no verifier exists and no token is in
-circulation. After P1.F1 and P1.2 land, the same change means updating every deployment's config *and*
-breaking live tokens until their next renewal. Free today, fiddly next month, same benefit.
-
-**What it is not:** a fix for the shared signing key, and not a reason to skip the `aud` check. Both
-still apply — see [trap 1](#trap-1--one-signing-key-for-every-application).
+**Why.** With one shared signing key, `aud` was the only claim separating the applications, and `aud` is
+an optional argument in every JWT library — omit it and nothing complains. `per_provider` adds a second
+discriminator that a discovery-built client pins structurally. It is **not** a fix for the shared
+signing key and **not** a reason to skip the `aud` check; both still apply, see
+[trap 1](#trap-1--one-signing-key-for-every-application).
 
 ---
 
@@ -656,20 +637,17 @@ production API carries exactly the roles a production token would. Only `iss` an
 them, which is what makes `issuer_mode: per_provider` load-bearing rather than a nicety, and why §5
 insists on checking `aud` by membership and pinning `iss`.
 
-Nothing verifies any of this yet: no API in this repo checks a token, so a sandbox token replayed
-against production is currently accepted everywhere, because nothing is looking. That is Phase 1b.
+`qr-manager-api` checks this as of 2026-09-07. The other two APIs do not, so a sandbox token replayed
+against either is still accepted, because nothing is looking.
 
 Access token lifetime is **1800s** in all four, per the raised `accessTokenValidity`.
 
 ## What is NOT verified
 
-- ~~**No real browser has done this.**~~ — done 2026-09-05. Login, reload, logout and cross-environment
-  SSO were all driven in Chromium against the live IdP, on the deployed apps and on `pnpm dev`. It
-  found four things headless testing could not: `X-Frame-Options` killing the iframe, an app usable
-  while signed out, a permanent `Loading…` where the sign-in page belonged, and an authorization code
-  exchanged twice per login. See the `verify-auth-in-browser` skill.
-- **Backend verification has never run.** The pods can now reach the JWKS (blocker 1 is fixed), but no
-  code in this repo has verified a token yet — so the `roles` claim has never been read by an API.
+- **The `roles` claim has never been read by an API.** `qr-manager-api` verifies signature, issuer and
+  audience as of 2026-09-07, but nothing consumes roles — authorization is unbuilt.
+- **Only `qr-manager-api` verifies anything.** `miot-bridge-api` and `interactive-map-feeder-api` still
+  accept any caller.
 - **`accesses` / multi-audience is designed, not built** (§7). `aud` is a one-element array today.
 - **`client_credentials` for service-to-service is untested.** These five clients are public;
   service identities need confidential clients, which do not exist yet. That is `homelab` A5.
