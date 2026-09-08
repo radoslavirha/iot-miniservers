@@ -4,30 +4,32 @@ Fetches precipitation radar data from ČHMÚ (Czech Hydrometeorological Institut
 
 ## Authentication
 
-**Every route requires a bearer token.** Two trust domains, and they are not interchangeable:
+**Every route requires a bearer token**, and there is exactly one trust domain: `IDP`. `/health*` stays
+open for the Kubernetes probes.
 
-| Routes | Method | Caller |
-|--------|--------|--------|
-| `/list`, `/:dataSource/cities`, `/:dataSource/image` | `IDP` | A person, via browser or API client |
-| `/:dataSource/cities/iot` | `DEVICE` | The LaskaKit map, and nothing else |
+The LaskaKit map logs in against the same identity provider as a person, from its own Authentik
+application. From this API's side that is not a different kind of authentication — it is the same
+bearer JWT from a neighbouring issuer, so the map's application is **one more row in
+`auth.IDP.trustedIssuers`** and costs no code.
 
-`@Authenticate` sits on the controller class; the IoT route carries its own, and a method-level
-`@Authenticate` **replaces** the class-level one rather than adding to it. So a person's token is
-refused on the map's route and the map's token is refused everywhere else — asserted in
-`DataSourcesController.integration.spec.ts`, because if that ever inverted the map would fail in the
-field with the tests still green.
+`@Authenticate(AuthMethod.Idp)` sits on the controller class and every route inherits it, including the
+one the map polls.
 
-Nothing here is protecting a secret: every route is a read of public ČHMÚ data. What the split
-protects is the other direction. The map holds a long-lived credential in flash and reaches exactly
-one endpoint, so a leaked device credential cannot walk the rest of the surface — including whatever
-is added later.
+**This used to be two trust domains**, with `@Authenticate(AuthMethod.Device)` on the map's route so a
+person's token was refused there. That was the wrong tool: an API has no business deciding on the kind
+of caller, and doing it through a trust domain meant onboarding device number two would have needed a
+change in this repo. If the map's route ever has to admit the map and refuse a person, that is
+`@RequireRoles` on a role the map's service account holds — authorization, checked after
+authentication, where it belongs.
 
-`/health*` stays open for the Kubernetes probes.
+Nothing here is protecting a secret: every route is a read of public ČHMÚ data. What the token buys is
+that the surface is not anonymous, and that a leaked credential is revocable at the IdP — which is a
+property of the map having its own application, not of how this API is configured.
 
 ### Giving a device its credential
 
 The device's token carries `aud` and `iss` of **its own** client, not this API's. This API trusts that
-pair explicitly in `auth.DEVICE.trustedIssuers` — option 1 of *Devices* in `homelab` →
+pair explicitly as a second row in `auth.IDP.trustedIssuers` — option 1 of *Devices* in `homelab` →
 `docs/superpowers/specs/2026-09-04-authentik-tenancy-topology.md`, which is the authority for the
 reasoning below. No custom Authentik scope mapping is needed, and no role claim is read: `iss` + `aud`
 carry the whole decision.
@@ -58,7 +60,7 @@ that constraint is stated at the top of `authentik-blueprints.yaml`):
 
 All four capabilities are already used in that file, so this is more YAML rather than a new capability.
 
-**Then here:** point `auth.DEVICE.trustedIssuers[0]` at the new client — `issuer`, `audience` and the
+**Then here:** add a row to `auth.IDP.trustedIssuers` for the new client — `issuer`, `audience` and the
 JWKS URI all derive from its `client_id`.
 
 ## Consumed By

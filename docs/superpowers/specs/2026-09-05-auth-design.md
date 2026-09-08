@@ -30,7 +30,7 @@ the `verify-auth-in-browser` skill. `git log -p -- <this file>` has the original
 | --- | --- |
 | `qr-manager-api` | `IDP` on `/qr-codes`. `GET /r/:slug`, `GET /qr-codes/:id/image` and `/health*` stay open |
 | `miot-bridge-api` | `IDP` on all 16 REST routes. `/health*` open |
-| `interactive-map-feeder-api` | `IDP` on three routes, `DEVICE` on the one the map polls. `/health*` open |
+| `interactive-map-feeder-api` | `IDP` on all four routes; the map's own application is a second issuer row. `/health*` open |
 
 **Guarding HTTP is not the same as securing a device.** `miot-bridge-api`'s `/command` actuates
 devices, but commands also arrive on an MQTT subscription that never passes a controller — that
@@ -69,10 +69,12 @@ creates `qr-manager-local-admin`, `miot-bridge-local-admin` and `homelab-dashboa
 does not put anyone in them.
 
 **~~Track C — onboard `interactive-map-feeder-api`~~ — DONE.** Two trust domains rather than one,
-because there are genuinely two callers: `IDP` for people, `DEVICE` for the LaskaKit map. A
-method-level `@Authenticate` **replaces** the class-level one rather than adding to it — verified
-against `Store.fromMethod` before the design was committed to — so the map's route admits `DEVICE` and
-refuses `IDP`, and its three neighbours do the reverse. Nothing there is protecting a secret; every
+with two trust domains, `IDP` for people and `DEVICE` for the LaskaKit map. **That was reversed on
+2026-09-08 and is now one domain with two issuer rows.** The map logs in against the same identity
+provider, so from the API's side it is the same bearer JWT from a neighbouring issuer; making it a
+separate domain put the decision "what kind of caller is this" inside authentication, and meant
+onboarding device number two would have needed a code change here. Restricting a route to the map is
+authorization — `@RequireRoles` on a role its service account holds — and is not currently wanted. Nothing there is protecting a secret; every
 route reads public ČHMÚ data. What the split protects is a leaked device credential, which lives in
 flash on a board that talks cleartext HTTP, reaching exactly one endpoint.
 
@@ -98,19 +100,74 @@ It needs the `accesses` multi-audience mapping, which is designed but unbuilt in
 a `postman` client's token carries `aud: postman` and reaches nothing. Until then, `<app>-local` is the
 way to hold a token by hand, one app at a time.
 
-**After both land:** a changeset and release covering `@radoslavirha/auth`, `@radoslavirha/tsed-auth`,
+### Before any of this is released
+
+**Hard blocker, and it is `homelab` work: no deployed values file carries an `auth` block.** Checked
+2026-09-08 — `qr-manager-api`, `miot-bridge-api` and `interactive-map-feeder-api`, production and
+sandbox, all six render a config with no `auth` key. Every one of these APIs *refuses to boot* without
+it, deliberately: `createAuthConfigSchema` makes each declared `AuthMethod` a required key and there is
+no disable flag. So the first release of any of them CrashLoops on a parse error naming `auth.IDP`.
+Nothing is broken today only because the deployed images predate the change.
+
+The changeset set is written and covers `@radoslavirha/auth`, `@radoslavirha/tsed-auth`,
 `@radoslavirha/ui-auth`, `qr-manager-api` and `qr-manager-ui`. Nothing since `qr-manager-ui@0.10.1` is
 released.
 
-**Parked, blocking nothing:** P1.7 authorization (`@Scopes()`, roles on `Principal`). It waits for a
-route that genuinely needs "admins only"; plumbing only when it comes.
+**Verified locally against the real IdP, 2026-09-08** — no mocks, `claude` through the real flow:
+
+| | Result |
+| --- | --- |
+| `qr-manager-ui` in Chromium, all six checks of `verify-auth-in-browser` | 15/15 — anonymous prompt, one callback hop, no sub-frames, no token in `localStorage`, renewal at +29:10 with no iframe, logout leaving `error=login_required` |
+| `qr-manager-api` | `401` unauthenticated, `200` with a real token, **`401` for a `miot-bridge` token** — the shared `kid` means `aud`/`iss` are the only separator, and they hold |
+| `miot-bridge-api` | `401` / `200` on `/devices`; `/command` `400` with the admin role, `403` without the `roles` scope, and the `403` names no role |
+| `interactive-map-feeder-api` | `401` / `200` on the person routes; **`401` on the map's route with a person's token** — the method-replaces-class design, proven against the IdP rather than against `Store.fromMethod` |
+
+**Still unverified:** anything deployed (all of the above is localhost), the Kubernetes SA path, and the
+`postman` client. `homelab-dashboard-ui` has no OIDC wiring in this repo at all, so there is nothing to
+verify there — its `homelab-dashboard-local` client exists and nothing here consumes it.
+
+**Authorization has shipped.** `@RequireRoles(...)` composes on a class and a method — "and" between
+decorators, "or" within one — and `miot-bridge-api`'s `/command` carries `miot-bridge.admin` because
+every route on it actuates a device. Verified against the live IdP on 2026-09-08, not against a fake:
+`-admin` membership alone yields `admin`, `editor` **and** `reader` in the claim, so the group
+parentage `homelab` shipped in `1553740` works and `AuthGuard` stays a plain set-membership test.
+
+**One trap that follows from it.** The claim rides the `roles` **scope**. A client that omits it gets
+`403` on a role-gated route even when the user *is* an admin — indistinguishable from lacking the role.
+`qr-manager-ui` asks for it; anything new must too.
+
+### The model, stated once
+
+Two ideas that were conflated for a week, and the conflation is what produced `AuthMethod.Device`:
+
+| | What it is | Where it lives |
+| --- | --- | --- |
+| **Trusted issuer** | a signing authority we believe | a row in `trustedIssuers`, per deployment |
+| **`AuthMethod` entry** | a named set of issuers a route admits | the service's enum, per route |
+
+An entry holds a *list*, so adding an issuer — a second cluster, a second IdP — is configuration and
+no code. **A second entry is warranted only when some route must admit one issuer and refuse another.**
+Nothing else justifies one: not "it is a device", not "it is a service". Those are `roles` on the
+`Principal`, and `Principal.kind` is audit metadata that gates nothing.
+
+**Target state: one entry, `IDP`, in every API.** Devices and services stop being categories in this
+code. **This is now the state of all three APIs** — `interactive-map-feeder-api`'s `DEVICE` was the
+last exception and was removed on 2026-09-08. A device's token carries its own `iss`/`aud`, which is a
+row in `trustedIssuers`, not a domain of its own; accepting it there means accepting it on every route
+the domain guards, which is correct for an API whose every route reads public data.
+
+The one caller that genuinely resists this: **a Kubernetes ServiceAccount token has no `roles` claim**,
+so a cluster caller arrives with `roles: []` and cannot be authorized by role at all. That is an
+argument for routing service-to-service through Authentik — where a service account is an ordinary user
+with groups — rather than verifying apiserver tokens directly.
 
 ### Onboarding an API — the five pieces
 
 What `d1c02b8` did, in order. Each is small; the thinking is all in the second step.
 
-1. `src/models/config/AuthMethod.enum.ts` — the service's own names, beside `ExternalApi`. Name the
-   trust domain (`IDP`), not the caller class and not the mechanism.
+1. `src/models/config/AuthMethod.enum.ts` — the service's own names, beside `ExternalApi`. In practice
+   this is `Idp` and nothing else: name the trust domain, never the caller class and never the
+   mechanism. A second value needs a route that admits one issuer while refusing another.
 2. Rank every route. Guarded is the default; each `@Anonymous()` needs a reason in a comment next to
    it. `qr-manager-api`'s image route is anonymous because `<img src>` cannot send a header — that is
    the shape of an acceptable reason.

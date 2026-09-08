@@ -26,12 +26,7 @@
                         "algorithm": "HS256",
                         "value": "test-secret-not-a-real-key-000000"
                     }
-                }
-            ]
-        },
-        "DEVICE": {
-            "type": "bearer-jwt",
-            "trustedIssuers": [
+                },
                 {
                     "name": "test-device",
                     "issuer": "https://device.issuer.test/",

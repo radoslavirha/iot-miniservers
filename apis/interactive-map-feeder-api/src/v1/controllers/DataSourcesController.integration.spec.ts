@@ -5,21 +5,25 @@ import { mintTestToken } from '@radoslavirha/tsed-auth';
 import { Server } from '../../Server.js';
 
 /**
- * Two trust domains, and the asymmetry between them.
+ * One trust domain, two issuers.
  *
- * Every route reads public ČHMÚ data, so nothing here is protecting a secret.
- * What the split protects is the *other* direction: the LaskaKit map holds a
- * long-lived credential in flash and calls this API over plain HTTP on the LAN,
- * so its token is the one most likely to leak — and it must reach exactly one
- * route, not the whole surface. These tests are what makes that true rather
- * than intended.
+ * The LaskaKit map logs in against the same identity provider as a person does,
+ * from its own Authentik application — so its token is an ordinary bearer JWT
+ * from a neighbouring issuer, and this API treats it as such. The tests below
+ * assert that both issuers are accepted and that everything else is refused:
+ * no credential, a forged signature, an audience minted for somebody else, and
+ * a scheme that is not `Bearer`.
+ *
+ * There used to be a second trust domain here so the map's route could refuse a
+ * person's token. That put the decision in the wrong place — which caller may do
+ * what is `roles` on the `Principal`, not a trust domain — and it is gone.
  */
 describe('DataSourcesController (integration)', () => {
     let request: SuperTest.Agent;
 
-    /** `config/test.json` — the IDP entry. */
+    /** `config/test.json` — the first issuer of the IDP entry. */
     const personToken = () => mintTestToken();
-    /** `config/test.json` — the DEVICE entry: different issuer, different secret. */
+    /** The second issuer of the same entry: the map's own application. */
     const deviceToken = () => mintTestToken({
         secret: 'test-device-secret-not-a-real-000',
         issuer: 'https://device.issuer.test/',
@@ -53,12 +57,14 @@ describe('DataSourcesController (integration)', () => {
             expect(response.status).not.toBe(401);
         });
 
-        it.each(PERSON_ROUTES)('refuses the device token on %s', async (path) => {
-            // The whole point of two trust domains. A leaked device credential
-            // reaches its one route and nothing else.
+        it.each(PERSON_ROUTES)('admits the map on %s too, because it is the same trust domain', async (path) => {
+            // Deliberate, and a change from the original design. Restricting the
+            // map to one route is authorization; when it is wanted it belongs to
+            // @RequireRoles and a role its service account holds, so that adding
+            // a second device needs no change in this repo.
             const response = await request.get(path).set('Authorization', `Bearer ${await deviceToken()}`);
 
-            expect(response.status).toBe(401);
+            expect(response.status).not.toBe(401);
         });
     });
 
@@ -73,14 +79,12 @@ describe('DataSourcesController (integration)', () => {
             expect(response.status).not.toBe(401);
         });
 
-        it('refuses a person token, because the method is overridden not inherited', async () => {
-            // If a method-level `@Authenticate` ever started *adding* to the
-            // class-level one instead of replacing it, this route would accept
-            // IDP and the map would break in the field. This is the test that
-            // notices.
+        it('admits a person token as well', async () => {
+            // The route is guarded, not restricted. Both issuers of the single
+            // trust domain reach it, and the route reads public radar data.
             const response = await request.get(IOT).set('Authorization', `Bearer ${await personToken()}`);
 
-            expect(response.status).toBe(401);
+            expect(response.status).not.toBe(401);
         });
     });
 

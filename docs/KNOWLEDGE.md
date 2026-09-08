@@ -20,7 +20,7 @@ pnpm monorepo of small independent Node.js APIs and UIs (Ts.ED, TypeScript ESM).
 |---------|---------|
 | `@radoslavirha/auth` | Framework-free inbound authentication: `Principal`, the verification-outcome vocabulary, a JWT verifier over static or JWKS keys, and the Zod config schema. Reads no request — a transport extracts the credential and applies the decision |
 | `@radoslavirha/health` | Framework-free health check contract, registry and `application/health+json` report. Checks declare `critical`, which decides whether a failure gates readiness |
-| `@radoslavirha/http-provider` | Auth-aware axios factory from Zod config: auth strategies, transport interpolation, resilience policy. Framework-free, no logging |
+| `@radoslavirha/http-provider` | Auth-aware axios factory from Zod config: auth strategies, credential-to-header mapping, resilience policy. Framework-free, no logging |
 | `@radoslavirha/miot-device` | Stateful MIoT device client: UDP transport, per-device stamp/handshake lifecycle |
 | `@radoslavirha/otel` | OpenTelemetry bootstrap — traces + custom metrics via OTLP; logs via stdout JSON (no OTLP log export) |
 | `@radoslavirha/resilience` | Transport-agnostic timeout / retry / circuit breaker over `AbortSignal`, backed by cockatiel |
@@ -42,7 +42,7 @@ IdP facts: [`superpowers/specs/2026-09-04-authentik-integration-contract.md`](./
 |-----|-------|
 | `qr-manager-api` | **Enforcing.** `/qr-codes` answers `401` without a valid token. `GET /r/:slug`, `/health*` and `GET /qr-codes/:id/image` stay open |
 | `miot-bridge-api` | **Enforcing.** All 16 REST routes need a token; `/health*` stays open. Commands also arrive over MQTT, which no decorator reaches — that identity is the broker's. The UDP command listener is gone |
-| `interactive-map-feeder-api` | **Enforcing.** Two trust domains: `IDP` on the three human routes, `DEVICE` on the one the LaskaKit map polls. A person's token is refused on the map's route and the map's on everything else |
+| `interactive-map-feeder-api` | **Enforcing.** One trust domain, `IDP`, on all four routes. The LaskaKit map logs in against the same IdP from its own Authentik application, so it is a second row in `trustedIssuers` rather than a second domain. The map has no credential yet |
 
 An API's `auth` block is a map of trust domains it accepts, keyed by the service's own `AuthMethod`
 enum — the inbound mirror of `ExternalApi` and `externalApis`:
@@ -59,9 +59,15 @@ Three properties worth knowing before changing any of it:
 - **A misconfiguration fails at boot, not at the first request.** The schema requires a key per
   declared `AuthMethod`, requires at least one trusted issuer, and is strict — a typo is a rejected
   key, not a silently stripped one.
-- **A name is not a mechanism.** The entry key says which callers a route admits; its `type` says how
-  they are checked. That is what lets a cluster's ServiceAccount tokens be a second entry that
-  human-facing routes do not admit, even though both are bearer JWTs.
+- **A name is not a mechanism, and not a kind of caller.** The entry key says which callers a route
+  admits; its `type` says how they are checked. One entry holds a *list* of trusted issuers, so a
+  second cluster or a second IdP is configuration and no code. **A second entry is warranted only when
+  some route must admit one issuer while refusing another** — the sole live case is the map's route in
+  `interactive-map-feeder-api`, and it is marked in that service's enum as a workaround pending two
+  `homelab` changes. What a caller may *do* is `roles`, checked with `@RequireRoles`; `Principal.kind`
+  is audit metadata and gates nothing.
+- **Roles ride the `roles` scope.** A client that omits it is refused with `403` on a role-gated route
+  even when the user holds the role — the same answer as not holding it.
 
 ### Frontend
 

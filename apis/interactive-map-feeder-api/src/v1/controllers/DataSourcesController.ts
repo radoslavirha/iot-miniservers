@@ -54,20 +54,19 @@ export class DataSourcesController {
 
     @Get('/:dataSource/cities/iot')
     /**
-     * The only route the LaskaKit map calls, and the only one that admits a
-     * device.
+     * The only route the LaskaKit map calls.
      *
-     * A method-level `@Authenticate` **replaces** the class-level one rather
-     * than adding to it — verified against `Store.fromMethod`, which reports
-     * `{ method: 'DEVICE' }` here and `{ method: 'IDP' }` on its neighbours. So
-     * this route admits the map and refuses a person's token, and every other
-     * route does the reverse.
+     * It carries no decorator of its own: the map authenticates against the same
+     * identity provider as everyone else, so from here it is an ordinary
+     * caller — the class-level `@Authenticate` covers it, and its Authentik
+     * application is one more row in `auth.IDP.trustedIssuers`.
      *
-     * That asymmetry is the point. The device's credential lives in flash on a
-     * board that talks plain HTTP over the LAN, so it is the credential most
-     * likely to leak — and it reaches exactly one read of public radar data.
+     * If this route ever has to admit the map and refuse a person, that is
+     * `@RequireRoles` on a role the map's service account holds, not a separate
+     * trust domain. The earlier `@Authenticate(AuthMethod.Device)` made the API
+     * decide on the kind of caller, which is authorization wearing
+     * authentication's clothes.
      */
-    @Authenticate(AuthMethod.Device)
     @Description('Returns cities with RGB color representing data from data source. with reduced response.')
     @(Returns(200, DataSourceCitiesResponse).Groups(GROUP_IOT))
     async getDataSourceForIoT(
