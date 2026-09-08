@@ -13,9 +13,15 @@ import { MqttClientProvider } from '../providers/MqttClientProvider.js';
  *
  * The defect this guards against lived *between* the code and the log: the
  * request logger was called correctly and wrote a secret anyway, because
- * `requests.headers.redactPaths` defaults to `[]` and nothing in this service
- * had overridden it. Only the emitted `headers` value proves the override is
- * still in place; the call itself always looked right.
+ * `requests.headers.redactPaths` defaulted to `[]` and nothing in this service
+ * had overridden it.
+ *
+ * `@radoslavirha/tsed-logger@0.7.0` fixed that at the source, so this service
+ * now configures **nothing** and relies on the package default — which is what
+ * these tests pin. They are more valuable that way than they were guarding a
+ * local config: an upstream regression, or a future service that forgets to
+ * think about it, both surface here. Only the emitted `headers` value proves
+ * anything; the call itself always looked right.
  */
 describe('Request logging (integration)', () => {
     let request: SuperTest.Agent;
@@ -50,7 +56,7 @@ describe('Request logging (integration)', () => {
     });
 
     it('redacts a cookie and an api key alongside it', async () => {
-        // Same fail-open default, same blast radius: a session cookie is a
+        // Both are in the package's default selector list: a session cookie is a
         // credential, and `x-api-key` is what a device would present once one
         // exists.
         const logger = PlatformTest.get<Logger>(Logger) as unknown as {

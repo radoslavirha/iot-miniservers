@@ -3,18 +3,7 @@
         "httpPort": 4001
     },
     "cachePath": "./cache",
-    "logger": {
-        "requests": {
-            "headers": {
-                "redactPaths": [
-                    "authorization",
-                    "cookie",
-                    "[\"proxy-authorization\"]",
-                    "[\"x-api-key\"]"
-                ]
-            }
-        }
-    },
+    "logger": {},
     "mqtt": {
         "enabled": false
     },
