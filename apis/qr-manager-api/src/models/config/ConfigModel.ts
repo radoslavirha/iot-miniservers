@@ -4,7 +4,7 @@ import { MongoConfigSchema } from '@radoslavirha/tsed-mongoose';
 import { HealthConfigSchema } from '@radoslavirha/tsed-health';
 import { LoggerOptionsSchema } from '@radoslavirha/tsed-logger';
 import { OtelConfigSchema } from '@radoslavirha/otel';
-import { createAuthConfigSchema } from '@radoslavirha/tsed-auth';
+import { createAuthConfigSchema } from '@radoslavirha/auth';
 import { AuthMethod } from './AuthMethod.enum.js';
 import { RedirectConfigSchema } from './RedirectConfig.js';
 

@@ -761,6 +761,9 @@ importers:
       '@opentelemetry/winston-transport':
         specifier: catalog:otel
         version: 0.31.0
+      '@radoslavirha/auth':
+        specifier: workspace:*
+        version: link:../../packages/auth
       '@radoslavirha/config-typescript':
         specifier: 'catalog:'
         version: 1.1.4(tslib@2.8.1)(typescript@6.0.3)

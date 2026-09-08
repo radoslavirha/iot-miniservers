@@ -20,6 +20,7 @@
     "@opentelemetry/api": "catalog:otel",
     "@opentelemetry/instrumentation-mongoose": "catalog:otel",
     "@opentelemetry/winston-transport": "catalog:otel",
+    "@radoslavirha/auth": "workspace:*",
     "@radoslavirha/config-typescript": "catalog:",
     "@radoslavirha/otel": "workspace:*",
     "@radoslavirha/resilience": "workspace:*",
