@@ -25,7 +25,10 @@ describe('CommandController (integration)', () => {
         // A second agent carrying a valid token as a default header. Two agents
         // rather than one, because `agent.set` is sticky — an authenticated
         // agent cannot also serve the anonymous cases.
-        api = await authenticateBearerJwt(SuperTest.agent(PlatformTest.callback()));
+        // Carries the admin role, because every route here requires it.
+        api = await authenticateBearerJwt(SuperTest.agent(PlatformTest.callback()), {
+            claims: { roles: ['miot-bridge.admin'] }
+        });
     });
     afterEach(PlatformTest.reset);
 
@@ -58,6 +61,42 @@ describe('CommandController (integration)', () => {
                 const response = await call(api);
 
                 expect(response.status).not.toBe(401);
+            });
+        });
+
+        describe('authorization, on top of authentication', () => {
+            // `call` above is scoped to the per-route table; these assertions
+            // hold for the controller as a whole, so they use one route.
+            const probe = (agent: SuperTest.Agent) => agent.get('/command');
+
+            it('refuses a verified caller who lacks the admin role', async () => {
+                // 403, not 401: the token is good. Sending this caller back to
+                // sign in again would loop them through a login that cannot
+                // change the answer.
+                const reader = await authenticateBearerJwt(SuperTest.agent(PlatformTest.callback()), {
+                    claims: { roles: ['miot-bridge.reader'] }
+                });
+
+                await probe(reader).expect(403);
+            });
+
+            it('refuses a verified caller carrying no roles at all', async () => {
+                const nobody = await authenticateBearerJwt(SuperTest.agent(PlatformTest.callback()));
+
+                await probe(nobody).expect(403);
+            });
+
+            it('answers 401 rather than 403 when there is no credential', async () => {
+                // Order matters: authentication first. A missing token must read
+                // as "sign in", not "you lack a role".
+                await probe(request).expect(401);
+            });
+
+            it('leaks the required role to nobody', async () => {
+                const nobody = await authenticateBearerJwt(SuperTest.agent(PlatformTest.callback()));
+                const response = await probe(nobody);
+
+                expect(JSON.stringify(response.body)).not.toContain('miot-bridge.admin');
             });
         });
 
