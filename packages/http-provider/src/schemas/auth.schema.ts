@@ -13,7 +13,7 @@ export enum AuthStrategy {
 const K8S_DEFAULT_TOKEN_PATH = '/var/run/secrets/kubernetes.io/serviceaccount/token';
 
 const K8S_DEFAULT_TRANSPORT = {
-    headers: [{ name: 'Authorization', value: 'Bearer {{value}}' }]
+    headers: [{ name: 'Authorization', credential: 'value', prefix: 'Bearer ' }]
 };
 
 export const KubernetesServiceAccountAuthSchema = z.object({
@@ -52,7 +52,7 @@ export const TokenExchangeAuthSchema = z.object({
 // ─── JWT Self-Signed ──────────────────────────────────────────────────────────
 
 const JWT_DEFAULT_TRANSPORT = {
-    headers: [{ name: 'Authorization', value: 'Bearer {{value}}' }]
+    headers: [{ name: 'Authorization', credential: 'value', prefix: 'Bearer ' }]
 };
 
 export const JwtKeySchema = z.discriminatedUnion('source', [

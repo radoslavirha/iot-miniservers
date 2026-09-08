@@ -94,7 +94,7 @@ describe('HttpProviderFactory', () => {
                         strategy: AuthStrategy.TokenExchange,
                         request: { method: 'POST', url: 'https://auth.example.com/token' },
                         tokenExtractor: [{ field: 'access_token', as: 'value' }],
-                        transport: { headers: [{ name: 'Authorization', value: 'Bearer {{value}}' }] }
+                        transport: { headers: [{ name: 'Authorization', credential: 'value', prefix: 'Bearer ' }] }
                     }
                 }
             });
@@ -165,7 +165,7 @@ describe('HttpProviderFactory', () => {
                         strategy: AuthStrategy.KubernetesServiceAccount,
                         tokenPath: '/run/secrets/token',
                         transport: {
-                            headers: [{ name: 'Authorization', value: 'Bearer {{value}}' }]
+                            headers: [{ name: 'Authorization', credential: 'value', prefix: 'Bearer ' }]
                         }
                     }
                 }
@@ -197,7 +197,7 @@ describe('HttpProviderFactory', () => {
                         strategy: AuthStrategy.KubernetesServiceAccount,
                         tokenPath: '/run/secrets/token',
                         transport: {
-                            headers: [{ name: 'Authorization', value: 'Bearer {{value}}' }]
+                            headers: [{ name: 'Authorization', credential: 'value', prefix: 'Bearer ' }]
                         }
                     }
                 }
@@ -248,7 +248,7 @@ describe('HttpProviderFactory', () => {
                         strategy: AuthStrategy.KubernetesServiceAccount,
                         tokenPath: '/run/secrets/token',
                         transport: {
-                            headers: [{ name: 'Authorization', value: 'Bearer {{value}}' }]
+                            headers: [{ name: 'Authorization', credential: 'value', prefix: 'Bearer ' }]
                         }
                     }
                 }
@@ -271,7 +271,7 @@ describe('HttpProviderFactory', () => {
                         strategy: AuthStrategy.KubernetesServiceAccount,
                         tokenPath: '/run/secrets/token',
                         transport: {
-                            headers: [{ name: 'Authorization', value: 'Bearer {{value}}' }]
+                            headers: [{ name: 'Authorization', credential: 'value', prefix: 'Bearer ' }]
                         }
                     },
                     resilience: { retry: { count: 2, backoffMs: 0 } }
@@ -310,7 +310,7 @@ describe('HttpProviderFactory', () => {
                         strategy: AuthStrategy.TokenExchange,
                         request: { method: 'POST', url: 'https://auth.example.com/token' },
                         tokenExtractor: [{ field: 'access_token', as: 'value' }],
-                        transport: { headers: [{ name: 'Authorization', value: 'Bearer {{value}}' }] }
+                        transport: { headers: [{ name: 'Authorization', credential: 'value', prefix: 'Bearer ' }] }
                     }
                 }
             });
@@ -327,7 +327,7 @@ describe('HttpProviderFactory', () => {
                         key: { source: 'value', value: 'secret' },
                         algorithm: 'HS256',
                         claims: { exp: 3600 },
-                        transport: { headers: [{ name: 'Authorization', value: 'Bearer {{value}}' }] }
+                        transport: { headers: [{ name: 'Authorization', credential: 'value', prefix: 'Bearer ' }] }
                     }
                 }
             });
@@ -595,7 +595,7 @@ describe('HttpProviderFactory', () => {
                         strategy: AuthStrategy.TokenExchange,
                         request: { method: 'POST', url: 'https://auth.example.com/token' },
                         tokenExtractor: 'access_token',
-                        transport: { headers: [{ name: 'Authorization', value: 'Bearer {{value}}' }] }
+                        transport: { headers: [{ name: 'Authorization', credential: 'value', prefix: 'Bearer ' }] }
                     }
                 }
             }, { onInstanceCreated });
