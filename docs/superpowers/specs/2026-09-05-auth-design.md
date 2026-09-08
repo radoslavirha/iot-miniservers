@@ -1,8 +1,8 @@
 # Auth design and work packages
 
-**Status 2026-09-07: the packages are built and `qr-manager-api` enforces.** An unauthenticated
-`GET /qr-codes` answers `401`. The other two HTTP APIs still answer in full; onboarding them is Tracks
-B and C below, and both are ordinary work — see the risk note under [Still open](#still-open).
+**Status 2026-09-08: every HTTP API in this repo enforces.** Tracks A, B and C are done. What is left
+is not onboarding — it is a release (nothing has shipped), the device credential the LaskaKit map does
+not hold yet, and authorization.
 
 **Read [`2026-09-04-authentik-integration-contract.md`](./2026-09-04-authentik-integration-contract.md)
 first.** It is the authority for every concrete IdP fact — endpoints, `client_id`s, claims, traps.
@@ -24,26 +24,20 @@ the `verify-auth-in-browser` skill. `git log -p -- <this file>` has the original
 | `qr-manager-api` enforces on `/qr-codes` | `d1c02b8`; 96 tests incl. forged / wrong-audience / expired / non-bearer |
 | `miot-bridge-api` enforces on every REST route (Track B) | 56 tests over all 16 routes; verified live — `401`, `503` on an unreachable JWKS, `BEARER_JWT` in both Swagger documents |
 
-### Still open
+### What each API admits
 
-| API | State | Risk if left |
-| --- | --- | --- |
-| `interactive-map-feeder-api` | Open | Read-only radar data. Low |
+| API | Admits |
+| --- | --- |
+| `qr-manager-api` | `IDP` on `/qr-codes`. `GET /r/:slug`, `GET /qr-codes/:id/image` and `/health*` stay open |
+| `miot-bridge-api` | `IDP` on all 16 REST routes. `/health*` open |
+| `interactive-map-feeder-api` | `IDP` on three routes, `DEVICE` on the one the map polls. `/health*` open |
 
-**`miot-bridge-api` was never the dangerous one, and its HTTP guard does not make it safe.**
-`/command` actuates devices, but HTTP is not the only way in: commands also arrive on an MQTT
-subscription (`miot-bridge/device/{deviceId}/command`), which never passes a controller. Loxone and
-the other controllers use MQTT; the REST endpoints exist for people. There was a third path — an
-unauthenticated UDP command listener — and it has been **deleted**, along with the UDP notification
-transport. `homelab` had already stopped exposing it (owner, 2026-08-27: never used), so the code was
-a dead socket that no decorator or broker ACL could ever have covered. `@Authenticate` reaches the HTTP path only, so guarding it closes nothing
-on the LAN — **what remains of the device-actuation risk is EMQX topic ACLs, which are `homelab`
-work, not this repo's.** Guard the HTTP surface because it is a human surface, not as a
-device control.
-
-*(The README's "Consumed By" row still lists HTTP among the controller transports. If any Loxone block
-really does call HTTP `/command`, guarding it breaks that automation — worth one look before Track B
-lands, since it is the one thing here that a test cannot tell you.)*
+**Guarding HTTP is not the same as securing a device.** `miot-bridge-api`'s `/command` actuates
+devices, but commands also arrive on an MQTT subscription that never passes a controller — that
+identity is the broker's, and EMQX topic ACLs are `homelab` work. There was a third path, an
+unauthenticated UDP command listener; it is **deleted**, along with the UDP notification transport.
+`homelab` had already stopped exposing it (owner, 2026-08-27: never used), so the code was a dead
+socket no decorator or broker ACL could have covered.
 
 ### Next
 
@@ -74,36 +68,24 @@ Still needed before a local login works, and only you can do it: **group members
 creates `qr-manager-local-admin`, `miot-bridge-local-admin` and `homelab-dashboard-local-viewer`, but
 does not put anyone in them.
 
-**Track C — onboard `interactive-map-feeder-api`.** `apis/interactive-map-feeder-api/**` only. The
-smaller of the two. Its consumer is a LaskaKit device on the LAN, not a browser, so the caller question
-is the whole of the work — a device holding a PAT from the IdP is one entry; a wholly public read-only
-API is a defensible answer too, but it must be written down rather than left by omission.
+**~~Track C — onboard `interactive-map-feeder-api`~~ — DONE.** Two trust domains rather than one,
+because there are genuinely two callers: `IDP` for people, `DEVICE` for the LaskaKit map. A
+method-level `@Authenticate` **replaces** the class-level one rather than adding to it — verified
+against `Store.fromMethod` before the design was committed to — so the map's route admits `DEVICE` and
+refuses `IDP`, and its three neighbours do the reverse. Nothing there is protecting a secret; every
+route reads public ČHMÚ data. What the split protects is a leaked device credential, which lives in
+flash on a board that talks cleartext HTTP, reaching exactly one endpoint.
 
-### The refusal was logging the credential
+The device token carries `aud`/`iss` of its **own** client, not this API's, and the API trusts that
+pair explicitly — option 1 of *Devices* in `homelab`'s tenancy-topology spec, which needs no Authentik
+scope mapping and reads no role claim.
 
-Found by reading the logs of the first unauthenticated request to `miot-bridge-api`, not by a test.
-`@radoslavirha/tsed-logger` writes the request headers on every failed request, and its
-`requests.headers.redactPaths` **defaults to `[]`** — so the `Authorization` header went to the log
-verbatim, at `level: error`, on exactly the requests authentication had just started producing:
-
-```
-"headers":"{…,\"authorization\":\"Bearer supersecrettokenvalue123\"}"  status:401
-```
-
-A rejected token is frequently still a live token — minted for another audience, expired by seconds,
-or valid against a different API — and these logs ship to Loki.
-
-Fixed here by configuring `logger.requests.headers.redactPaths` in both APIs' `localhost.json` and
-`test.json`; verified live, the entry now reads `"authorization":"***"` with the secret absent from the
-whole record. `cookie`, `proxy-authorization` and `x-api-key` are redacted alongside it.
-
-**Two things this repo cannot fix, both still open:**
-
-- **The default belongs upstream.** `redactPaths: []` on a field that is *always* headers is a
-  fail-open default: every service must remember, and the failure is silent. `@radoslavirha/tsed-logger`
-  in `toolkit-hub` should default to redacting `authorization`, `cookie` and `proxy-authorization`.
-- **Production config lives in `homelab`.** The ConfigMaps for both APIs need the same `logger` block,
-  or production keeps logging tokens while local development does not.
+**The map has no credential yet, and issuing one is not a solo change.** Over plain HTTP the
+`client_secret` crosses the LAN on every refresh, so whoever captures one refresh mints tokens forever
+and a short lifetime buys nothing. The runbook — Authentik application, service account, the group
+binding that gates `client_credentials`, and the ESPHome TLS + token-fetch change that must land in the
+same pass — is in `apis/interactive-map-feeder-api/README.md`. **Until it lands the map is broken**: it
+sends no token and the route now answers `401`.
 
 **Still open: the `postman` client.** Contract §7 designed it and deferred it to "the same pass as the
 first enforcing API" — that pass has happened. It is a **separate** client from the `-local` ones, and

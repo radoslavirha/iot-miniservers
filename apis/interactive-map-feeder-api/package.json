@@ -18,8 +18,10 @@
   },
   "dependencies": {
     "@opentelemetry/api": "catalog:otel",
+    "@radoslavirha/auth": "workspace:*",
     "@radoslavirha/config-typescript": "catalog:",
     "@radoslavirha/otel": "workspace:*",
+    "@radoslavirha/tsed-auth": "workspace:*",
     "@radoslavirha/tsed-common": "catalog:",
     "@radoslavirha/tsed-configuration": "catalog:",
     "@radoslavirha/tsed-health": "workspace:*",

@@ -330,12 +330,18 @@ importers:
       '@opentelemetry/api':
         specifier: catalog:otel
         version: 1.9.1
+      '@radoslavirha/auth':
+        specifier: workspace:*
+        version: link:../../packages/auth
       '@radoslavirha/config-typescript':
         specifier: 'catalog:'
         version: 1.1.4(tslib@2.8.1)(typescript@6.0.3)
       '@radoslavirha/otel':
         specifier: workspace:*
         version: link:../../packages/otel
+      '@radoslavirha/tsed-auth':
+        specifier: workspace:*
+        version: file:packages/tsed-auth(b9ec6acead5b1c2eb6a7ccc621ee3a6a)
       '@radoslavirha/tsed-common':
         specifier: 'catalog:'
         version: 0.5.8(@tsed/core@8.38.2)(@tsed/json-mapper@8.38.2(@tsed/core@8.38.2)(@tsed/schema@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/openspec@8.38.2)))(@tsed/schema@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/openspec@8.38.2))(zod@4.4.3)
@@ -8233,6 +8239,32 @@ snapshots:
       '@radoslavirha/auth': file:packages/auth(@opentelemetry/api@1.9.1)(tslib@2.8.1)
       '@radoslavirha/config-typescript': 1.1.4(tslib@2.8.1)(typescript@6.0.3)
       '@radoslavirha/tsed-swagger': 9.1.5(a561885db47dfd2bc99c0bc87d5efcc7)
+      '@radoslavirha/utils': 0.9.0
+      '@swc/helpers': 0.5.23
+      '@tsed/core': 8.38.2
+      '@tsed/di': 8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/logger@8.0.5)
+      '@tsed/exceptions': 8.38.2(@tsed/core@8.38.2)
+      '@tsed/platform-http': 8.38.2(@tsed/engines@8.38.2)(@tsed/logger@8.0.5)(@tsed/openspec@8.38.2)(@types/multer@2.2.0)
+      '@tsed/platform-middlewares': 8.38.2(@tsed/core@8.38.2)(@tsed/di@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/logger@8.0.5))(@tsed/schema@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/openspec@8.38.2))
+      '@tsed/platform-params': 8.38.2(@tsed/core@8.38.2)(@tsed/di@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/logger@8.0.5))(@tsed/exceptions@8.38.2(@tsed/core@8.38.2))(@tsed/json-mapper@8.38.2(@tsed/core@8.38.2)(@tsed/schema@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/openspec@8.38.2)))(@tsed/schema@8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/openspec@8.38.2))
+      '@tsed/schema': 8.38.2(@tsed/core@8.38.2)(@tsed/hooks@8.38.2)(@tsed/openspec@8.38.2)
+      typescript: 6.0.3
+    transitivePeerDependencies:
+      - '@opentelemetry/api'
+      - '@radoslavirha/tsed-configuration'
+      - '@radoslavirha/tsed-logger'
+      - '@radoslavirha/tsed-platform'
+      - '@tsed/json-mapper'
+      - '@tsed/openspec'
+      - '@tsed/platform-views'
+      - '@tsed/swagger'
+      - tslib
+
+  '@radoslavirha/tsed-auth@file:packages/tsed-auth(b9ec6acead5b1c2eb6a7ccc621ee3a6a)':
+    dependencies:
+      '@radoslavirha/auth': file:packages/auth(@opentelemetry/api@1.9.1)(tslib@2.8.1)
+      '@radoslavirha/config-typescript': 1.1.4(tslib@2.8.1)(typescript@6.0.3)
+      '@radoslavirha/tsed-swagger': 9.1.5(bd0619753b71e5426e48d42818659f7d)
       '@radoslavirha/utils': 0.9.0
       '@swc/helpers': 0.5.23
       '@tsed/core': 8.38.2

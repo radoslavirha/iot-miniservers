@@ -7,11 +7,17 @@ import { DataSourceCitiesResponse } from '../models/index.js';
 import { GROUP_IOT } from '../ModelGroups.js';
 import { DataSources } from '../DataSources.js';
 import { DataSourcesResponse } from '../models/DataSourcesResponse.js';
+import { Authenticate } from '@radoslavirha/tsed-auth';
+import { AuthMethod } from '../../global/models/AuthMethod.enum.js';
 
 @Description('API endpoints representing variety of data sources.')
 @Controller('/data-sources')
 @Scope(ProviderScope.REQUEST)
 @Docs('v1')
+// Guarded at the class, so a route added here is protected the moment it is
+// written. The one device route below overrides the method it asks for; it does
+// not opt out of the guard.
+@Authenticate(AuthMethod.Idp)
 export class DataSourcesController {
     constructor(
         private dataSourcesListHandler: DataSourcesListHandler,
@@ -47,6 +53,21 @@ export class DataSourcesController {
     }
 
     @Get('/:dataSource/cities/iot')
+    /**
+     * The only route the LaskaKit map calls, and the only one that admits a
+     * device.
+     *
+     * A method-level `@Authenticate` **replaces** the class-level one rather
+     * than adding to it — verified against `Store.fromMethod`, which reports
+     * `{ method: 'DEVICE' }` here and `{ method: 'IDP' }` on its neighbours. So
+     * this route admits the map and refuses a person's token, and every other
+     * route does the reverse.
+     *
+     * That asymmetry is the point. The device's credential lives in flash on a
+     * board that talks plain HTTP over the LAN, so it is the credential most
+     * likely to leak — and it reaches exactly one read of public radar data.
+     */
+    @Authenticate(AuthMethod.Device)
     @Description('Returns cities with RGB color representing data from data source. with reduced response.')
     @(Returns(200, DataSourceCitiesResponse).Groups(GROUP_IOT))
     async getDataSourceForIoT(

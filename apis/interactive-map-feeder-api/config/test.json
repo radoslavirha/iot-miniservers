@@ -11,5 +11,39 @@
             "baseURL": "https://opendata.chmi.cz"
         }
     },
-    "logger": {}
+    "logger": {},
+    "auth": {
+        "IDP": {
+            "type": "bearer-jwt",
+            "trustedIssuers": [
+                {
+                    "name": "test-local",
+                    "issuer": "https://issuer.test/",
+                    "audience": "test-audience",
+                    "subjectKind": "human",
+                    "key": {
+                        "source": "value",
+                        "algorithm": "HS256",
+                        "value": "test-secret-not-a-real-key-000000"
+                    }
+                }
+            ]
+        },
+        "DEVICE": {
+            "type": "bearer-jwt",
+            "trustedIssuers": [
+                {
+                    "name": "test-device",
+                    "issuer": "https://device.issuer.test/",
+                    "audience": "test-device-audience",
+                    "subjectKind": "device",
+                    "key": {
+                        "source": "value",
+                        "algorithm": "HS256",
+                        "value": "test-device-secret-not-a-real-000"
+                    }
+                }
+            ]
+        }
+    }
 }

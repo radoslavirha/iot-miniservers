@@ -42,7 +42,7 @@ IdP facts: [`superpowers/specs/2026-09-04-authentik-integration-contract.md`](./
 |-----|-------|
 | `qr-manager-api` | **Enforcing.** `/qr-codes` answers `401` without a valid token. `GET /r/:slug`, `/health*` and `GET /qr-codes/:id/image` stay open |
 | `miot-bridge-api` | **Enforcing.** All 16 REST routes need a token; `/health*` stays open. Commands also arrive over MQTT, which no decorator reaches — that identity is the broker's. The UDP command listener is gone |
-| `interactive-map-feeder-api` | **Open.** Read-only radar data |
+| `interactive-map-feeder-api` | **Enforcing.** Two trust domains: `IDP` on the three human routes, `DEVICE` on the one the LaskaKit map polls. A person's token is refused on the map's route and the map's on everything else |
 
 An API's `auth` block is a map of trust domains it accepts, keyed by the service's own `AuthMethod`
 enum — the inbound mirror of `ExternalApi` and `externalApis`:
