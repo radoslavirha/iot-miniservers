@@ -1,3 +1,4 @@
+import type { CredentialSource } from './CredentialSource.js';
 import type { VerificationOutcome } from './VerificationOutcome.js';
 
 /**
@@ -10,7 +11,8 @@ import type { VerificationOutcome } from './VerificationOutcome.js';
  * freedom gets lost.
  *
  * Extracting this from a request (the `Authorization` header, a query
- * parameter, an MQTT connect packet) belongs to the transport layer, not here.
+ * parameter, an MQTT connect packet) is `extract`'s job, driven by a
+ * `CredentialSource` so no transport is named here either.
  */
 export type Credential = string;
 
@@ -28,5 +30,24 @@ export type Credential = string;
  * at construction), which is not a verification result.
  */
 export interface ITokenVerifier {
+    /**
+     * Finds this verifier's credential, or `undefined` if the caller sent none.
+     *
+     * **A verifier owns where its credential lives**, which is the whole reason
+     * a second mechanism can be added without touching a transport: a JWT comes
+     * from `Authorization: Bearer`, an API key from its own header, and neither
+     * the guard nor the `Authenticator` has to learn the difference. Before this
+     * existed the guard extracted bearer tokens itself, which quietly made every
+     * future verifier bearer-shaped.
+     *
+     * Returning `undefined` means "not for me" and is an ordinary result: when a
+     * route admits several methods, the ones that find nothing step aside so the
+     * one that matches can answer.
+     *
+     * Sync, because extraction is a lookup. Anything needing I/O to decide
+     * belongs in `verify`.
+     */
+    extract(source: CredentialSource): Credential | undefined;
+
     verify(credential: Credential): Promise<VerificationOutcome>;
 }

@@ -54,14 +54,20 @@ export type VerificationReason = (typeof VerificationReason)[keyof typeof Verifi
  * and "has a principal" cannot drift apart: there is no way to express a
  * successful outcome with no principal, or a failure that carries one.
  */
-export type VerificationOutcome =
-    | { readonly reason: typeof VerificationReason.Ok; readonly principal: Principal }
-    | {
-        readonly reason: Exclude<VerificationReason, typeof VerificationReason.Ok>;
-        /**
-         * Operator-facing detail — a JOSE error, the rejected `iss`, the
-         * timeout that fired. Never rendered to the caller: a verification
-         * failure tells the client nothing beyond the status code.
-         */
-        readonly detail?: string;
-    };
+export type VerificationOutcome = VerifiedOutcome | RefusedOutcome;
+
+export type VerifiedOutcome = { readonly reason: typeof VerificationReason.Ok; readonly principal: Principal };
+
+/**
+ * Every outcome that is not a pass, named so a chain of verifiers can collect
+ * them without the union widening back to "might carry a principal".
+ */
+export type RefusedOutcome = {
+    readonly reason: Exclude<VerificationReason, typeof VerificationReason.Ok>;
+    /**
+     * Operator-facing detail — a JOSE error, the rejected `iss`, the timeout
+     * that fired. Never rendered to the caller: a verification failure tells the
+     * client nothing beyond the status code.
+     */
+    readonly detail?: string;
+};

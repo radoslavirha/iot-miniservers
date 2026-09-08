@@ -10,6 +10,9 @@
 
 // ─── Contracts ────────────────────────────────────────────────────────────────
 
+export { credentialSourceOf } from './CredentialSource.js';
+export type { CredentialSource } from './CredentialSource.js';
+export type { RefusedOutcome, VerifiedOutcome } from './VerificationOutcome.js';
 export { VerifierType } from './VerifierType.js';
 export { VerificationReason } from './VerificationOutcome.js';
 

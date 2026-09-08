@@ -70,6 +70,53 @@ using the enum at both the decorator and `createAuthConfigSchema` is what keeps 
 `@CurrentPrincipal()` yields `Principal | undefined` and never a stand-in. It is `undefined` on an
 `@Anonymous()` route, which is the only place a request reaches a handler unverified.
 
+## Requiring a role
+
+`@Authenticate` asks *who are you*. `@RequireRoles` asks *may you do this*:
+
+```ts
+@Controller('/qr-codes')
+@Authenticate(AuthMethod.Idp)
+@RequireRoles('qr-manager.reader')     // the floor for every route here
+export class QrCodeController {
+    @Get('/')
+    list() { … }                       // reader
+
+    @Delete('/:id')
+    @RequireRoles('qr-manager.admin')  // reader AND admin
+    remove() { … }
+}
+```
+
+**"Or" within one decorator, "and" between them.** `('a', 'b')` reads as "a or b". Stacking a second
+decorator *adds* a requirement, so a method can only ever narrow what its class allowed — never widen
+it. The store above resolves to `{ method: 'IDP', roles: [['qr-manager.reader'], ['qr-manager.admin']] }`.
+
+That nesting is not decoration. Ts.ED **concatenates arrays** when it merges endpoint options, so a
+flat `string[]` would have produced `['qr-manager.reader', 'qr-manager.admin']` — and under "any one
+is enough" the `@Delete` that meant to be *stricter* would have admitted readers instead. Each
+decorator's roles live in their own inner array precisely so that the merge cannot invert the meaning.
+Both shapes were measured against `Store.fromMethod` before this was written.
+
+(By contrast `method` is a string, and strings *replace* on merge — which is why a method-level
+`@Authenticate` overrides the class's. Same merge, opposite outcome, purely because of the value type.)
+
+**One guard runs both checks**, because roles live in the same store entry as the auth method rather
+than in a second middleware. So authentication cannot end up running second and turning a missing
+credential into a `403`.
+
+**A missing role is `403`, never `401`.** The credential is good and re-authenticating cannot help;
+answering `401` would send a frontend round a login loop with no exit. The refusal names no role —
+the caller cannot act on it, and naming it enumerates the permission model to anyone holding any valid
+token.
+
+**Exact strings, no hierarchy, no wildcards.** Whether `admin` implies `reader` belongs to whoever
+issues the roles. In this deployment Authentik answers it with group parentage — `all_groups()`
+returns a user's groups *and their parents*, so a token already lists every role its holder
+effectively has, and this stays a set-membership test. Implying it here instead would mean the token
+stopped describing what its holder can do, and every other consumer would need to keep the same
+ordering table to agree.
+
 ## What lands in the OpenAPI document
 
 The decorators emit the documentation themselves, so there is nothing to keep in step by hand:

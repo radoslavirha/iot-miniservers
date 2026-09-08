@@ -6,14 +6,16 @@
  * outcome is testable without a server.
  */
 
-export { AuthGuard, PRINCIPAL_CONTEXT_KEY, bearerFrom, principalOf } from './AuthGuard.js';
+export { AuthGuard, PRINCIPAL_CONTEXT_KEY, decodeMethods, encodeMethods, principalOf } from './AuthGuard.js';
 export { AuthenticationService } from './AuthenticationService.js';
 export { PrincipalPipe } from './PrincipalPipe.js';
-export { Anonymous, Authenticate, CurrentPrincipal } from './decorators.js';
+export { Anonymous, Authenticate, CurrentPrincipal, RequireRoles } from './decorators.js';
 export { authenticateBearerJwt } from './testing/authenticateBearerJwt.js';
 export type { AuthenticatableAgent } from './testing/authenticateBearerJwt.js';
 
 export type { AuthGuardOptions } from './AuthGuard.js';
+export type { CredentialSource } from '@radoslavirha/auth';
+export { credentialSourceOf } from '@radoslavirha/auth';
 
 // Re-exported so a service wiring auth needs only this package — where the
 // logic lives is an implementation detail, not part of how auth is configured.

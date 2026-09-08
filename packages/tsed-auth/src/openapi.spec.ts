@@ -4,7 +4,7 @@ import { Get, Post, SpecTypes, getSpec } from '@tsed/schema';
 import { TEST_METHOD } from '@radoslavirha/auth';
 import { SwaggerSecurityScheme } from '@radoslavirha/tsed-swagger';
 import type { Principal } from '@radoslavirha/auth';
-import { Anonymous, Authenticate, BEARER_JWT_SCHEME, CurrentPrincipal } from './decorators.js';
+import { Anonymous, Authenticate, BEARER_JWT_SCHEME, CurrentPrincipal, RequireRoles } from './decorators.js';
 
 @Controller('/qr-codes')
 @Authenticate(TEST_METHOD)
@@ -41,9 +41,31 @@ class PartlyProtectedController {
     }
 }
 
+@Controller('/roled')
+@Authenticate(TEST_METHOD)
+@RequireRoles('qr-manager.reader')
+class RoledController {
+    @Get('/')
+    read(): string {
+        return 'read';
+    }
+
+    @Get('/admin-only')
+    @RequireRoles('qr-manager.admin')
+    adminOnly(): string {
+        return 'admin';
+    }
+
+    @Get('/either')
+    @RequireRoles('qr-manager.admin', 'qr-manager.editor')
+    either(): string {
+        return 'either';
+    }
+}
+
 const specOf = (token: Parameters<typeof getSpec>[0]) =>
     getSpec(token, { specType: SpecTypes.OPENAPI }) as {
-        paths: Record<string, Record<string, { security?: unknown[]; responses?: Record<string, unknown> }>>;
+        paths: Record<string, Record<string, { security?: unknown[]; responses?: Record<string, { description?: string }> }>>;
     };
 
 const spec = getSpec(DocumentedController, { specType: SpecTypes.OPENAPI }) as {
@@ -109,5 +131,102 @@ describe('generated OpenAPI — method-level @Authenticate', () => {
         // silence here means "public", and silence is what a forgotten decorator
         // produces.
         expect(mixed.paths['/mixed/open']?.['get']?.security).toBeUndefined();
+    });
+});
+
+describe('generated OpenAPI — @RequireRoles', () => {
+    const roled = specOf(RoledController);
+
+    it('documents a 403 naming the roles that would satisfy it', () => {
+        // The one place the requirement is visible to a reader of the document.
+        // A 403 with no description would tell them the route can refuse and
+        // nothing about why.
+        expect(roled.paths['/roled/admin-only']?.['get']?.responses?.['403']?.description)
+            .toContain('qr-manager.admin');
+    });
+
+    it('lists every accepted role, because any one of them is enough', () => {
+        const description = roled.paths['/roled/either']?.['get']?.responses?.['403']?.description ?? '';
+
+        expect(description).toContain('qr-manager.admin');
+        expect(description).toContain('qr-manager.editor');
+    });
+
+    it('keeps the security requirement empty, as the spec demands for an http scheme', () => {
+        // The tempting alternative is `{ BEARER_JWT: ['qr-manager.admin'] }`.
+        // OpenAPI reserves that array for oauth2 and openIdConnect schemes and
+        // requires it to be empty for `type: http` — which BEARER_JWT is. It
+        // would render in Swagger UI and be wrong.
+        expect(roled.paths['/roled/admin-only']?.['get']?.security).toEqual([{ [BEARER_JWT_SCHEME]: [] }]);
+    });
+
+    it('still documents 401 and 503 alongside the 403', () => {
+        // Authorization is added to authentication, not swapped for it.
+        const responses = roled.paths['/roled/admin-only']?.['get']?.responses ?? {};
+
+        expect(Object.keys(responses)).toEqual(expect.arrayContaining(['401', '403', '503']));
+    });
+
+    it('puts the class-level requirement on a method that declares none', () => {
+        // The path is '/roled', not '/roled/' — an earlier version of this test
+        // asserted against the trailing-slash key, which does not exist, so it
+        // passed by looking up nothing at all.
+        expect(roled.paths['/roled']?.['get']?.responses?.['403']?.description)
+            .toContain('qr-manager.reader');
+    });
+
+    it('documents the combined requirement, not just the nearer half', () => {
+        // A reader-and-admin route that advertised only "admin" would send
+        // somebody hunting for a role they already hold.
+        const description = roled.paths['/roled/admin-only']?.['get']?.responses?.['403']?.description ?? '';
+
+        expect(description).toContain('qr-manager.reader');
+        expect(description).toContain('qr-manager.admin');
+        expect(description).toContain(' and ');
+    });
+
+    it('inherits the class-level method rather than replacing it', () => {
+        // The composition this design rests on: the method decorator adds
+        // `roles` and the class decorator still supplies `method`, so the route
+        // is authenticated as well as authorized.
+        expect(roled.paths['/roled/admin-only']?.['get']?.security).toEqual([{ [BEARER_JWT_SCHEME]: [] }]);
+    });
+
+    it('puts no 403 on an anonymous route, which cannot refuse anyone for a role', () => {
+        @Controller('/open')
+        @Authenticate(TEST_METHOD)
+        @RequireRoles('qr-manager.reader')
+        class OpenController {
+            @Get('/free')
+            @Anonymous()
+            free(): string {
+                return 'free'; 
+            }
+        }
+
+        const spec = specOf(OpenController);
+
+        expect(spec.paths['/open/free']?.['get']?.responses?.['403']).toBeUndefined();
+        expect(spec.paths['/open/free']?.['get']?.security).toEqual([]);
+    });
+
+    it('adds no 403 for a decorator that named no role at all', () => {
+        // `@RequireRoles()` is a mistake, but it must not document a refusal the
+        // guard will never produce — it treats an empty entry as no requirement.
+        @Controller('/empty')
+        @Authenticate(TEST_METHOD)
+        class EmptyController {
+            @Get('/')
+            @RequireRoles()
+            list(): string {
+                return ''; 
+            }
+        }
+
+        expect(specOf(EmptyController).paths['/empty']?.['get']?.responses?.['403']).toBeUndefined();
+    });
+
+    it('adds no vendor extension for the roles', () => {
+        expect(JSON.stringify(roled)).not.toMatch(/"x-/);
     });
 });

@@ -11,9 +11,9 @@ import {
     TEST_METHOD
 } from '@radoslavirha/auth';
 import type { Principal } from '@radoslavirha/auth';
-import { ServiceUnavailable, Unauthorized } from '@tsed/exceptions';
+import { Forbidden, ServiceUnavailable, Unauthorized } from '@tsed/exceptions';
 import type { PlatformContext } from '@tsed/platform-http';
-import { AuthGuard, PRINCIPAL_CONTEXT_KEY, bearerFrom, principalOf } from './AuthGuard.js';
+import { AuthGuard, PRINCIPAL_CONTEXT_KEY, encodeMethods, principalOf } from './AuthGuard.js';
 import { AuthenticationService } from './AuthenticationService.js';
 
 const config = AuthConfigSchema.parse({
@@ -29,7 +29,7 @@ const config = AuthConfigSchema.parse({
 });
 
 /** The store `@Authenticate(TEST_METHOD)` writes onto every endpoint. */
-const GUARDED = { method: TEST_METHOD };
+const GUARDED = { methods: encodeMethods([TEST_METHOD]) };
 
 /**
  * A stand-in for the bits of `PlatformContext` the guard touches. Booting a
@@ -43,7 +43,10 @@ const contextOf = (header?: string, endpointOptions?: unknown) => {
     }
 
     return {
-        request: { get: (name: string) => (name === 'authorization' ? header : undefined) },
+        // Answers any header, because a verifier — not the guard — decides which
+        // one it reads. Only `authorization` is populated here, since the real
+        // verifier under test is the bearer one.
+        request: { get: (name: string) => (name.toLowerCase() === 'authorization' ? header : undefined) },
         endpoint: { store: { get: (key: unknown) => store.get(key) } },
         set: (key: string, value: unknown) => values.set(key, value),
         get: <T>(key: string) => values.get(key) as T
@@ -56,36 +59,6 @@ const guardWith = (service: AuthenticationService): AuthGuard => {
     Object.defineProperty(guard, 'authenticator', { value: () => service, configurable: true });
     return guard;
 };
-
-describe('bearerFrom', () => {
-    it('extracts the token from a bearer header', () => {
-        expect(bearerFrom('Bearer abc.def.ghi')).toBe('abc.def.ghi');
-    });
-
-    it('matches the scheme case-insensitively, because clients send lowercase', () => {
-        expect(bearerFrom('bearer abc')).toBe('abc');
-        expect(bearerFrom('BEARER abc')).toBe('abc');
-    });
-
-    it('tolerates surrounding and repeated whitespace', () => {
-        expect(bearerFrom('  Bearer   abc  ')).toBe('abc');
-    });
-
-    it('ignores a non-bearer scheme rather than passing it on as garbage', () => {
-        // Reaching the JWT verifier, `Basic …` would be counted as `invalid`,
-        // which reads as an attack rather than a client using the wrong scheme.
-        expect(bearerFrom('Basic dXNlcjpwYXNz')).toBeUndefined();
-    });
-
-    it('ignores a bearer scheme with no token', () => {
-        expect(bearerFrom('Bearer')).toBeUndefined();
-        expect(bearerFrom('Bearer   ')).toBeUndefined();
-    });
-
-    it('returns undefined when there is no header at all', () => {
-        expect(bearerFrom(undefined)).toBeUndefined();
-    });
-});
 
 describe('AuthGuard', () => {
     it('parks the principal on the context when verification succeeds', async () => {
@@ -183,6 +156,118 @@ describe('AuthGuard', () => {
         } as unknown as PlatformContext;
 
         await expect(guardWith(service).use(ctx)).rejects.toBeInstanceOf(AuthConfigurationError);
+    });
+});
+
+describe('AuthGuard — several methods on one route', () => {
+    it('passes every named method through, in order', async () => {
+        const idp = new FakeTokenVerifier(failureOutcome(VerificationReason.Missing));
+        const key = new FakeTokenVerifier(successOutcome({ subject: 'device' })).readsHeader('x-api-key');
+        const service = new AuthenticationService(config, new Map([['IDP', idp], ['API_KEY', key]]));
+        const ctx = contextOf(undefined, { methods: encodeMethods(['IDP', 'API_KEY']) });
+
+        await expect(guardWith(service).use(ctx)).resolves.toBeUndefined();
+        expect(principalOf(ctx)).toMatchObject({ subject: 'device' });
+    });
+
+    it('refuses an endpoint whose store carries an unreadable method list', async () => {
+        // Rather than treating a corrupt store as "no requirement", which would
+        // leave the route open. Loud beats silent here in every case.
+        const service = new AuthenticationService(config, verifiersFor(new FakeTokenVerifier(successOutcome())));
+        const ctx = contextOf('Bearer t', { methods: 'not json' });
+
+        await expect(guardWith(service).use(ctx)).rejects.toBeInstanceOf(AuthConfigurationError);
+    });
+});
+
+describe('AuthGuard role checks', () => {
+    const withRoles = (...requirements: string[][]) => ({ ...GUARDED, roles: requirements });
+    const holder = (roles: string[]) =>
+        new AuthenticationService(config, verifiersFor(new FakeTokenVerifier(successOutcome({ subject: 'radoslav', roles }))));
+
+    it('admits a caller holding the required role', async () => {
+        const ctx = contextOf('Bearer t', withRoles(['qr-manager.admin']));
+
+        await expect(guardWith(holder(['qr-manager.admin'])).use(ctx)).resolves.toBeUndefined();
+        expect(principalOf(ctx)).toMatchObject({ subject: 'radoslav' });
+    });
+
+    it('admits a caller holding any one of several', async () => {
+        // "a or b", not "a and b". A route names the set it admits.
+        const ctx = contextOf('Bearer t', withRoles(['qr-manager.admin', 'qr-manager.editor']));
+
+        await expect(guardWith(holder(['qr-manager.editor'])).use(ctx)).resolves.toBeUndefined();
+    });
+
+    it('refuses with 403, not 401, when the role is missing', async () => {
+        // The credential is good; signing in again cannot fix it, and a 401
+        // would send the frontend round a login loop with no exit.
+        const ctx = contextOf('Bearer t', withRoles(['qr-manager.admin']));
+
+        await expect(guardWith(holder(['qr-manager.reader'])).use(ctx)).rejects.toBeInstanceOf(Forbidden);
+    });
+
+    it('refuses a caller with no roles at all', async () => {
+        const ctx = contextOf('Bearer t', withRoles(['qr-manager.admin']));
+
+        await expect(guardWith(holder([])).use(ctx)).rejects.toBeInstanceOf(Forbidden);
+    });
+
+    it('names no role in the refusal', async () => {
+        // Naming it enumerates the permission model to anyone holding any valid
+        // token, and the caller cannot act on it either way.
+        const ctx = contextOf('Bearer t', withRoles(['qr-manager.admin']));
+        const error = await guardWith(holder([])).use(ctx).then(() => undefined, (e: Error) => e);
+
+        expect(error?.message).not.toContain('qr-manager.admin');
+    });
+
+    it('does not check roles when none are required', async () => {
+        // Every route that existed before this feature. Authentication alone.
+        const ctx = contextOf('Bearer t', GUARDED);
+
+        await expect(guardWith(holder([])).use(ctx)).resolves.toBeUndefined();
+    });
+
+    it('treats an empty role list as no requirement rather than an impossible one', async () => {
+        // `@RequireRoles()` with no argument is a mistake, but failing closed on
+        // it would refuse every caller with a 403 that no role can satisfy —
+        // indistinguishable from a policy bug. Authentication still applies.
+        const ctx = contextOf('Bearer t', withRoles([]));
+
+        await expect(guardWith(holder([])).use(ctx)).resolves.toBeUndefined();
+    });
+
+    it('requires BOTH when a class-level and a method-level decorator apply', async () => {
+        // The case that motivated the nesting. A flat list would have merged
+        // these into one "any of" set and let a reader through the admin route.
+        const ctx = contextOf('Bearer t', withRoles(['qr-manager.reader'], ['qr-manager.admin']));
+
+        await expect(guardWith(holder(['qr-manager.reader'])).use(ctx)).rejects.toBeInstanceOf(Forbidden);
+    });
+
+    it('admits the caller who satisfies every requirement', async () => {
+        const ctx = contextOf('Bearer t', withRoles(['qr-manager.reader'], ['qr-manager.admin']));
+
+        await expect(guardWith(holder(['qr-manager.reader', 'qr-manager.admin'])).use(ctx)).resolves.toBeUndefined();
+    });
+
+    it('refuses someone holding only the narrower role, since the floor still applies', async () => {
+        // Fail-closed, and the argument for issuing roles hierarchically: an
+        // admin-only token satisfies the admin entry and not the reader one.
+        // Authentik group parentage is what makes that token carry both.
+        const ctx = contextOf('Bearer t', withRoles(['qr-manager.reader'], ['qr-manager.admin']));
+
+        await expect(guardWith(holder(['qr-manager.admin'])).use(ctx)).rejects.toBeInstanceOf(Forbidden);
+    });
+
+    it('refuses an unauthenticated caller with 401 before ever reaching the role check', async () => {
+        // Ordering, asserted rather than assumed: no credential must read as
+        // "sign in", not "you lack a role".
+        const service = new AuthenticationService(config, verifiersFor(new FakeTokenVerifier(failureOutcome(VerificationReason.Missing))));
+        const ctx = contextOf(undefined, withRoles(['qr-manager.admin']));
+
+        await expect(guardWith(service).use(ctx)).rejects.toBeInstanceOf(Unauthorized);
     });
 });
 

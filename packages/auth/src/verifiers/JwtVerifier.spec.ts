@@ -5,6 +5,7 @@ import { StaticKeySource } from '../keys/StaticKeySource.js';
 import { TrustedIssuerSchema } from '../schemas/auth.schema.js';
 import { mintTestToken, TEST_SECRET } from '../test/mintTestToken.js';
 import type { IKeySource } from '../IKeySource.js';
+import { credentialSourceOf } from '../CredentialSource.js';
 
 const ISSUER = 'https://issuer.test/';
 const AUDIENCE = 'test-audience';
@@ -236,5 +237,46 @@ describe('JwtVerifier — several trust sources', () => {
 
         expect(mine).toHaveProperty('principal.kind', 'human');
         expect(theirs).toHaveProperty('principal.kind', 'device');
+    });
+});
+
+describe('JwtVerifier.extract', () => {
+    // Moved here from the Ts.ED guard, which used to own bearer parsing. The
+    // mechanism knows how its credential travels; the transport does not.
+    const verifier = () => new JwtVerifier([], new StaticKeySource([]));
+    const from = (headers: Record<string, string>) => verifier().extract(credentialSourceOf(headers));
+
+    it('extracts the token from a bearer header', () => {
+        expect(from({ authorization: 'Bearer abc.def.ghi' })).toBe('abc.def.ghi');
+    });
+
+    it('matches the scheme case-insensitively, because clients send lowercase', () => {
+        expect(from({ authorization: 'bearer abc' })).toBe('abc');
+        expect(from({ authorization: 'BEARER abc' })).toBe('abc');
+    });
+
+    it('finds the header whatever case the transport spelled it in', () => {
+        expect(from({ Authorization: 'Bearer abc' })).toBe('abc');
+    });
+
+    it('tolerates surrounding and repeated whitespace', () => {
+        expect(from({ authorization: '  Bearer   abc  ' })).toBe('abc');
+    });
+
+    it('ignores a non-bearer scheme rather than passing it on as garbage', () => {
+        // Two reasons. Reaching the JWT parser, `Basic …` would be counted as
+        // `invalid`, which reads as an attack rather than a client using the
+        // wrong scheme. And on a route admitting several methods, "not mine"
+        // must let the next verifier answer.
+        expect(from({ authorization: 'Basic dXNlcjpwYXNz' })).toBeUndefined();
+    });
+
+    it('ignores a bearer scheme with no token', () => {
+        expect(from({ authorization: 'Bearer' })).toBeUndefined();
+        expect(from({ authorization: 'Bearer   ' })).toBeUndefined();
+    });
+
+    it('returns undefined when there is no header at all', () => {
+        expect(from({})).toBeUndefined();
     });
 });

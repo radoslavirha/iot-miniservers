@@ -5,7 +5,8 @@ import {
     TEST_METHOD,
     VerifierType,
     mintTestToken,
-    TEST_SECRET
+    TEST_SECRET,
+    credentialSourceOf
 } from '@radoslavirha/auth';
 import { AuthenticationService } from './AuthenticationService.js';
 
@@ -33,11 +34,14 @@ const serviceFor = () => new AuthenticationService(localhostConfig);
  * the subclass still works end to end when a container hands it nothing but a
  * parsed config: a real token, really signed, really verified, nothing running.
  */
+/** `Authorization: Bearer <token>` — the shape `JwtVerifier.extract` reads. */
+const bearer = (token: string) => credentialSourceOf({ authorization: `Bearer ${token}` });
+
 describe('AuthenticationService', () => {
     it('verifies a real token from configuration alone', async () => {
         const decision = await serviceFor().authenticate(
-            await mintTestToken({ issuer: ISSUER, audience: AUDIENCE, subject: 'a-service' }),
-            TEST_METHOD
+            bearer(await mintTestToken({ issuer: ISSUER, audience: AUDIENCE, subject: 'a-service' })),
+            [TEST_METHOD]
         );
 
         expect(decision).toMatchObject({ allowed: true, reason: 'ok' });
@@ -47,8 +51,8 @@ describe('AuthenticationService', () => {
 
     it('refuses a token minted for another audience', async () => {
         const decision = await serviceFor().authenticate(
-            await mintTestToken({ issuer: ISSUER, audience: 'somebody-else', subject: 's' }),
-            TEST_METHOD
+            bearer(await mintTestToken({ issuer: ISSUER, audience: 'somebody-else', subject: 's' })),
+            [TEST_METHOD]
         );
 
         expect(decision).toMatchObject({ allowed: false, reason: 'wrong-audience', status: 401 });
@@ -56,8 +60,8 @@ describe('AuthenticationService', () => {
 
     it('refuses a token from an issuer it does not trust', async () => {
         const decision = await serviceFor().authenticate(
-            await mintTestToken({ issuer: 'https://elsewhere.test/', audience: AUDIENCE, subject: 's' }),
-            TEST_METHOD
+            bearer(await mintTestToken({ issuer: 'https://elsewhere.test/', audience: AUDIENCE, subject: 's' })),
+            [TEST_METHOD]
         );
 
         expect(decision).toMatchObject({ allowed: false, reason: 'unknown-issuer' });
@@ -65,8 +69,8 @@ describe('AuthenticationService', () => {
 
     it('refuses a token signed with the wrong secret', async () => {
         const decision = await serviceFor().authenticate(
-            await mintTestToken({ issuer: ISSUER, audience: AUDIENCE, secret: 'a-different-secret-00000000000000' }),
-            TEST_METHOD
+            bearer(await mintTestToken({ issuer: ISSUER, audience: AUDIENCE, secret: 'a-different-secret-00000000000000' })),
+            [TEST_METHOD]
         );
 
         expect(decision).toMatchObject({ allowed: false, reason: 'invalid' });
@@ -76,7 +80,7 @@ describe('AuthenticationService', () => {
         // A deployment or programmer error, not a caller's. Configuring with
         // `createAuthConfigSchema` moves this to boot; reaching it at runtime
         // still must not look like a bad token.
-        await expect(serviceFor().authenticate('t', 'DEVICES')).rejects.toBeInstanceOf(
+        await expect(serviceFor().authenticate(bearer('t'), ['DEVICES'])).rejects.toBeInstanceOf(
             AuthConfigurationError
         );
     });

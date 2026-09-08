@@ -1,4 +1,6 @@
 import type { AuthVerifiers } from '../Authenticator.js';
+import { StringUtils } from '@radoslavirha/utils';
+import type { CredentialSource } from '../CredentialSource.js';
 import type { Credential, ITokenVerifier } from '../ITokenVerifier.js';
 import type { Principal } from '../Principal.js';
 import { VerificationReason, type VerificationOutcome } from '../VerificationOutcome.js';
@@ -19,14 +21,39 @@ export class FakeTokenVerifier implements ITokenVerifier {
     readonly seen: Credential[] = [];
 
     #outcome: VerificationOutcome;
+    #header = 'authorization';
 
     constructor(outcome: VerificationOutcome = successOutcome()) {
         this.#outcome = outcome;
     }
 
+    /**
+     * Reads the header this fake was told to read, defaulting to the bearer
+     * shape so most tests need say nothing.
+     *
+     * Configurable because a route admitting several methods needs verifiers
+     * that disagree about where their credential lives — that disagreement is
+     * the thing under test, and a fake that always reads `authorization` cannot
+     * express it.
+     */
+    extract(source: CredentialSource): Credential | undefined {
+        const raw = source.header(this.#header);
+        if (!StringUtils.isNotEmpty(raw)) {
+            return undefined;
+        }
+
+        return this.#header === 'authorization' ? (raw.split(/\s+/)[1] ?? undefined) : raw;
+    }
+
     verify(credential: Credential): Promise<VerificationOutcome> {
         this.seen.push(credential);
         return Promise.resolve(this.#outcome);
+    }
+
+    /** Reads a different header, for a fake standing in for a non-bearer method. */
+    readsHeader(name: string): this {
+        this.#header = name.toLowerCase();
+        return this;
     }
 
     /** Changes what the next `verify` returns, mid-test. */
