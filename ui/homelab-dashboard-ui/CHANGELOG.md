@@ -1,5 +1,11 @@
 # homelab-dashboard-ui
 
+## 0.6.0
+
+### Minor Changes
+
+- [#105](https://github.com/radoslavirha/iot-miniservers/pull/105) [`5352256`](https://github.com/radoslavirha/iot-miniservers/commit/5352256916a6d7081c2f605a04cb9ba14bce91f4) Thanks [@radoslavirha](https://github.com/radoslavirha)! - Refactor homelab dashboard
+
 ## 0.5.1
 
 ### Patch Changes
