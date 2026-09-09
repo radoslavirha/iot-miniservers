@@ -1,5 +1,11 @@
 # interactive-map-feeder
 
+## 0.12.1
+
+### Patch Changes
+
+- [`df04cd6`](https://github.com/radoslavirha/iot-miniservers/commit/df04cd652d15b571b0cc4276ad73911763121fe8) Thanks [@radoslavirha](https://github.com/radoslavirha)! - Log the `AUTH_CONFIG` boot summary (trusted issuers, audiences, no secrets) on startup, matching `qr-manager-api`. Previously these two apps enforced auth but gave no boot-time signal of what they'd accept.
+
 ## 0.12.0
 
 ### Minor Changes
