@@ -31,9 +31,9 @@ describe('ChmiPortalEndpoint', () => {
     afterEach(PlatformTest.reset);
 
     it.each([
-        ['getSurfaceMap', 'pacz2gmaps6.oro_col_40med.jpg'],
-        ['getCitiesMap', 'pacz2gmaps6.und2.png'],
-        ['getBordersMap', 'pacz2gmaps6.borders5.und.png']
+        ['getSurfaceMap', 'pacz2gmaps6.oro_col2sharp40.jpg'],
+        ['getCitiesMap', '/radar/und/pacz2gmaps6.und3.png'],
+        ['getBordersMap', '/radar/und/pacz2gmaps6.und.015.hranice2px_4b.png']
     ] as const)('%s fetches its layer from the configured provider', async (method, filename) => {
         expect.assertions(3);
         mock.onGet(new RegExp(filename.replace(/\./g, '\\.'))).reply(200, Buffer.from('image-bytes'));
