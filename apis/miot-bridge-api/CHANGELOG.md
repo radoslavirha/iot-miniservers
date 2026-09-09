@@ -1,5 +1,12 @@
 # miot-bridge
 
+## 0.24.2
+
+### Patch Changes
+
+- Updated dependencies [[`d7e18b1`](https://github.com/radoslavirha/iot-miniservers/commit/d7e18b1b64e5af39e73a631f78698958f58f59c0)]:
+  - @radoslavirha/tsed-http-provider@0.2.6
+
 ## 0.24.1
 
 ### Patch Changes

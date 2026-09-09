@@ -1,5 +1,13 @@
 # interactive-map-feeder
 
+## 0.12.2
+
+### Patch Changes
+
+- [`d2e5109`](https://github.com/radoslavirha/iot-miniservers/commit/d2e51095231d53546b6e4b6ee29d82605580c77d) Thanks [@radoslavirha](https://github.com/radoslavirha)! - Fix CHMI raster images source
+- Updated dependencies [[`d7e18b1`](https://github.com/radoslavirha/iot-miniservers/commit/d7e18b1b64e5af39e73a631f78698958f58f59c0)]:
+  - @radoslavirha/tsed-http-provider@0.2.6
+
 ## 0.12.1
 
 ### Patch Changes
