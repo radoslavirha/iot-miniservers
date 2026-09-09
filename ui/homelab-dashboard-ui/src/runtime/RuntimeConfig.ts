@@ -21,7 +21,15 @@ export const AppConfigSchema = z.object({
         /** Path segment only, not a secret. */
         site: z.string().min(1).default('default')
     }),
-    /** Capture group 1 must be the numeric server index. */
+    /**
+     * Capture group 1 must be the numeric server index.
+     *
+     * No default. The domain suffix is a deployment fact — `.home` was retired
+     * for `.homelab.irha.cz` on 2026-09-03, and a default here is exactly the
+     * "value a new deployment silently inherits" problem that migration
+     * exposed elsewhere. Omitting this key must fail config validation, not
+     * fall back to a pattern that can no longer match anything real.
+     */
     serverPattern: z.string()
         .refine(
             value => {
@@ -35,8 +43,7 @@ export const AppConfigSchema = z.object({
                 }
             },
             { error: 'must be a valid regular expression' }
-        )
-        .default('^server(\\d+)\\.home$'),
+        ),
     /** Protocol used when building tile URLs from hostnames. */
     scheme: z.enum(['http', 'https']).default('http'),
     /** Hostnames to hide, matched against the full DNS key, case-insensitive. */

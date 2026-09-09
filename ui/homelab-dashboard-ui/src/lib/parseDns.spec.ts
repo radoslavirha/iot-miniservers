@@ -88,19 +88,12 @@ describe('parseDnsRecords', () => {
         expect(clusters.some(c => c.label.includes('10.0.0'))).toBe(true);
     });
 
-    it('uses default server pattern when none provided', () => {
-        const records = [
-            aRecord('server1.home', '192.168.1.10'),
-            aRecord('app.home', '192.168.1.10')
-        ];
-        const config = AppConfigSchema.parse({ unifi: { host: 'https://192.168.1.1', apiKey: 'key' } });
-        const clusters = parseDnsRecords(records, config);
-        expect(clusters).toHaveLength(1);
-    });
-
     it('uses http scheme by default', () => {
         const records = [aRecord('server1.home', '192.168.1.10'), aRecord('app.home', '192.168.1.10')];
-        const config = AppConfigSchema.parse({ unifi: { host: 'https://192.168.1.1', apiKey: 'key' } });
+        const config = AppConfigSchema.parse({
+            unifi: { host: 'https://192.168.1.1', apiKey: 'key' },
+            serverPattern: '^server(\\d+)\\.home$'
+        });
         const clusters = parseDnsRecords(records, config);
         expect(clusters[0].services[0].url).toMatch(/^http:\/\//);
     });
