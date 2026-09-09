@@ -1,5 +1,13 @@
 # homelab-dashboard-ui
 
+## 0.5.1
+
+### Patch Changes
+
+- Updated dependencies [[`8eff9a3`](https://github.com/radoslavirha/iot-miniservers/commit/8eff9a3fc7c6aea685ad23d70158346f9c1903d6)]:
+  - @radoslavirha/ui-runtime@0.3.0
+  - @radoslavirha/ui-kit@1.1.0
+
 ## 0.5.0
 
 ### Minor Changes

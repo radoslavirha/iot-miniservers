@@ -1,5 +1,39 @@
 # @radoslavirha/ui-kit
 
+## 1.1.0
+
+### Minor Changes
+
+- [#100](https://github.com/radoslavirha/iot-miniservers/pull/100) [`8eff9a3`](https://github.com/radoslavirha/iot-miniservers/commit/8eff9a3fc7c6aea685ad23d70158346f9c1903d6) Thanks [@radoslavirha](https://github.com/radoslavirha)! - Keep a browser session alive, and stop reporting a dead one as healthy.
+  
+  Three defects that only showed up in a browser, all of which passed the test suite:
+  
+  - **Nothing renewed the token.** `automaticSilentRenew` is off — correctly, it uses a hidden iframe and
+    Authentik sets `X-Frame-Options: DENY` — but nothing replaced it, so a tab open past the 30-minute
+    lifetime held a dead token. Renewal is now a top-level `prompt=none` redirect scheduled a minute
+    before expiry, and it returns the user to the page they were on rather than the landing route.
+  - **`getAccessToken()` did not check expiry**, so the request seam attached that dead token.
+  - **A `401` classified as a healthy backend.** `classifyResponse` mapped every 4xx to `client-error`,
+    which is right for a validation error and wrong for an expired session: the user saw a green banner
+    and a raw failure string with nothing prompting a re-login. 401 and 403 are now an `unauthorized`
+    outcome and surface as `unauthenticated`, with banner copy that says to sign in again rather than
+    claiming a retry is coming.
+  
+  `<AuthCallback>` moves into `@radoslavirha/ui-auth`. It takes `navigate` as a **prop** rather than
+  calling `useNavigate()` internally, because a single-screen app should not have to adopt a router to
+  get a login. It owns the single-exchange guard, the `returnTo` handling and the basename stripping —
+  all three are things every frontend would otherwise reimplement, and the exchange guard is invisible
+  without a browser because the first exchange succeeds and the user still lands signed in.
+  
+  `@radoslavirha/ui-kit` gains the `unauthenticated` banner state, deliberately worded apart from
+  `degraded`: nothing is broken and nothing is retrying, so "having problems — retrying" would be a lie
+  that makes the user wait for a recovery that cannot come.
+
+### Patch Changes
+
+- Updated dependencies [[`8eff9a3`](https://github.com/radoslavirha/iot-miniservers/commit/8eff9a3fc7c6aea685ad23d70158346f9c1903d6)]:
+  - @radoslavirha/ui-runtime@0.3.0
+
 ## 1.0.1
 
 ### Patch Changes

@@ -1,5 +1,58 @@
 # interactive-map-feeder
 
+## 0.12.0
+
+### Minor Changes
+
+- [#100](https://github.com/radoslavirha/iot-miniservers/pull/100) [`353489c`](https://github.com/radoslavirha/iot-miniservers/commit/353489c382e7438f464493181c3b30785f557605) Thanks [@radoslavirha](https://github.com/radoslavirha)! - One trust domain, not two.
+  
+  The LaskaKit map logs in against the same identity provider as a person does, from its own Authentik
+  application. From this API's side that is not a different kind of authentication — it is the same
+  bearer JWT from a neighbouring issuer. So `AuthMethod.Device` is gone, its config entry is folded into
+  `auth.IDP.trustedIssuers` as a second row, and the map's route carries no decorator of its own.
+  
+  **Why the original shape was wrong.** A trust domain answers "do we believe this signature"; it was
+  being used to answer "what kind of thing is calling", which is authorization. The cost showed up in
+  scaling: because a domain is named in code and every guarded route names a domain, onboarding device
+  number two would have needed a change in this repo — a deployment of the thing being consumed, to admit
+  a consumer. As an issuer row it is configuration, per environment, and costs nothing.
+  
+  Restricting the map's route to the map is still available and is now in the right place:
+  `@RequireRoles` on a role its service account holds. It is not currently wanted — every route here
+  reads public ČHMÚ data, and what the token buys is that the surface is not anonymous and that a leaked
+  credential is revocable at the IdP, which follows from the map having its own application rather than
+  from how this API is configured.
+  
+  The integration tests changed with it: the map's issuer is now admitted on all four routes, and the
+  refusals that matter — no credential, forged signature, wrong audience, expired, non-bearer scheme —
+  are unchanged.
+
+- [#100](https://github.com/radoslavirha/iot-miniservers/pull/100) [`8eff9a3`](https://github.com/radoslavirha/iot-miniservers/commit/8eff9a3fc7c6aea685ad23d70158346f9c1903d6) Thanks [@radoslavirha](https://github.com/radoslavirha)! - Admit people and the LaskaKit map, separately.
+  
+  Every route now requires a bearer token, across two trust domains that are not interchangeable: `IDP`
+  on the three routes a person uses, `DEVICE` on the single route the map polls. A person's token is
+  refused on the map's route and the map's token everywhere else.
+  
+  **The map has no credential yet, so its route answers `401` until one is issued.** The runbook is in
+  this API's README: an Authentik confidential client with `client_credentials`, a service account bound
+  to its group, and — in the same change, not as a follow-up — moving the ESPHome request to TLS. Over
+  cleartext the `client_secret` crosses the LAN on every refresh, so whoever captures one refresh mints
+  tokens indefinitely and a short token lifetime buys nothing.
+  
+  Nothing here is protecting a secret; every route reads public ČHMÚ data. What the split protects is the
+  other direction: the map's credential lives in flash on a board on a cleartext LAN hop, so it is the
+  one most likely to leak, and it reaches exactly one endpoint — including whatever is added later.
+  
+  The device's token carries `aud` and `iss` of its **own** client rather than this API's, and the API
+  trusts that pair explicitly. No Authentik scope mapping, and no role claim is read.
+
+### Patch Changes
+
+- Updated dependencies [[`8eff9a3`](https://github.com/radoslavirha/iot-miniservers/commit/8eff9a3fc7c6aea685ad23d70158346f9c1903d6)]:
+  - @radoslavirha/auth@0.2.0
+  - @radoslavirha/tsed-auth@0.2.0
+  - @radoslavirha/tsed-http-provider@0.2.5
+
 ## 0.11.11
 
 ### Patch Changes

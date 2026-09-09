@@ -1,6 +1,6 @@
 {
     "name": "@radoslavirha/tsed-auth",
-    "version": "0.1.0",
+    "version": "0.2.0",
     "description": "Ts.ED wiring for @radoslavirha/auth: the request guard, the endpoint decorators and the injectable Principal",
     "private": true,
     "type": "module",
