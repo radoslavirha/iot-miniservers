@@ -1,5 +1,12 @@
 # @radoslavirha/tsed-http-provider
 
+## 0.2.5
+
+### Patch Changes
+
+- Updated dependencies [[`f10be00`](https://github.com/radoslavirha/iot-miniservers/commit/f10be00f4102a54e5357b81018fbd0885ac8b70b)]:
+  - @radoslavirha/http-provider@0.3.0
+
 ## 0.2.4
 
 ### Patch Changes

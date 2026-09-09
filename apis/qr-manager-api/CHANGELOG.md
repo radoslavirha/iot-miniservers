@@ -1,5 +1,31 @@
 # qr-manager-api
 
+## 0.7.0
+
+### Minor Changes
+
+- [#100](https://github.com/radoslavirha/iot-miniservers/pull/100) [`8eff9a3`](https://github.com/radoslavirha/iot-miniservers/commit/8eff9a3fc7c6aea685ad23d70158346f9c1903d6) Thanks [@radoslavirha](https://github.com/radoslavirha)! - `/qr-codes` now requires a verified caller.
+  
+  An unauthenticated `GET /qr-codes` answers `401` instead of returning every record. This is the first
+  API in the repo to actually verify the tokens the frontend had already been sending.
+  
+  `@Authenticate(AuthMethod.Idp)` sits on the controller class, not on each method, so a route added
+  tomorrow is protected the moment it is written. Two routes stay open, each for a reason that is written
+  next to it: `GET /r/:slug` is the printed-QR redirect, scanned by an anonymous phone camera, and
+  `GET /qr-codes/:id/image` is loaded by `<img src>`, which cannot send a header.
+  
+  A refused request answers `401`, and one whose token could not be verified answers `503` — a JWKS fetch
+  that failed is our problem, not the caller's, and unlike `401` it is worth retrying. Neither says why.
+  
+  Credential headers are no longer written to the log. That is now the default in
+  `@radoslavirha/tsed-logger`, so this service configures nothing.
+
+### Patch Changes
+
+- Updated dependencies [[`8eff9a3`](https://github.com/radoslavirha/iot-miniservers/commit/8eff9a3fc7c6aea685ad23d70158346f9c1903d6)]:
+  - @radoslavirha/auth@0.2.0
+  - @radoslavirha/tsed-auth@0.2.0
+
 ## 0.6.0
 
 ### Minor Changes
