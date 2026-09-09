@@ -93,7 +93,7 @@ describe('<App />', () => {
 
     it('uses default title "Homelab dashboard" when config.title is not set', async () => {
         mockFetch([]);
-        const cfgNoTitle = AppConfigSchema.parse({ unifi: config.unifi });
+        const cfgNoTitle = AppConfigSchema.parse({ unifi: config.unifi, serverPattern: config.serverPattern });
         render(<App config={cfgNoTitle} />);
         await waitFor(() => expect(screen.getByText('Homelab dashboard')).toBeInTheDocument());
     });

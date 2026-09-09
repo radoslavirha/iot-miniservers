@@ -3,9 +3,21 @@
     "unifi": {
         "site": "default"
     },
-    "serverPattern": "^server(\\d+)\\.home$",
+    "serverPattern": "^server(\\d+)\\.homelab\\.irha\\.cz$",
     "scheme": "http",
-    "exclude": ["dashboard.home"],
+    "exclude": [
+        "dashboard.server3.homelab.irha.cz",
+        "qr.irha.cz",
+        "api.server1.homelab.irha.cz",
+        "api.sandbox.server1.homelab.irha.cz",
+        "apps.server1.homelab.irha.cz",
+        "apps.sandbox.server1.homelab.irha.cz",
+        "api.server2.homelab.irha.cz",
+        "api.sandbox.server2.homelab.irha.cz",
+        "apps.server2.homelab.irha.cz",
+        "apps.sandbox.server2.homelab.irha.cz",
+        "otel.server3.homelab.irha.cz"
+    ],
     "paths": {
         "traefik": "/dashboard"
     }
