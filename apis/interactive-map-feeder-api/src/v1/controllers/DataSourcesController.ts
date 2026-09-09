@@ -14,9 +14,6 @@ import { AuthMethod } from '../../global/models/AuthMethod.enum.js';
 @Controller('/data-sources')
 @Scope(ProviderScope.REQUEST)
 @Docs('v1')
-// Guarded at the class, so a route added here is protected the moment it is
-// written. The one device route below overrides the method it asks for; it does
-// not opt out of the guard.
 @Authenticate(AuthMethod.Idp)
 export class DataSourcesController {
     constructor(
@@ -53,20 +50,6 @@ export class DataSourcesController {
     }
 
     @Get('/:dataSource/cities/iot')
-    /**
-     * The only route the LaskaKit map calls.
-     *
-     * It carries no decorator of its own: the map authenticates against the same
-     * identity provider as everyone else, so from here it is an ordinary
-     * caller — the class-level `@Authenticate` covers it, and its Authentik
-     * application is one more row in `auth.IDP.trustedIssuers`.
-     *
-     * If this route ever has to admit the map and refuse a person, that is
-     * `@RequireRoles` on a role the map's service account holds, not a separate
-     * trust domain. The earlier `@Authenticate(AuthMethod.Device)` made the API
-     * decide on the kind of caller, which is authorization wearing
-     * authentication's clothes.
-     */
     @Description('Returns cities with RGB color representing data from data source. with reduced response.')
     @(Returns(200, DataSourceCitiesResponse).Groups(GROUP_IOT))
     async getDataSourceForIoT(
