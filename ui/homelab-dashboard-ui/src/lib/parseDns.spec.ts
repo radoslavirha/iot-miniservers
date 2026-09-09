@@ -52,6 +52,27 @@ describe('parseDnsRecords', () => {
         expect(clusters[0].services[0].name).toBe('service');
     });
 
+    it('groups a CNAME by the anchor\'s own matched hostname, not a hardcoded suffix', () => {
+        const config = { ...baseConfig, serverPattern: '^server(\\d+)\\.homelab\\.irha\\.cz$' };
+        const records = [
+            aRecord('server1.homelab.irha.cz', '192.168.1.10'),
+            cnameRecord('grafana.irha.cz', 'server1.homelab.irha.cz')
+        ];
+        const clusters = parseDnsRecords(records, config);
+        expect(clusters).toHaveLength(1);
+        expect(clusters[0].services[0].name).toBe('grafana');
+    });
+
+    it('matches a CNAME target case-insensitively', () => {
+        const config = { ...baseConfig, serverPattern: '^server(\\d+)\\.homelab\\.irha\\.cz$' };
+        const records = [
+            aRecord('server1.homelab.irha.cz', '192.168.1.10'),
+            cnameRecord('grafana.irha.cz', 'SERVER1.homelab.irha.cz')
+        ];
+        const clusters = parseDnsRecords(records, config);
+        expect(clusters[0].services).toHaveLength(1);
+    });
+
     it('excludes records listed in config.exclude', () => {
         const records = [
             aRecord('server1.home', '192.168.1.10'),
@@ -86,6 +107,12 @@ describe('parseDnsRecords', () => {
         const clusters = parseDnsRecords(records, { ...baseConfig, serverPattern: '^NOMATCH$' });
         expect(clusters.length).toBeGreaterThan(0);
         expect(clusters.some(c => c.label.includes('10.0.0'))).toBe(true);
+    });
+
+    it('derives a clean label in the subnet fallback for any domain, not a hardcoded-suffix strip', () => {
+        const records = [aRecord('grafana.irha.cz', '10.0.0.5')];
+        const clusters = parseDnsRecords(records, { ...baseConfig, serverPattern: '^NOMATCH$' });
+        expect(clusters[0].services[0].name).toBe('grafana');
     });
 
     it('uses http scheme by default', () => {
