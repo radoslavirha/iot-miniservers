@@ -12,8 +12,8 @@ catalog:
   '@radoslavirha/tsed-common': ^0.5.8
   '@radoslavirha/tsed-configuration': ^0.8.5
   '@radoslavirha/tsed-logger': ^0.7.0
-  '@radoslavirha/tsed-platform': ^5.0.1
-  '@radoslavirha/tsed-swagger': ^9.1.5
+  '@radoslavirha/tsed-platform': ^5.0.2
+  '@radoslavirha/tsed-swagger': ^9.1.6
   '@radoslavirha/utils': ^0.9.0
   '@radoslavirha/tsed-mongoose': ^5.0.8
   '@types/node': ^26.2.0
