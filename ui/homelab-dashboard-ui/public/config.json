@@ -3,9 +3,9 @@
     "unifi": {
         "site": "default"
     },
-    "serverPattern": "^server(\\d+)\\.home$",
+    "serverPattern": "^server(\\d+)\\.homelab\\.irha\\.cz$",
     "scheme": "http",
-    "exclude": ["dashboard.home"],
+    "exclude": ["dashboard.server3.homelab.irha.cz"],
     "paths": {
         "traefik": "/dashboard"
     }
