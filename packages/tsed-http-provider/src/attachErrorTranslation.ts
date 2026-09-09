@@ -31,15 +31,15 @@ export function attachErrorTranslation(instance: AxiosInstance, api: string): vo
 
 function toHttpException(error: unknown, api: string): Error {
     if (isBrokenCircuitError(error)) {
-        return new ServiceUnavailable(`External API "${api}" is unavailable (circuit open).`, error);
+        return new ServiceUnavailable(`External API ${api} is unavailable (circuit open).`, error);
     }
 
     if (isTaskCancelledError(error)) {
-        return new GatewayTimeout(`External API "${api}" did not respond in time.`, error);
+        return new GatewayTimeout(`External API ${api} did not respond in time.`, error);
     }
 
     const status = axios.isAxiosError(error) ? error.response?.status : undefined;
     const detail = CommonUtils.isUndefined(status) ? 'could not be reached' : `responded with ${status}`;
 
-    return new BadGateway(`External API "${api}" ${detail}.`, error);
+    return new BadGateway(`External API ${api} ${detail}.`, error);
 }
