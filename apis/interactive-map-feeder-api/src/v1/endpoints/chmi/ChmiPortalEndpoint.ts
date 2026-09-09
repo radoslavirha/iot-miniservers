@@ -15,21 +15,21 @@ export class ChmiPortalEndpoint {
 
     public getSurfaceMap(): Promise<Buffer> {
         return this.client.get<Buffer>(
-            '/files/portal/docs/meteo/rad/inca-cz/und/pacz2gmaps6.oro_col_40med.jpg',
+            '/radar/und/pacz2gmaps6.oro_col2sharp40.jpg',
             { responseType: 'binary' }
         );
     }
 
     public getCitiesMap(): Promise<Buffer> {
         return this.client.get<Buffer>(
-            '/files/portal/docs/meteo/rad/inca-cz/und/pacz2gmaps6.und2.png',
+            '/radar/und/pacz2gmaps6.und3.png',
             { responseType: 'binary' }
         );
     }
 
     public getBordersMap(): Promise<Buffer> {
         return this.client.get<Buffer>(
-            '/files/portal/docs/meteo/rad/inca-cz/und/pacz2gmaps6.borders5.und.png',
+            '/radar/und/pacz2gmaps6.und.015.hranice2px_4b.png',
             { responseType: 'binary' }
         );
     }
