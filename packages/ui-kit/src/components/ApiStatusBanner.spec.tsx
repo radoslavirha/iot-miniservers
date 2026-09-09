@@ -21,7 +21,17 @@ describe('ApiStatusBanner', () => {
         expect(screen.getByText(/QR Manager API is having problems/)).toBeInTheDocument();
     });
 
-    it.each(['degraded', 'unreachable'] as const)('leaks no URL or status code when %s', (status) => {
+    it('tells the user to sign in again when unauthenticated', () => {
+        // Distinct from the other two on purpose: nothing is broken and nothing
+        // is retrying, so "having problems — retrying" would be a lie that makes
+        // the user wait for a recovery that cannot come.
+        render(<ApiStatusBanner status="unauthenticated" serviceName="QR Manager API" />);
+
+        expect(screen.getByText(/sign in again/)).toBeInTheDocument();
+        expect(screen.queryByText(/retrying/)).not.toBeInTheDocument();
+    });
+
+    it.each(['degraded', 'unreachable', 'unauthenticated'] as const)('leaks no URL or status code when %s', (status) => {
         const { container } = render(<ApiStatusBanner status={status} serviceName="QR Manager API" />);
 
         expect(container.textContent).not.toMatch(/https?:\/\/|\b\d{3}\b/);

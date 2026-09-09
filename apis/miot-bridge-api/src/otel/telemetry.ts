@@ -34,9 +34,6 @@ export const MIOT_TRACER_NAME = 'miot';
 /** Instrumentation scope for the property poller. */
 export const POLLER_TRACER_NAME = 'device-poller';
 
-/** Instrumentation scope for the inbound UDP command listener. */
-export const UDP_TRACER_NAME = 'udp';
-
 /**
  * Span names. All low cardinality — never interpolate a device id, topic or property into one,
  * or Tempo gets one span name per device and every latency aggregate stops grouping.
@@ -44,17 +41,13 @@ export const UDP_TRACER_NAME = 'udp';
 export const SPAN_POLL_SUBSCRIPTIONS_LOAD = 'load poll subscriptions';
 export const SPAN_POLL_TICK = 'poll device properties';
 export const SPAN_POLL_DEVICE = 'poll device';
-export const SPAN_UDP_COMMAND = 'process udp command';
 
 /**
  * `job.name` values — the bounded set of scheduled work this app runs.
  *
  * `snake_case` rather than the spaced span names: these are metric attribute values, and Grafana
  * label values with spaces are miserable to write queries against.
- *
- * The UDP listener is deliberately absent. A datagram from Loxone is request traffic whose rate a
- * client sets, not work this process scheduled, and filing it under `job.*` would break every
- * panel that reads a run rate off these instruments.
+
  */
 export const JOB_POLL_DEVICE_PROPERTIES = 'poll_device_properties';
 export const JOB_POLL_SUBSCRIPTIONS_LOAD = 'load_poll_subscriptions';

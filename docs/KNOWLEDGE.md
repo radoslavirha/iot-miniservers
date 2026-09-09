@@ -1,6 +1,6 @@
 # IoT Miniservers — Knowledge Base
 
-> Maintained by `/update-docs` skill. Last updated: 2026-08-01.
+> Maintained by `/update-docs` skill. Last updated: 2026-09-07.
 
 pnpm monorepo of small independent Node.js APIs and UIs (Ts.ED, TypeScript ESM).
 
@@ -18,15 +18,95 @@ pnpm monorepo of small independent Node.js APIs and UIs (Ts.ED, TypeScript ESM).
 
 | Package | Purpose |
 |---------|---------|
+| `@radoslavirha/auth` | Framework-free inbound authentication: `Principal`, the verification-outcome vocabulary, a JWT verifier over static or JWKS keys, and the Zod config schema. Reads no request — a transport extracts the credential and applies the decision |
 | `@radoslavirha/health` | Framework-free health check contract, registry and `application/health+json` report. Checks declare `critical`, which decides whether a failure gates readiness |
-| `@radoslavirha/http-provider` | Auth-aware axios factory from Zod config: auth strategies, transport interpolation, resilience policy. Framework-free, no logging |
+| `@radoslavirha/http-provider` | Auth-aware axios factory from Zod config: auth strategies, credential-to-header mapping, resilience policy. Framework-free, no logging |
 | `@radoslavirha/miot-device` | Stateful MIoT device client: UDP transport, per-device stamp/handshake lifecycle |
 | `@radoslavirha/otel` | OpenTelemetry bootstrap — traces + custom metrics via OTLP; logs via stdout JSON (no OTLP log export) |
 | `@radoslavirha/resilience` | Transport-agnostic timeout / retry / circuit breaker over `AbortSignal`, backed by cockatiel |
+| `@radoslavirha/tsed-auth` | Ts.ED wiring for `auth` — the request guard, `@Authenticate` / `@Anonymous` / `@CurrentPrincipal`, OpenAPI security metadata, and a SuperTest helper |
 | `@radoslavirha/tsed-health` | Ts.ED wiring for `health` — `/health/live`, `/health/ready`, `/health`, a `HEALTH_CHECKS` provider-type registry, and the SIGTERM drain sequence. Ships `MongoHealthCheck` on the `/mongoose` subpath (optional peers, so database-free apps never resolve mongoose) |
 | `@radoslavirha/tsed-http-provider` | Ts.ED wiring for `http-provider` — builds clients from `externalApis` config and adds redacted outbound request/response logging |
 | `@radoslavirha/tsed-resilience` | Ts.ED `@RequestSignal()` decorator — an `AbortSignal` tied to the HTTP request lifecycle |
+| `@radoslavirha/ui-auth` | OIDC authorization-code + PKCE login for the browser apps. Public client, **access token in memory only**, and **no iframe anywhere** — Authentik sets `X-Frame-Options: DENY`, so session recovery and renewal are top-level `prompt=none` redirects |
 | `@radoslavirha/ui-kit` | Shared design system and UI components for the UIs |
+
+## Auth
+
+Design and live status: [`superpowers/specs/2026-09-05-auth-design.md`](./superpowers/specs/2026-09-05-auth-design.md).
+IdP facts: [`superpowers/specs/2026-09-04-authentik-integration-contract.md`](./superpowers/specs/2026-09-04-authentik-integration-contract.md).
+
+### Which APIs verify (2026-09-07)
+
+| API | State |
+|-----|-------|
+| `qr-manager-api` | **Enforcing.** `/qr-codes` answers `401` without a valid token. `GET /r/:slug`, `/health*` and `GET /qr-codes/:id/image` stay open |
+| `miot-bridge-api` | **Enforcing.** All 16 REST routes need a token; `/health*` stays open. Commands also arrive over MQTT, which no decorator reaches — that identity is the broker's. The UDP command listener is gone |
+| `interactive-map-feeder-api` | **Enforcing.** One trust domain, `IDP`, on all four routes. The LaskaKit map logs in against the same IdP from its own Authentik application, so it is a second row in `trustedIssuers` rather than a second domain. The map has no credential yet |
+
+An API's `auth` block is a map of trust domains it accepts, keyed by the service's own `AuthMethod`
+enum — the inbound mirror of `ExternalApi` and `externalApis`:
+
+```jsonc
+"auth": { "IDP": { "type": "bearer-jwt", "trustedIssuers": [ … ] } }
+```
+
+Three properties worth knowing before changing any of it:
+
+- **There is no off switch.** No mode, no `enabled` flag, no permissive verifier type. Every such
+  state is one where a forgotten key in a values file leaves a service up, healthy and unauthenticated.
+  A route is guarded by `@Authenticate()` or opened by `@Anonymous()`, both visible in the source.
+- **A misconfiguration fails at boot, not at the first request.** The schema requires a key per
+  declared `AuthMethod`, requires at least one trusted issuer, and is strict — a typo is a rejected
+  key, not a silently stripped one.
+- **A name is not a mechanism, and not a kind of caller.** The entry key says which callers a route
+  admits; its `type` says how they are checked. One entry holds a *list* of trusted issuers, so a
+  second cluster or a second IdP is configuration and no code. **A second entry is warranted only when
+  some route must admit one issuer while refusing another** — the sole live case is the map's route in
+  `interactive-map-feeder-api`, and it is marked in that service's enum as a workaround pending two
+  `homelab` changes. What a caller may *do* is `roles`, checked with `@RequireRoles`; `Principal.kind`
+  is audit metadata and gates nothing.
+- **Roles ride the `roles` scope.** A client that omits it is refused with `403` on a role-gated route
+  even when the user holds the role — the same answer as not holding it.
+
+### Frontend
+
+`qr-manager-ui` logs in through Authentik (`auth.irha.cz`) as a public client. The whole app is gated:
+an anonymous visitor gets a sign-in page and none of the routes.
+
+Session handling closed on 2026-09-07 (`ed0bb43`): the access token is renewed a minute before it
+expires, an expired one is never attached to a request, and a `401` reports as `unauthenticated`
+rather than healthy.
+
+**Renewal is a top-level `prompt=none` redirect, and cannot be anything else.** `automaticSilentRenew`
+in oidc-client-ts uses a hidden iframe, which Authentik's `X-Frame-Options: DENY` forbids. The visible
+cost is that the page reloads about twice an hour and unsaved form state does not survive it; the
+return path is carried through the redirect so the user lands back where they were.
+
+The callback route is `<AuthCallback>` from `@radoslavirha/ui-auth`. A frontend mounts it and supplies
+how it navigates, its basename, and its home route — navigation is a prop rather than a `useNavigate()`
+inside the package, since `homelab-dashboard-ui` has no router at all.
+
+Four facts that are load-bearing and easy to get wrong:
+
+- **No iframe.** `X-Frame-Options: DENY` on every Authentik response. Recovery, renewal and SSO are all
+  top-level `prompt=none` redirects. A `302` passes through a frame unblocked, so an iframe approach
+  appears to work until Authentik renders an actual page — which is how it survived review once.
+- **SSO is global and so is logout.** One session covers all four `qr-manager` applications across both
+  clusters and both stages; logging out of any one signs out of all of them. There is no per-environment
+  logout.
+- **`roles` is identical in every environment** (`qr-manager.admin`, no cluster, no stage). Only `iss`
+  and `aud` separate a sandbox token from a production one, which is why `issuer_mode: per_provider`
+  matters and why a verifier must pin `iss` and check `aud` by membership.
+- **Config is templated per deployment.** The `homelab` values files are shared by both clusters, so
+  `clientId`, `issuer` and `redirectUri` render from `VAR_CLUSTER` / `NAMESPACE`. Literals there would
+  point server2 at server1's application.
+
+`http://localhost:5173/callback` is registered on **sandbox applications only**, so `pnpm dev` performs
+a real login against the real IdP. Use the **`verify-auth-in-browser`** skill before calling any auth
+change done: six bugs in this area passed a green test suite, and the skill carries the checklist plus
+the Playwright traps (Authentik's shadow DOM, `ak-loading-overlay`, and counting redirect hops with
+`request` rather than `framenavigated`).
 
 ## Observability (OTel signal routing)
 
@@ -48,7 +128,6 @@ A log line without a `trace_id` is a missing span, not a logging fault: `Winston
 | Inbound HTTP | `HttpInstrumentation` / `ExpressInstrumentation` |
 | Inbound + outbound MQTT | `withMqttConsumeSpan` / `withMqttPublishSpan` (`packages/otel`), per-app broker identity via `MqttTracingService` |
 | Poll tick, startup task, any scheduled work | `runJob` (`packages/otel/src/jobTelemetry.ts`) — span **and** `job.*` metrics |
-| Inbound UDP datagram | `withEntryPointSpan` (`packages/otel/src/spanTracing.ts`) |
 | miot device UDP call, other uninstrumented outbound calls | `withClientSpan`, wrapped for miot by `apis/miot-bridge-api/src/otel/miotTracing.ts` |
 
 Span names, tracer scopes, `job.name` values and `miot.*` attribute keys are constants in `apis/<api>/src/otel/telemetry.ts`. Adding a background job or listener: `.apm/skills/instrument-entry-point`.
@@ -77,7 +156,7 @@ Three reusable instruments, repo-local namespace (OpenTelemetry has no conventio
 
 `/health*` and `/healthz` produce no spans (`HttpInstrumentation.ignoreIncomingRequestHook` in `@radoslavirha/otel`) and no request-log lines (`requests.ignorePaths` in `@radoslavirha/tsed-logger`, on by default). At ~0.3 req/s per pod forever, they would otherwise dominate both Tempo and Loki while carrying no information.
 
-The trace hook also suppresses `http.server.request.duration` for those paths — deliberate, since probe traffic is fast and constant-rate and would dilute every percentile of the real-traffic latency histogram. **Probe state is therefore a Kubernetes-layer fact only**, and must come from kube-state-metrics. `kube_pod_status_ready` is not currently collected on server3 — tracked in `homelab/docs/superpowers/plans/2026-08-07-probe-state-not-observable.md`. Until that lands, a readiness failure is invisible to monitoring.
+The trace hook also suppresses `http.server.request.duration` for those paths — deliberate, since probe traffic is fast and constant-rate and would dilute every percentile of the real-traffic latency histogram. **Probe state is therefore a Kubernetes-layer fact only**, and must come from kube-state-metrics. `kube_pod_status_ready` **is** collected — added to the kube-state-metrics allow-list in `homelab` → `gitops/helm-values/k8s-monitoring.yaml`, alongside kubelet's `prober_*` counters, which say *which* probe failed. Reference: `homelab` → `docs/observability.md`. No alert consumes either metric yet, so a readiness failure is visible but silent.
 
 ## Communication
 
@@ -86,12 +165,12 @@ graph LR
     LaskaKit["LaskaKit IoT Map\nhardware"] -->|HTTP GET /data-sources/:src/cities/iot| IMA["interactive-map-feeder-api"]
     IMA -->|HTTPS| CHMI["ČHMÚ radar\nexternal"]
 
-    HA["Loxone / HA controller"] -->|HTTP · UDP · MQTT| MBA["miot-bridge-api"]
+    HA["Loxone / HA controller"] -->|MQTT · HTTP| MBA["miot-bridge-api"]
     MBA -->|MIoT binary UDP| Xiaomi["Xiaomi devices\nLAN"]
     MBA -->|HTTPS| MiotSpec["miot-spec.org\nexternal"]
     MBA <-->|MQTT| MQTTBroker["MQTT broker"]
     MBA <-->|TCP| MongoDB1[("MongoDB")]
-    MBA -->|HTTP · UDP · MQTT notifications| HA
+    MBA -->|MQTT · HTTP notifications| HA
 
     QRU["qr-manager-ui"] -->|REST| QRA["qr-manager-api"]
     Phone["Phone / scanner"] -->|HTTP GET /:slug| QRA

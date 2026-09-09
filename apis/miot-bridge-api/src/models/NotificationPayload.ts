@@ -2,7 +2,7 @@ import { AdditionalProperties, Description, Example, Property, Required } from '
 
 /**
  * Payload sent to all configured outbound notification transports
- * (HTTP POST body / UDP JSON datagram) when a property value is observed.
+ * (HTTP POST body / MQTT message) when a property value is observed.
  */
 @AdditionalProperties(false)
 export class NotificationPayload {

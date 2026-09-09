@@ -33,7 +33,7 @@ const RS256_FILE_CONFIG: JwtSelfSignedAuth = {
     key: { source: 'file', path: '/run/secrets/private.key' },
     algorithm: 'RS256',
     claims: { iss: 'miot-bridge', sub: 'miot-bridge', aud: 'qr-manager', exp: 3600 },
-    transport: { headers: [{ name: 'Authorization', value: 'Bearer {{value}}' }] }
+    transport: { headers: [{ name: 'Authorization', credential: 'value', prefix: 'Bearer ' }] }
 };
 
 const HS256_VALUE_CONFIG: JwtSelfSignedAuth = {
@@ -41,7 +41,7 @@ const HS256_VALUE_CONFIG: JwtSelfSignedAuth = {
     key: { source: 'value', value: 'shared-secret' },
     algorithm: 'HS256',
     claims: { exp: 60 },
-    transport: { headers: [{ name: 'Authorization', value: 'Bearer {{value}}' }] }
+    transport: { headers: [{ name: 'Authorization', credential: 'value', prefix: 'Bearer ' }] }
 };
 
 describe('JwtSelfSignedStrategy', () => {

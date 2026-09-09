@@ -9,11 +9,14 @@ import { ModelPropertyOverride } from '../models/model-property-override/ModelPr
 import { ModelPropertyOverrideRequest } from '../models/model-property-override/ModelPropertyOverrideRequest.js';
 import { ModelPropertyOverridesResponse } from '../models/model-property-override/ModelPropertyOverridesResponse.js';
 import { SwaggerDocs } from '../models/SwaggerDocs.enum.js';
+import { Authenticate } from '@radoslavirha/tsed-auth';
+import { AuthMethod } from '../models/config/AuthMethod.enum.js';
 
 @Description('Endpoints for managing custom (undocumented) property value overrides per device model.')
 @Controller('/model-property-overrides')
 @Scope(ProviderScope.SINGLETON)
 @Docs(SwaggerDocs.API)
+@Authenticate(AuthMethod.Idp)
 export class ModelPropertyOverridesController {
     constructor(
         private readonly getAllHandler: ModelPropertyOverrideGetAllHandler,

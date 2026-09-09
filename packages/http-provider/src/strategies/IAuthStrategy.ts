@@ -1,10 +1,15 @@
 export interface IAuthStrategy {
     /**
-     * Returns a map of named credential values to be interpolated into
-     * transport placeholders. Keys match the `{{name}}` tokens in transport config.
+     * Returns a map of named credential values. Each key is a name a transport
+     * entry may claim through its `credential` field — for `token-exchange`
+     * those are the `as` names from `tokenExtractor`, so a strategy can return
+     * several and the configuration decides which header each one lands in.
      *
-     * Implementations must cache credentials internally and only re-acquire
-     * when `invalidate()` has been called.
+     * Implementations **may** cache internally, re-acquiring after
+     * `invalidate()`. `KubernetesServiceAccountStrategy` deliberately does not:
+     * it re-reads the projected token file each time, which is what picks up the
+     * kubelet's rotation for free. A cache there would have to be expiry-aware to
+     * be correct.
      */
     getCredentials(): Promise<Record<string, string>>;
 

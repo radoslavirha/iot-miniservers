@@ -3,7 +3,7 @@
  * (or, when dispatchOnChange is false, on every polling cycle).
  *
  * Consumers (Phase 5.3 NotificationDispatchService) listen for PROPERTY_CHANGED events
- * and forward this payload to configured transports (UDP / HTTP / MQTT).
+ * and forward this payload to configured transports (HTTP / MQTT).
  */
 export interface PropertyChangeEvent {
     /** Application-level device ID (UUID v4). */

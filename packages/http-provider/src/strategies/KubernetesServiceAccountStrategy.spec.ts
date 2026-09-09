@@ -12,7 +12,7 @@ import { readFile } from 'node:fs/promises';
 const DEFAULT_CONFIG: KubernetesServiceAccountAuth = {
     strategy: AuthStrategy.KubernetesServiceAccount,
     tokenPath: '/var/run/secrets/kubernetes.io/serviceaccount/token',
-    transport: { headers: [{ name: 'Authorization', value: 'Bearer {{value}}' }] }
+    transport: { headers: [{ name: 'Authorization', credential: 'value', prefix: 'Bearer ' }] }
 };
 
 describe('KubernetesServiceAccountStrategy', () => {

@@ -8,7 +8,7 @@ Deliberately has **no logging** — see [`@radoslavirha/tsed-http-provider`](../
 
 - **Multiple auth strategies**: none, Kubernetes service account, token exchange, JWT self-signed
 - **Get/set separation**: auth strategy _gets_ credentials; transport config _sets_ them on requests
-- **Placeholder interpolation**: use `{{name}}` in transport values — replaced by credential fields at runtime
+- **Credential-to-header mapping**: a transport entry names the `credential` it carries, with optional `prefix`/`suffix` — no templating syntax, so no config renderer can eat it
 - **Static values**: API keys, bearer tokens, or any fixed header/query param go directly in `transport`
 - **Resilience policy** integration (timeout, retry, circuit breaker) with configurable retriable statuses
 - **401 retry** — on a 401 response, credentials are invalidated and one retry is attempted automatically
@@ -39,7 +39,7 @@ const factory = new HttpProviderFactory({
     auth: {
       strategy: AuthStrategy.KubernetesServiceAccount,
       transport: {
-        headers: [{ name: 'Authorization', value: 'Bearer {{value}}' }],
+        headers: [{ name: 'Authorization', credential: 'value', prefix: 'Bearer ' }],
       },
     },
   },
@@ -155,7 +155,7 @@ Uses `/var/run/secrets/kubernetes.io/serviceaccount/token` by default.
     "auth": {
       "strategy": "kubernetes-service-account",
       "transport": {
-        "headers": [{ "name": "Authorization", "value": "Bearer {{value}}" }]
+        "headers": [{ "name": "Authorization", "credential": "value", "prefix": "Bearer " }]
       }
     }
   }
@@ -172,7 +172,7 @@ Uses `/var/run/secrets/kubernetes.io/serviceaccount/token` by default.
       "strategy": "kubernetes-service-account",
       "tokenPath": "/run/secrets/my-sa/token",
       "transport": {
-        "headers": [{ "name": "Authorization", "value": "Bearer {{value}}" }]
+        "headers": [{ "name": "Authorization", "credential": "value", "prefix": "Bearer " }]
       }
     }
   }
@@ -197,7 +197,7 @@ The string shorthand `"access_token"` is equivalent to `[{ "field": "access_toke
       },
       "tokenExtractor": "access_token",
       "transport": {
-        "headers": [{ "name": "Authorization", "value": "Bearer {{value}}" }]
+        "headers": [{ "name": "Authorization", "credential": "value", "prefix": "Bearer " }]
       }
     }
   }
@@ -221,7 +221,7 @@ Static transport on the auth request itself (passed via `headers`/`queryParams` 
       },
       "tokenExtractor": "token",
       "transport": {
-        "headers": [{ "name": "X-Token", "value": "{{value}}" }]
+        "headers": [{ "name": "X-Token", "credential": "value" }]
       }
     }
   }
@@ -243,10 +243,13 @@ Static transport on the auth request itself (passed via `headers`/`queryParams` 
       },
       "tokenExtractor": [
         { "field": "access_token", "as": "accessToken" },
-        { "field": "token_type", "as": "tokenType" }
+        { "field": "refresh_token", "as": "refreshToken" }
       ],
       "transport": {
-        "headers": [{ "name": "Authorization", "value": "{{tokenType}} {{accessToken}}" }]
+        "headers": [
+          { "name": "Authorization", "credential": "accessToken", "prefix": "Bearer " },
+          { "name": "X-Refresh-Token", "credential": "refreshToken" }
+        ]
       }
     }
   }
@@ -264,7 +267,7 @@ Static transport on the auth request itself (passed via `headers`/`queryParams` 
       "algorithm": "RS256",
       "key": { "source": "file", "path": "/run/secrets/jwt/private.pem" },
       "transport": {
-        "headers": [{ "name": "Authorization", "value": "Bearer {{value}}" }]
+        "headers": [{ "name": "Authorization", "credential": "value", "prefix": "Bearer " }]
       }
     }
   }
@@ -282,7 +285,7 @@ Static transport on the auth request itself (passed via `headers`/`queryParams` 
       "algorithm": "HS256",
       "key": { "source": "value", "value": "my-shared-secret" },
       "transport": {
-        "headers": [{ "name": "Authorization", "value": "Bearer {{value}}" }]
+        "headers": [{ "name": "Authorization", "credential": "value", "prefix": "Bearer " }]
       }
     }
   }
@@ -307,7 +310,7 @@ Static transport on the auth request itself (passed via `headers`/`queryParams` 
         "additionalClaims": { "role": "service" }
       },
       "transport": {
-        "headers": [{ "name": "Authorization", "value": "Bearer {{value}}" }]
+        "headers": [{ "name": "Authorization", "credential": "value", "prefix": "Bearer " }]
       }
     }
   }
@@ -391,9 +394,28 @@ starts a new cache epoch so stale in-flight completions cannot overwrite newer r
 
 ## Transport Placeholder Interpolation
 
-Strategy credentials are a `Record<string, string>`. Values in `transport.headers` or `transport.queryParams` containing `{{name}}` are replaced with the matching credential field.
+Strategy credentials are a `Record<string, string>`. A transport entry names one of them in its `credential` field, and `prefix`/`suffix` wrap the value. Several entries name several credentials, so one token response can put an access token in one header and a refresh token in another:
 
-For single-value strategies (k8s SA, simple token exchange), the credential is always exposed as `value` → use `{{value}}` in your transport.
+```jsonc
+"tokenExtractor": [
+    { "field": "token",         "as": "access" },
+    { "field": "refresh_token", "as": "refresh" }
+],
+"transport": {
+    "headers": [
+        { "name": "Authorization",   "credential": "access", "prefix": "Bearer " },
+        { "name": "X-Refresh-Token", "credential": "refresh" }
+    ]
+}
+```
+
+For single-value strategies (k8s SA, JWT self-signed, shorthand token exchange) the credential is always exposed as `value`.
+
+A **static** entry keeps the plain `value` field instead — for a fixed API key under `strategy: none`, where no credential is produced at request time.
+
+An entry naming a credential the strategy did not produce, or produced empty, **throws** rather than sending a bare prefix: `Authorization: Bearer ` would come back as a `401` from the far end and read like a genuine refusal.
+
+There is deliberately **no template syntax**. It could express one thing more — two credentials inside a single value — that nothing used, and it cost a placeholder that a downstream config renderer may claim. These files are rendered by Jinja2, whose `{{ }}` is exactly that syntax and whose default for an unknown name is the empty string.
 
 For multi-field token exchange, use `as` to name each field → reference by that name in transport.
 

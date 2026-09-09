@@ -15,12 +15,15 @@ import { DevicePostResponse } from '../models/DevicePostResponse.js';
 import { DeviceRequest } from '../models/DeviceRequest.js';
 import { GROUP_SIMPLIFIED_SPEC } from '../ModelGroups.js';
 import { SwaggerDocs } from '../models/SwaggerDocs.enum.js';
+import { Authenticate } from '@radoslavirha/tsed-auth';
+import { AuthMethod } from '../models/config/AuthMethod.enum.js';
 import { DeviceNotificationsController } from './DeviceNotificationsController.js';
 
 @Description('Endpoints for miot device discovery, registration and management.')
 @Controller({ path: '/devices', children: [DeviceNotificationsController] })
 @Scope(ProviderScope.SINGLETON)
 @Docs(SwaggerDocs.API)
+@Authenticate(AuthMethod.Idp)
 export class DevicesController {
     constructor(
         private readonly discoveryHandler: DeviceDiscoveryHandler,

@@ -18,11 +18,14 @@ import { QrErrorCorrection } from '../models/QrErrorCorrection.enum.js';
 import { QrImageFormat } from '../models/QrImageFormat.enum.js';
 import { QrType } from '../models/QrType.enum.js';
 import { SwaggerDocs } from '../models/SwaggerDocs.enum.js';
+import { Anonymous, Authenticate } from '@radoslavirha/tsed-auth';
+import { AuthMethod } from '../models/config/AuthMethod.enum.js';
 
 @Description('Endpoints for managing QR code mappings.')
 @Controller({ path: '/qr-codes' })
 @Scope(ProviderScope.SINGLETON)
 @Docs(SwaggerDocs.API)
+@Authenticate(AuthMethod.Idp)
 export class QrCodeController {
     constructor(
         private readonly createHandler: QrCodeCreateHandler,
@@ -81,6 +84,7 @@ export class QrCodeController {
     }
 
     @Get('/:id/image')
+    @Anonymous()
     @Description('Returns the rendered QR image.\n\n- `format`: `svg` (default, vector) or `png` (raster).\n- `size`: PNG width in px (ignored for SVG). Range 64–4096.\n- `ecLevel`: error correction. `M` default (~15% damage tolerance, smallest). `L`/`Q`/`H` for less/more redundancy. Lower level = fewer modules = smaller print.')
     @(Returns(200).ContentType('image/png'))
     @(Returns(200).ContentType('image/svg+xml'))

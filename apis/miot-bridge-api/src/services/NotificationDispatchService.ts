@@ -1,4 +1,3 @@
-import { createSocket } from 'dgram';
 import { Inject, Service, Scope, ProviderScope } from '@tsed/di';
 import { CommonUtils, ObjectUtils } from '@radoslavirha/utils';
 import { SpanStatusCode } from '@opentelemetry/api';
@@ -20,9 +19,9 @@ const QOS = 1;
  *
  * Sources:
  * - {@link DevicePropertyPollerService} — periodic polls (`PROPERTY_CHANGED` events)
- * - {@link DeviceCommandService} — direct GET_PROPERTY calls via HTTP / UDP / MQTT
+ * - {@link DeviceCommandService} — direct GET_PROPERTY calls via HTTP / MQTT
  *
- * Outbound transports: HTTP POST and UDP datagram.
+ * Outbound transports: HTTP POST and MQTT publish.
  */
 @Service()
 @Scope(ProviderScope.SINGLETON)
@@ -41,7 +40,7 @@ export class NotificationDispatchService {
 
     /**
      * Receives a property-value observation and forwards it to all enabled
-     * outbound notification transports (HTTP, UDP).
+     * outbound notification transports (HTTP, MQTT).
      */
     public receive(event: PropertyChangeEvent): void {
         const payload = CommonUtils.buildModelStrict(NotificationPayload, {
@@ -54,10 +53,6 @@ export class NotificationDispatchService {
 
         if (ObjectUtils.isEnabled(config.http?.notifications)) {
             void this.sendHttp(config.http.notifications.address, payload);
-        }
-
-        if (ObjectUtils.isEnabled(config.udp?.notifications)) {
-            void this.sendUdp(config.udp.notifications.address, payload);
         }
 
         if (ObjectUtils.isEnabled(config.mqtt?.notifications) && this.mqttClient) {
@@ -124,41 +119,4 @@ export class NotificationDispatchService {
         }
     }
 
-    private sendUdp(address: string, payload: NotificationPayload): Promise<void> {
-        return new Promise(resolve => {
-            const colonIndex = address.lastIndexOf(':');
-            if (colonIndex === -1) {
-                this.logger.warn('Invalid UDP address format. Expected host:port.', { address });
-                return resolve();
-            }
-            const host = address.slice(0, colonIndex);
-            const port = parseInt(address.slice(colonIndex + 1), 10);
-            if (CommonUtils.isNil(host) || isNaN(port)) {
-                this.logger.warn('Invalid UDP address format. Expected host:port.', { address });
-                return resolve();
-            }
-
-            const socket = createSocket('udp4');
-            const message = `deviceId=${payload.deviceId}\n${payload.property}=${String(payload.value ?? '')}`;
-            const buffer = Buffer.from(message, 'utf8');
-            socket.send(buffer, port, host, (error) => {
-                socket.close();
-                if (CommonUtils.notNil(error)) {
-                    this.logger.warn('NOTIFICATION_UDP_ERROR', {
-                        address,
-                        deviceId: payload.deviceId,
-                        property: payload.property,
-                        message: error.message
-                    });
-                } else {
-                    this.logger.debug('NOTIFICATION_UDP_SENT', {
-                        address,
-                        deviceId: payload.deviceId,
-                        property: payload.property
-                    });
-                }
-                resolve();
-            });
-        });
-    }
 }

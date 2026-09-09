@@ -11,7 +11,6 @@ import './providers/index.js';
 // Imported for its side effect: the @Injectable({ type: HEALTH_CHECKS }) decorators run
 // on module load, which is what makes the checks visible to injectMany.
 import './health/index.js';
-import './services/UdpListenerService.js';
 import './services/MqttListenerService.js';
 
 @Configuration({

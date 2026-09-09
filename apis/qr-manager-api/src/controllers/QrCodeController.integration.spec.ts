@@ -9,6 +9,7 @@ import { QrCode } from '../models/QrCode.js';
 import { QrErrorCorrection } from '../models/QrErrorCorrection.enum.js';
 import { QrImageFormat } from '../models/QrImageFormat.enum.js';
 import { QrType } from '../models/QrType.enum.js';
+import { authenticateBearerJwt, mintTestToken } from '@radoslavirha/tsed-auth';
 
 // test.json: redirect.baseURL = 'http://localhost:4011', api.publicURL = undefined → ''
 const sampleModel = (overrides: Partial<QrCode> = {}): QrCode =>
@@ -29,11 +30,29 @@ describe('QrCodeController (integration)', () => {
     let qrCodeService: QrCodeService;
     let qrImageService: QrImageService;
 
+    /**
+     * A second agent, pre-authenticated. Every admin call goes through this one;
+     * `request` stays bare for the anonymous cases, so which is which is visible
+     * at the call site instead of being a header somebody has to remember.
+     *
+     * Two agents rather than one wrapped twice: `agent.set` carries a default
+     * header on every request the agent makes, which is exactly what is wanted —
+     * and means an authenticated agent cannot also serve the 401 tests.
+     *
+     * The token is minted from `config/test.json`'s inline-key issuer row, whose
+     * issuer, audience and secret are `mintTestToken`'s own defaults — so no
+     * arguments are needed and the two cannot drift apart.
+     */
+    let api: SuperTest.Agent;
+
     beforeEach(PlatformTest.bootstrap(Server));
     beforeEach(() => {
-        request = SuperTest(PlatformTest.callback());
+        request = SuperTest.agent(PlatformTest.callback());
         qrCodeService = PlatformTest.get<QrCodeService>(QrCodeService);
         qrImageService = PlatformTest.get<QrImageService>(QrImageService);
+    });
+    beforeEach(async () => {
+        api = await authenticateBearerJwt(SuperTest.agent(PlatformTest.callback()));
     });
     afterEach(PlatformTest.reset);
     afterEach(vi.restoreAllMocks);
@@ -43,8 +62,9 @@ describe('QrCodeController (integration)', () => {
             expect.assertions(3);
             vi.spyOn(qrCodeService, 'create').mockResolvedValue(sampleModel());
 
-            const response = await request
+            const response = await api
                 .post('/qr-codes')
+                
                 .send({ targetURL: 'https://iot-ui.home/devices/shelf-1', label: 'Shelf 1', type: QrType.IOT_DEVICE })
                 .expect(201);
 
@@ -54,7 +74,7 @@ describe('QrCodeController (integration)', () => {
         });
 
         it('returns 400 when required body fields are missing', async () => {
-            await request.post('/qr-codes').send({}).expect(400);
+            await api.post('/qr-codes').send({}).expect(400);
         });
     });
 
@@ -63,7 +83,7 @@ describe('QrCodeController (integration)', () => {
             expect.assertions(2);
             vi.spyOn(qrCodeService, 'list').mockResolvedValue([sampleModel()]);
 
-            const response = await request.get('/qr-codes').expect(200);
+            const response = await api.get('/qr-codes').expect(200);
 
             expect(response.body.items).toHaveLength(1);
             expect(response.body.items[0].slug).toBe('x7k2');
@@ -73,7 +93,7 @@ describe('QrCodeController (integration)', () => {
             expect.assertions(1);
             const listSpy = vi.spyOn(qrCodeService, 'list').mockResolvedValue([]);
 
-            await request.get('/qr-codes?type=iot-device&active=true').expect(200);
+            await api.get('/qr-codes?type=iot-device&active=true').expect(200);
 
             expect(listSpy).toHaveBeenCalledWith({ type: QrType.IOT_DEVICE, active: true });
         });
@@ -84,7 +104,7 @@ describe('QrCodeController (integration)', () => {
             expect.assertions(1);
             vi.spyOn(qrCodeService, 'getById').mockResolvedValue(sampleModel());
 
-            const response = await request.get('/qr-codes/671b00000000000000000001').expect(200);
+            const response = await api.get('/qr-codes/671b00000000000000000001').expect(200);
 
             expect(response.body.id).toBe('671b00000000000000000001');
         });
@@ -92,7 +112,7 @@ describe('QrCodeController (integration)', () => {
         it('returns 404 when the QR code does not exist', async () => {
             vi.spyOn(qrCodeService, 'getById').mockResolvedValue(undefined);
 
-            await request.get('/qr-codes/671b00000000000000000001').expect(404);
+            await api.get('/qr-codes/671b00000000000000000001').expect(404);
         });
     });
 
@@ -101,8 +121,9 @@ describe('QrCodeController (integration)', () => {
             expect.assertions(1);
             vi.spyOn(qrCodeService, 'update').mockResolvedValue(sampleModel({ targetURL: 'https://new.home' }));
 
-            const response = await request
+            const response = await api
                 .put('/qr-codes/671b00000000000000000001')
+                
                 .send({ targetURL: 'https://new.home' })
                 .expect(200);
 
@@ -112,8 +133,9 @@ describe('QrCodeController (integration)', () => {
         it('returns 404 when the QR code does not exist', async () => {
             vi.spyOn(qrCodeService, 'update').mockResolvedValue(undefined);
 
-            await request
+            await api
                 .put('/qr-codes/671b00000000000000000001')
+                
                 .send({ active: false })
                 .expect(404);
         });
@@ -124,13 +146,13 @@ describe('QrCodeController (integration)', () => {
             vi.spyOn(qrCodeService, 'getById').mockResolvedValue(sampleModel());
             vi.spyOn(qrCodeService, 'delete').mockResolvedValue(undefined);
 
-            await request.delete('/qr-codes/671b00000000000000000001').expect(204);
+            await api.delete('/qr-codes/671b00000000000000000001').expect(204);
         });
 
         it('returns 404 when the QR code does not exist', async () => {
             vi.spyOn(qrCodeService, 'getById').mockResolvedValue(undefined);
 
-            await request.delete('/qr-codes/671b00000000000000000001').expect(404);
+            await api.delete('/qr-codes/671b00000000000000000001').expect(404);
         });
     });
 
@@ -150,7 +172,7 @@ describe('QrCodeController (integration)', () => {
             vi.spyOn(qrCodeService, 'getById').mockResolvedValue(sampleModel());
             vi.spyOn(qrImageService, 'render').mockResolvedValue({ contentType: 'image/png', body: Buffer.from([0x89, 0x50, 0x4e, 0x47]) });
 
-            const response = await request
+            const response = await api
                 .get('/qr-codes/671b00000000000000000001/image?format=png')
                 .expect(200);
 
@@ -184,6 +206,57 @@ describe('QrCodeController (integration)', () => {
             vi.spyOn(qrCodeService, 'getById').mockResolvedValue(undefined);
 
             await request.get('/qr-codes/671b00000000000000000001/image').expect(404);
+        });
+    });
+
+    describe('Authentication', () => {
+        it('refuses an admin route with no credential', async () => {
+            await request.get('/qr-codes').expect(401);
+        });
+
+        it('refuses a token signed by somebody else', async () => {
+            const forged = await mintTestToken({ secret: 'a-different-secret-0000000000000' });
+
+            await request.get('/qr-codes').set('Authorization', `Bearer ${forged}`).expect(401);
+        });
+
+        it('refuses a valid token minted for another audience', async () => {
+            // The refusal that separates "a token" from "a token for us". The
+            // signature is perfectly good; the token simply is not ours.
+            const elsewhere = await mintTestToken({ audience: 'some-other-api' });
+
+            await request.get('/qr-codes').set('Authorization', `Bearer ${elsewhere}`).expect(401);
+        });
+
+        it('refuses an expired token', async () => {
+            const stale = await mintTestToken({ expiresIn: '-5m' });
+
+            await request.get('/qr-codes').set('Authorization', `Bearer ${stale}`).expect(401);
+        });
+
+        it('ignores a non-bearer scheme rather than treating it as a bad token', async () => {
+            await request.get('/qr-codes').set('Authorization', 'Basic dXNlcjpwYXNz').expect(401);
+        });
+
+        it('leaks nothing about why the credential was refused', async () => {
+            // The operator-facing detail names the audience that did not match.
+            // Handing it over tells an attacker which part to fix next.
+            const elsewhere = await mintTestToken({ audience: 'some-other-api' });
+            const response = await request.get('/qr-codes').set('Authorization', `Bearer ${elsewhere}`);
+
+            expect(JSON.stringify(response.body)).not.toContain('some-other-api');
+        });
+
+        it('serves the image route with no credential at all', async () => {
+            // Anonymous by necessity: the UI loads it with an `<img src>`, which
+            // cannot carry a header. Protecting it would break every QR image.
+            vi.spyOn(qrCodeService, 'getById').mockResolvedValue(sampleModel());
+            vi.spyOn(qrImageService, 'render').mockResolvedValue({
+                body: Buffer.from('<svg/>'),
+                contentType: 'image/svg+xml'
+            });
+
+            await request.get('/qr-codes/671b00000000000000000001/image').expect(200);
         });
     });
 });

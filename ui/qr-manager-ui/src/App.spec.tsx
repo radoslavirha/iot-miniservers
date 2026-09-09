@@ -77,7 +77,12 @@ describe('<App />', () => {
         render(<App config={config()} />);
 
         await waitFor(() => expect(screen.getByText('Shelf 1')).toBeInTheDocument());
-        expect(fetchMock).toHaveBeenCalledWith('https://api.server.home/qr/qr-codes');
+        // Asserted through the real App wiring rather than the client alone:
+        // this is what proves the token reaches fetch once the providers,
+        // useQrCodesClient and the page are all in the path.
+        const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+        expect(url).toBe('https://api.server.home/qr/qr-codes');
+        expect(new Headers(init.headers).get('Authorization')).toBe('Bearer token-abc');
         expect(screen.getByRole('link', { name: 'List' })).toBeInTheDocument();
         expect(screen.getByRole('link', { name: 'New' })).toBeInTheDocument();
     });

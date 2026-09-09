@@ -2,6 +2,67 @@
 
 Fetches precipitation radar data from ČHMÚ (Czech Hydrometeorological Institute), composites multiple image layers (radar, surface, city markers, borders), and returns per-city RGB LED values for the [LaskaKit Interactive Map of Czech Republic](https://www.laskakit.cz/laskakit-interaktivni-mapa-cr-ws2812b/).
 
+## Authentication
+
+**Every route requires a bearer token**, and there is exactly one trust domain: `IDP`. `/health*` stays
+open for the Kubernetes probes.
+
+The LaskaKit map logs in against the same identity provider as a person, from its own Authentik
+application. From this API's side that is not a different kind of authentication — it is the same
+bearer JWT from a neighbouring issuer, so the map's application is **one more row in
+`auth.IDP.trustedIssuers`** and costs no code.
+
+`@Authenticate(AuthMethod.Idp)` sits on the controller class and every route inherits it, including the
+one the map polls.
+
+**This used to be two trust domains**, with `@Authenticate(AuthMethod.Device)` on the map's route so a
+person's token was refused there. That was the wrong tool: an API has no business deciding on the kind
+of caller, and doing it through a trust domain meant onboarding device number two would have needed a
+change in this repo. If the map's route ever has to admit the map and refuse a person, that is
+`@RequireRoles` on a role the map's service account holds — authorization, checked after
+authentication, where it belongs.
+
+Nothing here is protecting a secret: every route is a read of public ČHMÚ data. What the token buys is
+that the surface is not anonymous, and that a leaked credential is revocable at the IdP — which is a
+property of the map having its own application, not of how this API is configured.
+
+### Giving a device its credential
+
+The device's token carries `aud` and `iss` of **its own** client, not this API's. This API trusts that
+pair explicitly as a second row in `auth.IDP.trustedIssuers` — option 1 of *Devices* in `homelab` →
+`docs/superpowers/specs/2026-09-04-authentik-tenancy-topology.md`, which is the authority for the
+reasoning below. No custom Authentik scope mapping is needed, and no role claim is read: `iss` + `aud`
+carry the whole decision.
+
+**In Authentik** (`homelab`; the client secret must come from OpenBao, never the blueprint values —
+that constraint is stated at the top of `authentik-blueprints.yaml`):
+
+1. An Application + OAuth2 provider named `interactive-map-device`, with `client_type: confidential`,
+   `grant_types: [client_credentials]`, **no redirect URIs**, and `issuer_mode: per_provider` like
+   every other provider here.
+2. A **service account** user for it, bound to the Application's group. Authentik gates
+   `client_credentials` on the same policy binding as a human login — without the membership the token
+   request fails with `invalid_grant`, which reads like a wrong secret and is not.
+3. A long `access_token_validity` on this provider. It is per provider, so device tokens can be
+   long-lived while the SPA providers stay at 30 minutes.
+
+**In `iot-esphome/interactive-map.yaml`, in the same change — not as a follow-up:**
+
+4. **Move the request to HTTPS.** It is plain HTTP today. Over cleartext the `client_secret` crosses
+   the LAN on every refresh, and anyone who captures one refresh can mint tokens indefinitely, so a
+   short token lifetime buys nothing. `http_request` on `esp-idf` does TLS; this cluster's private CA
+   needs `verify_ssl: false`, which stops passive sniffing but not an active MITM. The real limit is
+   heap during the handshake, so the test is "does it stay up", not "does it compile".
+5. A token-fetch script: `http_request.post` to `https://auth.irha.cz/application/o/token/` with
+   `grant_type=client_credentials`, `client_id` and `client_secret`; parse `access_token` out of the
+   response into a global; refresh on an `interval` inside the token's lifetime.
+6. `Authorization: Bearer` as a `!lambda` request header on the existing fetch.
+
+All four capabilities are already used in that file, so this is more YAML rather than a new capability.
+
+**Then here:** add a row to `auth.IDP.trustedIssuers` for the new client — `issuer`, `audience` and the
+JWKS URI all derive from its `client_id`.
+
 ## Consumed By
 
 - LaskaKit hardware: polls `GET /data-sources/radar/cities/iot` on its own interval

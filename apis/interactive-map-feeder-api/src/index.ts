@@ -1,7 +1,7 @@
 import { Platform, ServerConfiguration } from '@radoslavirha/tsed-platform';
 import { createShutdownHandler } from '@radoslavirha/tsed-health';
 import { openTelemetry } from '@radoslavirha/otel';
-import { SwaggerConfig, SwaggerDocumentConfig, SwaggerProvider } from '@radoslavirha/tsed-swagger';
+import { SwaggerConfig, SwaggerDocumentConfig, SwaggerProvider, SwaggerSecurityScheme } from '@radoslavirha/tsed-swagger';
 import { CommonUtils } from '@radoslavirha/utils';
 import { Server } from './Server.js';
 import { injector } from '@tsed/di';
@@ -30,7 +30,7 @@ try {
         documents: [
             CommonUtils.buildModelStrict(SwaggerDocumentConfig, {
                 docs: 'v1',
-                security: []
+                security: [SwaggerSecurityScheme.BEARER_JWT]
             })
         ],
         swaggerUIOptions: {

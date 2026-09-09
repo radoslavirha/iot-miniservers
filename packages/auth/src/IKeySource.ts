@@ -1,0 +1,74 @@
+import type { KeyInput } from 'jose';
+
+/**
+ * Supplies the key a signature is checked against.
+ *
+ * This is the seam between P1.1 (JWT verification with inline static keys) and
+ * P1.2 (keys fetched from a remote JWKS). `JwtVerifier` is written once against
+ * this interface and never learns whether the key came from a config file or an
+ * HTTP round trip — which is what lets P1.1 be built and tested with no
+ * infrastructure at all, and P1.2 be swapped in behind it.
+ *
+ * It is also where the Kubernetes-agnostic claim is cashed in: a ServiceAccount
+ * token is verified by a `RemoteJwksSource` whose fetch happens to carry a
+ * bearer token. That is transport configuration on one implementation, not a
+ * branch in the verifier.
+ */
+export interface IKeySource {
+    /**
+     * Resolves the verification key for one signature.
+     *
+     * `kid` is optional because a JWS header may omit it — a static single-key
+     * deployment has nothing to select between. An implementation holding more
+     * than one key and given no `kid` should reject rather than guess.
+     *
+     * **Rejects rather than returning undefined when the key cannot be
+     * resolved**, and the *type* of the rejection carries the distinction the
+     * caller needs: `UnresolvableKeyError` means the credential asked for a key
+     * this source will never have, and anything else means the source could not
+     * be consulted. A bare `undefined` would erase that difference.
+     */
+    getKey(params: KeyLookup): Promise<VerificationKey>;
+}
+
+/**
+ * The credential named a key this source cannot supply — an unknown `kid`, an
+ * algorithm the configured key is not for, an issuer with no key at all.
+ *
+ * **This is the token's fault, and verification should report `invalid`.**
+ * Every other rejection from `getKey` is the source's fault — a timeout, a
+ * refused connection, a malformed JWKS document — and must report
+ * `indeterminate` instead.
+ *
+ * The split lives here, as a type, rather than in the verifier inspecting
+ * error messages: the verifier must not learn which key sources exist, or
+ * adding one would mean editing it. Getting this backwards files an attack
+ * under "the IdP might be down", and files an outage under "someone is
+ * forging tokens".
+ */
+export class UnresolvableKeyError extends Error {
+    constructor(message: string) {
+        super(message);
+        this.name = 'UnresolvableKeyError';
+    }
+}
+
+export interface KeyLookup {
+    /** `iss` of the credential being verified — which trust source to ask. */
+    readonly issuer: string;
+    /** `kid` from the JWS header, when the header carried one. */
+    readonly kid?: string;
+    /** `alg` from the JWS header, so a source can refuse an unexpected algorithm. */
+    readonly algorithm?: string;
+}
+
+/**
+ * Whatever `jose` will accept as a verification key — `CryptoKey`, a Node
+ * `KeyObject`, a raw `JWK`, or the bytes of a symmetric secret.
+ *
+ * An alias of `jose`'s own `KeyInput` rather than a hand-written union, so it
+ * cannot drift from what the library actually accepts. Naming it here keeps the
+ * `jose` import in one file and gives implementations and tests one word for
+ * the concept.
+ */
+export type VerificationKey = KeyInput;

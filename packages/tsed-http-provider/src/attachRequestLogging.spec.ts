@@ -429,7 +429,7 @@ describe('outbound request logging', () => {
                 strategy: AuthStrategy.TokenExchange,
                 request: { method: 'POST', url: 'https://auth.example.com/token' },
                 tokenExtractor: 'access_token',
-                transport: { headers: [{ name: 'Authorization', value: 'Bearer {{value}}' }] }
+                transport: { headers: [{ name: 'Authorization', credential: 'value', prefix: 'Bearer ' }] }
             }
         }, logger);
         const mock = new MockAdapter(instance);

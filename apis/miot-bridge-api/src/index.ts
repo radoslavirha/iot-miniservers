@@ -1,7 +1,7 @@
 import { Platform, ServerConfiguration } from '@radoslavirha/tsed-platform';
 import { createShutdownHandler } from '@radoslavirha/tsed-health';
 import { openTelemetry } from '@radoslavirha/otel';
-import { SwaggerConfig, SwaggerDocumentConfig, SwaggerProvider } from '@radoslavirha/tsed-swagger';
+import { SwaggerConfig, SwaggerDocumentConfig, SwaggerProvider, SwaggerSecurityScheme } from '@radoslavirha/tsed-swagger';
 import { CommonUtils, ObjectUtils } from '@radoslavirha/utils';
 import { Server } from './Server.js';
 import { injector } from '@tsed/di';
@@ -31,7 +31,9 @@ try {
         documents: ObjectUtils.values(SwaggerDocs).map((doc) =>
             CommonUtils.buildModelStrict(SwaggerDocumentConfig, {
                 docs: doc,
-                security: []
+                // Both documents, because both carry guarded routes: `api` holds
+                // devices and overrides, `commands` holds the command surface.
+                security: [SwaggerSecurityScheme.BEARER_JWT]
             })
         ),
         swaggerUIOptions: {

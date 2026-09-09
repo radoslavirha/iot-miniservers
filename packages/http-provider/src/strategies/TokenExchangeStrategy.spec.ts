@@ -18,7 +18,7 @@ const POST_CONFIG: TokenExchangeAuth = {
         body: { client_id: 'x', client_secret: 'y' }
     },
     tokenExtractor: [{ field: 'access_token', as: 'accessToken' }],
-    transport: { headers: [{ name: 'Authorization', value: 'Bearer {{accessToken}}' }] }
+    transport: { headers: [{ name: 'Authorization', credential: 'accessToken', prefix: 'Bearer ' }] }
 };
 
 const MULTI_EXTRACTOR_CONFIG: TokenExchangeAuth = {
@@ -28,7 +28,7 @@ const MULTI_EXTRACTOR_CONFIG: TokenExchangeAuth = {
         { field: 'access_token', as: 'accessToken' },
         { field: 'refresh_token', as: 'refreshToken' }
     ],
-    transport: { headers: [{ name: 'Authorization', value: 'Bearer {{accessToken}}' }] }
+    transport: { headers: [{ name: 'Authorization', credential: 'accessToken', prefix: 'Bearer ' }] }
 };
 
 describe('TokenExchangeStrategy', () => {
@@ -148,7 +148,7 @@ describe('TokenExchangeStrategy', () => {
                 headers: [{ name: 'Authorization', value: 'Basic abc==' }]
             },
             tokenExtractor: [{ field: 'access_token', as: 'value' }],
-            transport: { headers: [{ name: 'Authorization', value: 'Bearer {{value}}' }] }
+            transport: { headers: [{ name: 'Authorization', credential: 'value', prefix: 'Bearer ' }] }
         };
         const strategy = new TokenExchangeStrategy(config);
         await strategy.getCredentials();
@@ -165,7 +165,7 @@ describe('TokenExchangeStrategy', () => {
                 queryParams: [{ name: 'grant_type', value: 'client_credentials' }]
             },
             tokenExtractor: [{ field: 'access_token', as: 'value' }],
-            transport: { headers: [{ name: 'Authorization', value: 'Bearer {{value}}' }] }
+            transport: { headers: [{ name: 'Authorization', credential: 'value', prefix: 'Bearer ' }] }
         };
         const strategy = new TokenExchangeStrategy(config);
         await strategy.getCredentials();

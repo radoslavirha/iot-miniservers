@@ -21,9 +21,25 @@ export const ApiStatusBanner = ({ status, serviceName }: ApiStatusBannerProps): 
         return null;
     }
 
-    const message = status === 'unreachable'
-        ? `Cannot reach ${serviceName}.`
-        : `${serviceName} is having problems — retrying.`;
+    const message = messageFor(status, serviceName);
 
     return <StatusBar status="error" message={message} />;
+};
+
+/**
+ * One line per non-ok status.
+ *
+ * `unauthenticated` earns its own wording because the other two are about the
+ * backend and this one is about the viewer: nothing is broken, nothing is
+ * retrying, and waiting will not help. It says what to do instead.
+ */
+const messageFor = (status: Exclude<ApiStatus, 'ok'>, serviceName: string): string => {
+    switch (status) {
+        case 'unreachable':
+            return `Cannot reach ${serviceName}.`;
+        case 'unauthenticated':
+            return `${serviceName} did not accept your session — sign in again.`;
+        case 'degraded':
+            return `${serviceName} is having problems — retrying.`;
+    }
 };

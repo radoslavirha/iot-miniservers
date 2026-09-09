@@ -15,6 +15,15 @@ describe('Server', () => {
     });
     afterEach(PlatformTest.reset);
 
+    // Every controller in this service is guarded, so these are the only routes
+    // left that answer without a credential. Asserted here rather than in a
+    // controller spec because keeping them open is a property of the service.
+    it.each(['/health', '/health/live', '/health/ready'])('Should serve %s with no credential', async (path) => {
+        const response = await request.get(path);
+
+        expect(response.status).not.toBe(401);
+    });
+
     it('Should call GET /rest', async () => {
         const response = await request.get('/rest').expect(404);
 

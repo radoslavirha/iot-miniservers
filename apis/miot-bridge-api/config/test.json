@@ -11,5 +11,23 @@
         "MIOT_SPEC": {
             "baseURL": "https://miot-spec.org/miot-spec-v2"
         }
+    },
+    "auth": {
+        "IDP": {
+            "type": "bearer-jwt",
+            "trustedIssuers": [
+                {
+                    "name": "test-local",
+                    "issuer": "https://issuer.test/",
+                    "audience": "test-audience",
+                    "subjectKind": "human",
+                    "key": {
+                        "source": "value",
+                        "algorithm": "HS256",
+                        "value": "test-secret-not-a-real-key-000000"
+                    }
+                }
+            ]
+        }
     }
 }

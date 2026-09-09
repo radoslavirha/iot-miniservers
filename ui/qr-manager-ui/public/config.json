@@ -2,8 +2,8 @@
     "apiBaseURL": "http://localhost:4002",
     "basePath": "/",
     "auth": {
-        "issuer": "https://auth.irha.cz/application/o/qr-manager-server1-sandbox/",
-        "clientId": "qr-manager-server1-sandbox",
+        "issuer": "https://auth.irha.cz/application/o/qr-manager-local/",
+        "clientId": "qr-manager-local",
         "scope": "openid profile email roles",
         "redirectUri": "http://localhost:5173/callback",
         "postLogoutRedirectUri": "http://localhost:5173/"

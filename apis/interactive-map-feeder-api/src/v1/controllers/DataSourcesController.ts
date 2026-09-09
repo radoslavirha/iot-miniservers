@@ -7,11 +7,14 @@ import { DataSourceCitiesResponse } from '../models/index.js';
 import { GROUP_IOT } from '../ModelGroups.js';
 import { DataSources } from '../DataSources.js';
 import { DataSourcesResponse } from '../models/DataSourcesResponse.js';
+import { Authenticate } from '@radoslavirha/tsed-auth';
+import { AuthMethod } from '../../global/models/AuthMethod.enum.js';
 
 @Description('API endpoints representing variety of data sources.')
 @Controller('/data-sources')
 @Scope(ProviderScope.REQUEST)
 @Docs('v1')
+@Authenticate(AuthMethod.Idp)
 export class DataSourcesController {
     constructor(
         private dataSourcesListHandler: DataSourcesListHandler,
