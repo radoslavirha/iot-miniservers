@@ -253,7 +253,7 @@ So FE-B6 ships ~30 lines of local backoff behind the `recoveryProbe` option, and
         "lint": "true",
         "test": "true"
     },
-    "engines": { "node": ">= 24", "pnpm": ">= 11.8" }
+    "engines": { "node": ">= 24", "pnpm": ">= 12.3" }
 }
 ```
 

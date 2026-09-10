@@ -5,7 +5,7 @@ FROM $BUILD_FROM AS base
 
 LABEL maintainer="radoslav.irha@gmail.com"
 ENV LANG=C.UTF-8
-RUN npm install -g pnpm@11
+RUN npm install -g pnpm@12
 
 FROM base AS deps
 
