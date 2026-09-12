@@ -1,5 +1,11 @@
 # interactive-map-feeder
 
+## 0.13.0
+
+### Minor Changes
+
+- [`5c05e0f`](https://github.com/radoslavirha/iot-miniservers/commit/5c05e0f4356127b1bfeb84bd72b291bec14e99a7) Thanks [@radoslavirha](https://github.com/radoslavirha)! - Slim dockerfile
+
 ## 0.12.2
 
 ### Patch Changes

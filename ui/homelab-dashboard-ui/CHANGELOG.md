@@ -1,5 +1,11 @@
 # homelab-dashboard-ui
 
+## 0.7.0
+
+### Minor Changes
+
+- [`84a7d27`](https://github.com/radoslavirha/iot-miniservers/commit/84a7d2745a68192c132bd934dae7b869b871fdba) Thanks [@radoslavirha](https://github.com/radoslavirha)! - Slim dockerfiles
+
 ## 0.6.0
 
 ### Minor Changes
