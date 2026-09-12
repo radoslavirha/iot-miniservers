@@ -60,14 +60,13 @@
     "dotenv": "catalog:",
     "express": "catalog:express",
     "method-override": "catalog:express",
-    "sharp": "^0.35.3",
+    "sharp": "^0.35.4",
     "typescript": "catalog:",
     "zod": "catalog:"
   },
   "devDependencies": {
     "@radoslavirha/config-eslint": "catalog:",
     "@radoslavirha/config-vitest": "catalog:",
-    "axios-mock-adapter": "^2.1.0",
     "@swc/core": "catalog:swc",
     "@types/compression": "catalog:express",
     "@types/cookie-parser": "catalog:express",
@@ -78,6 +77,7 @@
     "@types/node": "catalog:",
     "@types/supertest": "catalog:",
     "@vitest/coverage-v8": "catalog:",
+    "axios-mock-adapter": "^2.1.0",
     "eslint": "catalog:",
     "nodemon": "catalog:",
     "supertest": "catalog:",
@@ -88,7 +88,7 @@
   },
   "engines": {
     "node": ">= 24",
-    "pnpm": ">= 12.3"
+    "pnpm": ">= 11.26"
   },
   "tsed": {
     "convention": "conv_default",

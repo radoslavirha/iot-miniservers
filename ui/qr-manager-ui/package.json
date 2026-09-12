@@ -36,17 +36,17 @@
     "@types/react": "catalog:react",
     "@types/react-dom": "catalog:react",
     "@vitejs/plugin-react": "catalog:react",
-    "@vitest/coverage-v8": "catalog:",
+    "@vitest/coverage-v8": "catalog:react",
     "esbuild": "catalog:",
     "eslint": "catalog:",
     "jsdom": "catalog:react",
     "typescript": "catalog:",
     "typescript-eslint": "catalog:",
     "vite": "catalog:react",
-    "vitest": "catalog:"
+    "vitest": "catalog:react"
   },
   "engines": {
     "node": ">= 24",
-    "pnpm": ">= 12.3"
+    "pnpm": ">= 11.26"
   }
 }

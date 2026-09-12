@@ -4,37 +4,37 @@ packages:
   - ui/*
 
 catalog:
-  '@radoslavirha/config-eslint': ^0.4.7
-  '@radoslavirha/config-tsdown': 0.2.3
-  '@radoslavirha/config-typescript': ^1.1.4
-  '@radoslavirha/config-vitest': ^0.4.5
-  '@radoslavirha/redaction': ^0.3.0
-  '@radoslavirha/tsed-common': ^0.5.8
-  '@radoslavirha/tsed-configuration': ^0.8.5
-  '@radoslavirha/tsed-logger': ^0.7.0
-  '@radoslavirha/tsed-platform': ^5.0.2
-  '@radoslavirha/tsed-swagger': ^9.1.6
-  '@radoslavirha/utils': ^0.9.0
-  '@radoslavirha/tsed-mongoose': ^5.0.8
-  '@types/node': ^26.2.0
+  '@radoslavirha/config-eslint': ^0.4.9
+  '@radoslavirha/config-tsdown': 0.2.5
+  '@radoslavirha/config-typescript': ^1.1.6
+  '@radoslavirha/config-vitest': ^0.4.7
+  '@radoslavirha/redaction': ^0.3.2
+  '@radoslavirha/tsed-common': ^0.5.10
+  '@radoslavirha/tsed-configuration': ^0.8.7
+  '@radoslavirha/tsed-logger': ^0.7.2
+  '@radoslavirha/tsed-platform': ^5.0.4
+  '@radoslavirha/tsed-swagger': ^9.1.8
+  '@radoslavirha/utils': ^0.9.2
+  '@radoslavirha/tsed-mongoose': ^5.0.10
+  '@types/node': ^26.5.1
   '@types/supertest': ^7.2.1
-  '@vitest/coverage-v8': ^4.1.11
-  axios: ^1.19.0
+  '@vitest/coverage-v8': ^5.0.0
+  axios: ^1.20.0
   cockatiel: ^4.0.0
   cross-env: ^10.1.0
   dotenv: ^17.4.2
   esbuild: ^0.28.2
-  eslint: ^10.9.0
-  jose: ^6.2.9
-  mongoose: ^9.9.3
+  eslint: ^10.10.0
+  jose: ^6.2.12
+  mongoose: ^9.9.5
   nodemon: ^3.1.14
   supertest: ^7.2.2
-  tsdown: 0.22.14
+  tsdown: 0.23.0
   tslib: ^2.8.1
   typescript: ^6.0.3
-  typescript-eslint: ^8.67.0
-  vitest: ^4.1.11
-  zod: 4.4.3
+  typescript-eslint: ^8.70.0
+  vitest: ^5.0.0
+  zod: 4.6.0
 
 catalogs:
   express:
@@ -52,60 +52,66 @@ catalogs:
     method-override: ^3.0.0
   otel:
     '@opentelemetry/api': ^1.9.1
-    '@opentelemetry/core': ^2.10.0
-    '@opentelemetry/exporter-logs-otlp-http': ^0.221.0
-    '@opentelemetry/exporter-metrics-otlp-http': ^0.221.0
-    '@opentelemetry/exporter-trace-otlp-http': ^0.221.0
-    '@opentelemetry/instrumentation': ^0.221.0
-    '@opentelemetry/instrumentation-express': ^0.69.0
-    '@opentelemetry/instrumentation-http': ^0.221.0
-    '@opentelemetry/instrumentation-mongoose': ^0.67.0
-    '@opentelemetry/instrumentation-winston': ^0.65.0
-    '@opentelemetry/resources': ^2.10.0
-    '@opentelemetry/sdk-logs': ^0.221.0
-    '@opentelemetry/sdk-metrics': ^2.10.0
-    '@opentelemetry/sdk-node': ^0.221.0
-    '@opentelemetry/sdk-trace-node': ^2.10.0
+    '@opentelemetry/core': ^2.11.0
+    '@opentelemetry/exporter-logs-otlp-http': ^0.222.0
+    '@opentelemetry/exporter-metrics-otlp-http': ^0.222.0
+    '@opentelemetry/exporter-trace-otlp-http': ^0.222.0
+    '@opentelemetry/instrumentation': ^0.222.0
+    '@opentelemetry/instrumentation-express': ^0.70.0
+    '@opentelemetry/instrumentation-http': ^0.222.0
+    '@opentelemetry/instrumentation-mongoose': ^0.68.0
+    '@opentelemetry/instrumentation-winston': ^0.66.0
+    '@opentelemetry/resources': ^2.11.0
+    '@opentelemetry/sdk-logs': ^0.222.0
+    '@opentelemetry/sdk-metrics': ^2.11.0
+    '@opentelemetry/sdk-node': ^0.222.0
+    '@opentelemetry/sdk-trace-node': ^2.11.0
     '@opentelemetry/semantic-conventions': ^1.43.0
-    '@opentelemetry/winston-transport': ^0.31.0
+    '@opentelemetry/winston-transport': ^0.32.0
   react:
+    # vitest/@vitest+coverage-v8 pinned to 4.x: jest-dom@7.0.1's vitest.d.ts
+    # augments Assertion<T=any>, but vitest 5 changed it to Assertion<R,T>
+    # (2 required params) — merge fails, matcher types vanish. Bump once
+    # jest-dom ships vitest-5-compatible types.
     '@testing-library/jest-dom': ^7.0.1
-    '@testing-library/react': ^16.3.2
-    '@testing-library/user-event': ^14.6.5
-    '@types/react': ^19.2.18
-    '@types/react-dom': ^19.2.4
-    '@vitejs/plugin-react': ^6.1.0
+    '@testing-library/react': ^16.3.3
+    '@testing-library/user-event': ^14.6.7
+    '@types/react': ^19.3.0
+    '@types/react-dom': ^19.3.0
+    '@vitejs/plugin-react': ^6.1.1
+    '@vitest/coverage-v8': ^4.1.11
     jsdom: ^30.0.1
     oidc-client-ts: ^3.5.0
-    react: ^19.2.8
-    react-dom: ^19.2.8
-    react-router-dom: ^7.18.2
-    vite: ^8.2.2
+    react: ^19.3.0
+    react-dom: ^19.3.0
+    react-router-dom: ^7.18.3
+    vite: ^8.3.0
+    vitest: ^4.1.11
   swc:
     '@swc-node/register': ^1.12.1
     '@swc/cli': ^0.8.1
-    '@swc/core': ^1.16.1
+    '@swc/core': ^1.16.2
     '@swc/helpers': ^0.5.23
   tsed:
-    '@tsed/ajv': ^8.38.2
-    '@tsed/core': ^8.38.2
-    '@tsed/di': ^8.38.2
-    '@tsed/engines': ^8.38.2
-    '@tsed/exceptions': ^8.38.2
-    '@tsed/json-mapper': ^8.38.2
-    '@tsed/mongoose': ^8.38.2
-    '@tsed/openspec': ^8.38.2
-    '@tsed/platform-cache': ^8.38.2
-    '@tsed/platform-exceptions': ^8.38.2
-    '@tsed/platform-express': ^8.38.2
-    '@tsed/platform-http': ^8.38.2
-    '@tsed/platform-middlewares': ^8.38.2
-    '@tsed/platform-params': ^8.38.2
-    '@tsed/platform-response-filter': ^8.38.2
-    '@tsed/platform-views': ^8.38.2
-    '@tsed/schema': ^8.38.2
-    '@tsed/swagger': ^8.38.2
-    '@tsed/testcontainers-mongo': ^8.38.2
+    '@tsed/ajv': ^8.38.4
+    '@tsed/core': ^8.38.4
+    '@tsed/di': ^8.38.4
+    '@tsed/engines': ^8.38.4
+    '@tsed/exceptions': ^8.38.4
+    '@tsed/json-mapper': ^8.38.4
+    '@tsed/mongoose': ^8.38.4
+    '@tsed/openspec': ^8.38.4
+    '@tsed/platform-cache': ^8.38.4
+    '@tsed/platform-exceptions': ^8.38.4
+    '@tsed/platform-express': ^8.38.4
+    '@tsed/platform-http': ^8.38.4
+    '@tsed/platform-middlewares': ^8.38.4
+    '@tsed/platform-params': ^8.38.4
+    '@tsed/platform-response-filter': ^8.38.4
+    '@tsed/platform-views': ^8.38.4
+    '@tsed/schema': ^8.38.4
+    '@tsed/swagger': ^8.38.4
+    '@tsed/testcontainers-mongo': ^8.38.4
     ajv: ^8.20.0
 
 injectWorkspacePackages: true

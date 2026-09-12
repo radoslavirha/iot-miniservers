@@ -26,13 +26,13 @@
   "devDependencies": {
     "@actions/core": "^3.0.1",
     "@actions/github": "^9.1.1",
-    "@changesets/changelog-github": "^1.0.0",
-    "@changesets/cli": "^3.0.1",
+    "@changesets/changelog-github": "^1.0.1",
+    "@changesets/cli": "^3.0.2",
     "handlebars": "^4.7.9"
   },
   "engines": {
     "node": ">= 24",
-    "pnpm": ">= 12.3"
+    "pnpm": ">= 11.26"
   },
   "os": [
     "darwin",
