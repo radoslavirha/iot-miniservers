@@ -7,6 +7,25 @@ LABEL maintainer="radoslav.irha@gmail.com"
 ENV LANG=C.UTF-8
 RUN npm install -g pnpm@12
 
+# Runtime base for the API images: the Node runtime and nothing else. Deliberately
+# NOT built from `base`, which carries a global pnpm install that has no business in
+# a running pod — see docs/superpowers/specs/2026-09-12-js-on-k8s-alignment.md § G1.
+#
+# USER is numeric, NOT `node`. Kubernetes verifies runAsNonRoot against the image's
+# configured user and cannot map a username to a UID — that mapping lives in the
+# image's /etc/passwd, which the kubelet does not read. With `USER node` it fails
+# closed: CreateContainerConfigError "container has runAsNonRoot and image has
+# non-numeric user (node), cannot verify user is non-root". 1000 is the node user in
+# node:24-trixie-slim.
+# hadolint ignore=DL3006
+FROM $BUILD_FROM AS runtime-base
+
+LABEL maintainer="radoslav.irha@gmail.com"
+ENV LANG=C.UTF-8 \
+    NODE_ENV=production
+WORKDIR /home/app
+USER 1000
+
 FROM base AS deps
 
 WORKDIR /usr/src/app
@@ -22,12 +41,10 @@ RUN --mount=type=secret,id=npmrc,target=/root/.npmrc \
     pnpm --filter=interactive-map-feeder-api run build && \
     pnpm deploy --filter=interactive-map-feeder-api --prod /prod/interactive-map-feeder-api
 
-FROM base AS interactive-map-feeder-api
+FROM runtime-base AS interactive-map-feeder-api
 
-COPY --from=build-interactive-map-feeder-api /prod/interactive-map-feeder-api /home/app
-WORKDIR /home/app
-ENV NODE_ENV=production
-CMD ["node", "--import", "@swc-node/register/esm-register", "--import", "/home/app/dist/otel/instrument.js", "dist/index.js"]
+COPY --from=build-interactive-map-feeder-api --chown=1000:1000 /prod/interactive-map-feeder-api /home/app
+CMD ["node", "--import", "/home/app/dist/otel/instrument.js", "dist/index.js"]
 
 # ─── miot-bridge-api ───────────────────────────────────────────────────────────────
 FROM deps AS build-miot-bridge-api
@@ -36,12 +53,10 @@ RUN --mount=type=secret,id=npmrc,target=/root/.npmrc \
     pnpm --filter=miot-bridge-api run build && \
     pnpm deploy --filter=miot-bridge-api --prod /prod/miot-bridge-api
 
-FROM base AS miot-bridge-api
+FROM runtime-base AS miot-bridge-api
 
-COPY --from=build-miot-bridge-api /prod/miot-bridge-api /home/app
-WORKDIR /home/app
-ENV NODE_ENV=production
-CMD ["node", "--import", "@swc-node/register/esm-register", "--import", "/home/app/dist/otel/instrument.js", "dist/index.js"]
+COPY --from=build-miot-bridge-api --chown=1000:1000 /prod/miot-bridge-api /home/app
+CMD ["node", "--import", "/home/app/dist/otel/instrument.js", "dist/index.js"]
 
 # ─── qr-manager-api ────────────────────────────────────────────────────────────
 FROM deps AS build-qr-manager-api
@@ -50,12 +65,10 @@ RUN --mount=type=secret,id=npmrc,target=/root/.npmrc \
     pnpm --filter=qr-manager-api run build && \
     pnpm deploy --filter=qr-manager-api --prod /prod/qr-manager-api
 
-FROM base AS qr-manager-api
+FROM runtime-base AS qr-manager-api
 
-COPY --from=build-qr-manager-api /prod/qr-manager-api /home/app
-WORKDIR /home/app
-ENV NODE_ENV=production
-CMD ["node", "--import", "@swc-node/register/esm-register", "--import", "/home/app/dist/otel/instrument.js", "dist/index.js"]
+COPY --from=build-qr-manager-api --chown=1000:1000 /prod/qr-manager-api /home/app
+CMD ["node", "--import", "/home/app/dist/otel/instrument.js", "dist/index.js"]
 
 # ─── homelab-dashboard-ui ──────────────────────────────────────────────────────
 FROM deps AS build-homelab-dashboard-ui

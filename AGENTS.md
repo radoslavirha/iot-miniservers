@@ -238,7 +238,18 @@ ui/<ui-name>/
 2. New workspace members are auto-discovered via `apis/*` glob in `pnpm-workspace.yaml` — no changes needed there.
 3. Run `pnpm install` from the repo root (requires `NODE_AUTH_TOKEN` in env).
 4. Add a `.README.md`.
-5. Add a `Dockerfile` stage in the root `Dockerfile` following the `qr-manager-api` pattern (deps → build → final image with `pnpm start:prod`).
+5. Add a `Dockerfile` stage in the root `Dockerfile` following the `qr-manager-api` pattern
+   (deps → build → final image).
+
+   The final stage is built `FROM runtime-base` — never `FROM base`, which carries a global
+   pnpm install that has no business in a running pod. `runtime-base` already sets
+   `WORKDIR /home/app`, `NODE_ENV=production` and `USER 1000`, so the app stage is one
+   `COPY --from=build-<app> --chown=1000:1000` plus one `CMD`. Keep build-only packages
+   (`typescript`, `@swc/cli`, `@swc-node/register`) in `devDependencies` so `pnpm deploy --prod`
+   leaves them out; `@swc/helpers` is the exception and must stay a runtime dependency,
+   because `.swcrc` sets `externalHelpers: true`. Verify the result with
+   `pnpm verify:image <image-ref>` before opening the PR — non-root, no package manager,
+   no compiler, no source maps, no token in the layer history, inside the size budget.
 
 ## Authentication
 

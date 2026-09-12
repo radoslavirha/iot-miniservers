@@ -1,5 +1,5 @@
 {
-  "sourceMaps": true,
+  "sourceMaps": false,
   "jsc": {
     "parser": {
       "syntax": "typescript",
