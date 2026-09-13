@@ -1,5 +1,23 @@
 # interactive-map-feeder
 
+## 0.13.1
+
+### Patch Changes
+
+- [`d402b87`](https://github.com/radoslavirha/iot-miniservers/commit/d402b871c7d2f4096dc333b1a7c5e389e96778d8) Thanks [@radoslavirha](https://github.com/radoslavirha)! - Bound the shutdown sequence with an optional hard deadline
+  
+  `createShutdownHandler` gains `hardDeadlineMs` and `onHardDeadline`. Nothing previously
+  bounded the drain: a connection that never closes, or a `platform.stop()` stuck on a
+  dependency, burned the whole termination grace period and ended in SIGKILL — which also
+  discarded the batched spans, metrics and logs the drain produced, i.e. the exact telemetry
+  that would explain the hang.
+  
+  Off by default. The three APIs set 10s, which fits inside their chart budget of
+  preStop 10s + drain 5s < terminationGracePeriodSeconds 30s, and log
+  `SERVER_SHUTDOWN_TIMEOUT` with the elapsed time before exiting non-zero.
+- Updated dependencies [[`d402b87`](https://github.com/radoslavirha/iot-miniservers/commit/d402b871c7d2f4096dc333b1a7c5e389e96778d8)]:
+  - @radoslavirha/tsed-health@0.3.0
+
 ## 0.13.0
 
 ### Minor Changes
