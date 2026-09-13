@@ -241,15 +241,33 @@ ui/<ui-name>/
 5. Add a `Dockerfile` stage in the root `Dockerfile` following the `qr-manager-api` pattern
    (deps → build → final image).
 
-   The final stage is built `FROM runtime-base` — never `FROM base`, which carries a global
-   pnpm install that has no business in a running pod. `runtime-base` already sets
-   `WORKDIR /home/app`, `NODE_ENV=production` and `USER 1000`, so the app stage is one
-   `COPY --from=build-<app> --chown=1000:1000` plus one `CMD`. Keep build-only packages
-   (`typescript`, `@swc/cli`, `@swc-node/register`) in `devDependencies` so `pnpm deploy --prod`
-   leaves them out; `@swc/helpers` is the exception and must stay a runtime dependency,
-   because `.swcrc` sets `externalHelpers: true`. Verify the result with
-   `pnpm verify:image <image-ref>` before opening the PR — non-root, no package manager,
-   no compiler, no source maps, no token in the layer history, inside the size budget.
+   Copy the `qr-manager-api` stages verbatim and change the name. The rules they encode,
+   because a copied stage is only as good as the reasons behind it:
+
+   | Rule | Why it is not cosmetic |
+   | --- | --- |
+   | Final stage is `FROM runtime-base`, never `FROM base` | `base` carries a global pnpm install. A package manager in a running pod is attacker tooling, and it is 40MB of it. |
+   | Never add `USER`, `WORKDIR` or `ENV NODE_ENV` to an app stage | `runtime-base` sets all three (`USER 1000`, `/home/app`, production). Re-declaring them is how they drift apart. |
+   | `COPY --from=build-<app> --chown=1000:1000` | Without the chown the files land as root and UID 1000 cannot read them. |
+   | `CMD` keeps `--import /home/app/dist/otel/instrument.js` | Dropping it silently removes every trace and every `trace_id` from logs. Nothing fails; the data just stops. |
+   | Build-only packages (`typescript`, `@swc/cli`, `@swc-node/register`) go in `devDependencies` | `pnpm deploy --prod` copies `dependencies` into the image. A compiler there is shipped, not used. |
+   | **`@swc/helpers` stays in `dependencies`** | `.swcrc` sets `externalHelpers: true`, so compiled output imports it at runtime. Moving it breaks the image at first import. |
+   | `.swcrc` keeps `sourceMaps: false`, build keeps `--ignore '**/*.spec.ts'` | Otherwise `dist/` ships source maps and compiled tests — 72 files per app before this was fixed. |
+   | The npm token arrives only as `--mount=type=secret,id=npmrc` | An `ARG` or `ENV` token is readable forever in `docker history`. |
+
+   **None of this is enforced by CI, deliberately** — one Dockerfile, few hands, and a gate
+   that can fail for its own reasons on every PR is not worth it. Do not add one without
+   asking. The backstop is the cluster: pods run with `runAsNonRoot` and a read-only root
+   filesystem (`homelab:gitops/helm-values/apps/<app>/base.yaml`), so an image that regains
+   root fails admission instead of running.
+
+   Spot-check a built image by hand when you touch any of the above:
+
+   ```sh
+   docker inspect <ref> --format '{{.Config.User}}'                     # 1000
+   docker run --rm --entrypoint sh <ref> -c 'command -v pnpm; ls node_modules/typescript'
+   docker run --rm --entrypoint sh <ref> -c 'find dist -name "*.map" -o -name "*.spec.js"'
+   ```
 
 ## Authentication
 

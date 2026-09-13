@@ -18,8 +18,7 @@
     "lint:fix": "pnpm --stream --recursive run lint:fix",
     "prepare": "husky",
     "test": "pnpm --stream --recursive --sequential run test",
-    "verify": "pnpm run lint && pnpm run build && pnpm run test",
-    "verify:image": "./scripts/verify-image.sh"
+    "verify": "pnpm run lint && pnpm run build && pnpm run test"
   },
   "dependencies": {
     "husky": "^9.1.7"
