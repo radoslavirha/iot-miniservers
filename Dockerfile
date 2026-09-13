@@ -75,7 +75,18 @@ FROM deps AS build-homelab-dashboard-ui
 
 RUN pnpm --filter=homelab-dashboard-ui run build
 
-FROM nginx:1.29-alpine AS homelab-dashboard-ui
+FROM nginxinc/nginx-unprivileged:1.29-alpine AS homelab-dashboard-ui
+
+# Unprivileged variant: nginx runs as UID 101 and binds 8080, because a non-root
+# process cannot bind a port below 1024. Same upstream image otherwise — same
+# entrypoint, same /docker-entrypoint.d pipeline, same STOPSIGNAL SIGQUIT.
+#
+# USER 0 is only for the package install and the chmod below; the image's own
+# USER 101 is restored before anything runs. Both are numeric because hadolint
+# DL3066 rejects a name here, and because Kubernetes verifies runAsNonRoot
+# against the image's configured user and cannot resolve a username — a named
+# user fails closed with CreateContainerConfigError.
+USER 0
 
 # Pinned per hadolint DL3018. Alpine keeps only the current revision of a
 # package, so this pin rots the moment upstream bumps it: 1.8.1-r0 vanished and
@@ -93,7 +104,8 @@ COPY ui/homelab-dashboard-ui/docker-entrypoint.d/10-require-unifi-env.sh /docker
 # The stock entrypoint renders /etc/nginx/templates/*.template into conf.d.
 COPY ui/homelab-dashboard-ui/nginx.conf.template /etc/nginx/templates/default.conf.template
 RUN chmod +x /docker-entrypoint.d/05-validate-runtime-config.sh /docker-entrypoint.d/10-require-unifi-env.sh
-EXPOSE 80
+USER 101
+EXPOSE 8080
 # ENTRYPOINT / CMD / STOPSIGNAL are inherited from the base image on purpose:
 # STOPSIGNAL SIGQUIT is what makes nginx shut down gracefully instead of
 # dropping in-flight requests, and the stock entrypoint keeps nginx as PID 1.
@@ -127,7 +139,18 @@ FROM deps AS build-qr-manager-ui
 
 RUN pnpm --filter=qr-manager-ui run build
 
-FROM nginx:1.29-alpine AS qr-manager-ui
+FROM nginxinc/nginx-unprivileged:1.29-alpine AS qr-manager-ui
+
+# Unprivileged variant: nginx runs as UID 101 and binds 8080, because a non-root
+# process cannot bind a port below 1024. Same upstream image otherwise — same
+# entrypoint, same /docker-entrypoint.d pipeline, same STOPSIGNAL SIGQUIT.
+#
+# USER 0 is only for the package install and the chmod below; the image's own
+# USER 101 is restored before anything runs. Both are numeric because hadolint
+# DL3066 rejects a name here, and because Kubernetes verifies runAsNonRoot
+# against the image's configured user and cannot resolve a username — a named
+# user fails closed with CreateContainerConfigError.
+USER 0
 
 # Pinned per hadolint DL3018. Alpine keeps only the current revision of a
 # package, so this pin rots the moment upstream bumps it: 1.8.1-r0 vanished and
@@ -147,7 +170,8 @@ COPY packages/nginx-runtime/docker-entrypoint.d/05-validate-runtime-config.sh /d
 # (e.g. /qr-manager or /) to configure the sub-path at runtime.
 COPY ui/qr-manager-ui/nginx.conf.template /etc/nginx/templates/default.conf.template
 RUN chmod +x /docker-entrypoint.d/05-validate-runtime-config.sh
-EXPOSE 80
+USER 101
+EXPOSE 8080
 ENV NGINX_BASE_PATH=/
 # ENTRYPOINT / CMD / STOPSIGNAL inherited from the base image — rule F4.
 

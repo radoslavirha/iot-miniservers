@@ -11,7 +11,11 @@
 # also fails for sub-paths because it doesn't start with the location prefix.
 
 server {
-    listen 80 default_server;
+    # Port 8080, not 80: this image is nginxinc/nginx-unprivileged and nginx runs as
+    # UID 101, which cannot bind a port below 1024. The Service's targetPort in
+    # homelab:gitops/helm-values must match — the two move together or the pod serves
+    # nothing.
+    listen 8080 default_server;
     server_name _;
 
     # Disable gzip on HTML so sub_filter can modify the plain bytes.
