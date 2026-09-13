@@ -61,6 +61,20 @@ try {
     // listeners — so the drain has to be driven from here, not from a lifecycle hook.
     const shutdown = createShutdownHandler(platform, {
         onShutdown: (phase) => logger.info(`Server ${phase}.`, { event: 'SERVER_SHUTDOWN' }),
+        // Budget: preStop 10s + drain 5s + this 10s, inside the chart's
+        // terminationGracePeriodSeconds of 30 — see
+        // homelab:gitops/helm-values/apps/<app>/base.yaml.
+        hardDeadlineMs: 10_000,
+        // Logged rather than silent. A pod that exits here has a connection that never
+        // closed or a dependency that never released, and this line is the only evidence
+        // that survives — the telemetry flush below is precisely what did not finish.
+        onHardDeadline: (elapsedMs) => {
+            logger.error('Shutdown exceeded its hard deadline, exiting.', {
+                event: 'SERVER_SHUTDOWN_TIMEOUT',
+                elapsedMs
+            });
+            process.exit(1);
+        },
         // Last, once the listeners are closed. Without it the batched spans, logs and —
         // worst, on a 60s export interval — metrics from the drain are discarded when the
         // process exits.

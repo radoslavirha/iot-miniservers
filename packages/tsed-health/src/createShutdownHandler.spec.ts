@@ -1,7 +1,7 @@
 import { PlatformTest } from '@tsed/platform-http/testing';
 import { inject } from '@tsed/di';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { DEFAULT_DRAIN_DELAY_MS, createShutdownHandler } from './createShutdownHandler.js';
+import { DEFAULT_DRAIN_DELAY_MS, DEFAULT_HARD_DEADLINE_MS, createShutdownHandler } from './createShutdownHandler.js';
 import { ShutdownState } from './ShutdownState.js';
 
 describe('createShutdownHandler', () => {
@@ -139,6 +139,79 @@ describe('createShutdownHandler', () => {
         await shutdown();
 
         expect(onStopped).toHaveBeenCalledOnce();
+    });
+
+    it('Should call onHardDeadline when the sequence overruns the deadline', async () => {
+        const onHardDeadline = vi.fn();
+        const platform = {
+            stop: () => new Promise<void>((resolve) => setTimeout(resolve, 80))
+        };
+
+        await createShutdownHandler(platform, { drainDelayMs: 0, hardDeadlineMs: 20, onHardDeadline })();
+
+        expect(onHardDeadline).toHaveBeenCalledOnce();
+        // The elapsed time it reports is what makes the log line worth reading.
+        expect(onHardDeadline.mock.calls[0][0]).toBeGreaterThanOrEqual(20);
+    });
+
+    it('Should NOT call onHardDeadline when shutdown finishes in time', async () => {
+        const onHardDeadline = vi.fn();
+
+        await createShutdownHandler(
+            { stop: () => undefined },
+            { drainDelayMs: 0, hardDeadlineMs: 500, onHardDeadline }
+        )();
+
+        // Far longer than an immediate stop needs, far shorter than the deadline: a timer
+        // left uncleared would fire inside this window.
+        await new Promise((resolve) => setTimeout(resolve, 50));
+
+        expect(onHardDeadline).not.toHaveBeenCalled();
+    });
+
+    it('Should leave the deadline disabled by default', async () => {
+        const onHardDeadline = vi.fn();
+
+        await createShutdownHandler(
+            { stop: () => new Promise<void>((resolve) => setTimeout(resolve, 30)) },
+            { drainDelayMs: 0, onHardDeadline }
+        )();
+
+        expect(onHardDeadline).not.toHaveBeenCalled();
+    });
+
+    // A teardown that throws must not leave a timer behind that exits the process seconds
+    // later, from nowhere, after the caller has already handled the error.
+    it('Should clear the deadline when the sequence throws', async () => {
+        const onHardDeadline = vi.fn();
+        const platform = {
+            stop: () => {
+                throw new Error('teardown exploded');
+            }
+        };
+
+        await expect(
+            createShutdownHandler(platform, { drainDelayMs: 0, hardDeadlineMs: 20, onHardDeadline })()
+        ).rejects.toThrow('teardown exploded');
+
+        await new Promise((resolve) => setTimeout(resolve, 50));
+
+        expect(onHardDeadline).not.toHaveBeenCalled();
+    });
+
+    it('Should still flush onStopped on the normal path when a deadline is set', async () => {
+        const onStopped = vi.fn();
+
+        await createShutdownHandler(
+            { stop: () => undefined },
+            { drainDelayMs: 0, hardDeadlineMs: 500, onStopped }
+        )();
+
+        expect(onStopped).toHaveBeenCalledOnce();
+    });
+
+    it('Should leave the hard deadline off by default', () => {
+        expect(DEFAULT_HARD_DEADLINE_MS).toBe(0);
     });
 });
 

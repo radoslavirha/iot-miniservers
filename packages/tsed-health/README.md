@@ -176,3 +176,44 @@ a request already mid-query when the injector is destroyed. Both are needed; kee
 
 Do **not** register the handler for `beforeExit`: it fires when the event loop empties, not
 on a signal, and would start a shutdown nobody requested.
+
+### `hardDeadlineMs` — bounding the sequence
+
+Off by default. When set, an `unref`'d timer runs the whole sequence — drain,
+`platform.stop()`, `onStopped` — against a deadline, and `onHardDeadline` (default
+`process.exit(1)`) ends the process when it overruns.
+
+The alternative is not a slower shutdown. It is SIGKILL at the end of
+`terminationGracePeriodSeconds`, which also discards the batched spans, metrics and logs the
+drain produced — the exact telemetry that would have explained the hang.
+
+```ts
+const shutdown = createShutdownHandler(platform, {
+    drainDelayMs: 5_000,
+    hardDeadlineMs: 10_000,
+    onHardDeadline: (elapsedMs) => {
+        logger.error('Shutdown exceeded its hard deadline, exiting.', {
+            event: 'SERVER_SHUTDOWN_TIMEOUT',
+            elapsedMs
+        });
+        process.exit(1);
+    },
+    onStopped: () => openTelemetry.shutdown()
+});
+```
+
+Size it inside the pod's own budget:
+
+```text
+preStop sleep + drainDelayMs + hardDeadlineMs < terminationGracePeriodSeconds
+```
+
+For the IoT apps that is 10s + 5s + 10s < 30s.
+
+Two details that are easy to get wrong if you reimplement this:
+
+- **The timer is `unref`'d.** It must never be the reason the process stays alive — if the
+  event loop empties, Node exits on its own and there is nothing left to kill. What keeps
+  the loop alive in the case this guards is exactly what the deadline exists to end.
+- **It is cleared in a `finally`.** A teardown that throws must not leave a timer that ends
+  the process seconds later, from nowhere, after the caller has already handled the error.

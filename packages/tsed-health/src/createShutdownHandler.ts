@@ -22,6 +22,20 @@ export interface ShutdownHandlerOptions {
      * `terminationGracePeriodSeconds`.
      */
     drainDelayMs?: number;
+    /**
+     * Bounds the whole sequence — drain, `platform.stop()`, `onStopped`. When it overruns,
+     * `onHardDeadline` runs. Off by default: a caller that has not sized its own budget is
+     * better served by the pod's grace period than by a number guessed here.
+     *
+     * The alternative to setting it is not "shutdown takes longer". It is SIGKILL at the
+     * end of `terminationGracePeriodSeconds`, which also discards the batched spans,
+     * metrics and logs the drain produced — the exact telemetry that would have explained
+     * why it hung.
+     *
+     * Size it inside the pod's budget: `preStop + drainDelayMs + hardDeadlineMs <
+     * terminationGracePeriodSeconds`.
+     */
+    hardDeadlineMs?: number;
     /** Called when shutdown begins and when it completes. Wire to the app's logger. */
     onShutdown?: (phase: 'draining' | 'stopping' | 'stopped') => void;
     /**
@@ -35,9 +49,25 @@ export interface ShutdownHandlerOptions {
      * the pod's remaining termination budget.
      */
     onStopped?: () => Promise<void> | void;
+    /**
+     * Runs when `hardDeadlineMs` elapses, with the milliseconds spent so far. Defaults to
+     * ending the process with a non-zero status.
+     *
+     * Override it to log first — a pod that exits here has a connection that never closed
+     * or a dependency that never released, and the log line is the only evidence that
+     * survives, because the telemetry flush is precisely what did not finish. Tests
+     * override it to assert without killing the runner.
+     */
+    onHardDeadline?: (elapsedMs: number) => void;
 }
 
 export const DEFAULT_DRAIN_DELAY_MS = 5_000;
+/** Disabled. See `ShutdownHandlerOptions.hardDeadlineMs`. */
+export const DEFAULT_HARD_DEADLINE_MS = 0;
+
+const defaultHardExit = (): void => {
+    process.exit(1);
+};
 
 /**
  * Builds the signal handler that shuts the platform down gracefully.
@@ -72,7 +102,13 @@ export const createShutdownHandler = (
     platform: StoppablePlatform,
     options: ShutdownHandlerOptions = {}
 ): (() => Promise<void>) => {
-    const { drainDelayMs = DEFAULT_DRAIN_DELAY_MS, onShutdown, onStopped } = options;
+    const {
+        drainDelayMs = DEFAULT_DRAIN_DELAY_MS,
+        hardDeadlineMs = DEFAULT_HARD_DEADLINE_MS,
+        onShutdown,
+        onStopped,
+        onHardDeadline = defaultHardExit
+    } = options;
     let shuttingDown = false;
 
     return async (): Promise<void> => {
@@ -81,19 +117,41 @@ export const createShutdownHandler = (
         }
         shuttingDown = true;
 
-        onShutdown?.('draining');
-        // Resolved here rather than captured at construction: the handler is built during
-        // bootstrap, when the container may not yet hold the provider.
-        inject<ShutdownState>(ShutdownState).beginDrain();
+        const startedAt = Date.now();
+        let deadline: NodeJS.Timeout | undefined;
 
-        if (drainDelayMs > 0) {
-            await delay(drainDelayMs);
+        if (hardDeadlineMs > 0) {
+            deadline = setTimeout(() => onHardDeadline(Date.now() - startedAt), hardDeadlineMs);
+            // `unref` on purpose: this timer must never be the reason the process stays
+            // alive. If the event loop empties, Node exits and there is nothing left to
+            // kill. What keeps the loop alive in the case this guards — a socket that will
+            // not close, a `stop()` awaiting a dependency that is gone — is exactly what
+            // the deadline exists to end.
+            deadline.unref();
         }
 
-        onShutdown?.('stopping');
-        await platform.stop();
-        onShutdown?.('stopped');
+        try {
+            onShutdown?.('draining');
+            // Resolved here rather than captured at construction: the handler is built during
+            // bootstrap, when the container may not yet hold the provider.
+            inject<ShutdownState>(ShutdownState).beginDrain();
 
-        await onStopped?.();
+            if (drainDelayMs > 0) {
+                await delay(drainDelayMs);
+            }
+
+            onShutdown?.('stopping');
+            await platform.stop();
+            onShutdown?.('stopped');
+
+            await onStopped?.();
+        } finally {
+            // `finally`, not after `onStopped`: a teardown that throws must not leave a
+            // timer that ends the process seconds later, from nowhere, after the caller
+            // has already handled the error.
+            if (deadline) {
+                clearTimeout(deadline);
+            }
+        }
     };
 };
